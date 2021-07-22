@@ -60,7 +60,8 @@ jobs:
       with:
         distribution: 'adopt' # See 'Supported distributions' for available options
         java-version: '15'
-    - run: java -cp java HelloWorldApp
+    - run: chmod +x gradlew
+    - run: ./gradlew build
 
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 https://git.io/JvXDl
