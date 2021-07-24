@@ -2,6 +2,7 @@ package io.keepup.cms.core.datasource.dao;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.keepup.cms.core.boot.KeepupApplication;
+import io.keepup.cms.core.cache.KeepupCacheConfiguration;
 import io.keepup.cms.core.datasource.sql.entity.NodeAttributeEntity;
 import io.keepup.cms.core.datasource.sql.entity.NodeEntity;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveNodeAttributeEntityRepository;
@@ -17,7 +18,11 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.r2dbc.DataR2dbcTest;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import reactor.core.publisher.Flux;
@@ -34,7 +39,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = {KeepupApplication.class})
+@ActiveProfiles("dev")
+@ContextConfiguration(classes = {KeepupApplication.class, KeepupCacheConfiguration.class})
 @DataR2dbcTest
 class SqlDataSourceTest {
 
@@ -46,13 +52,15 @@ class SqlDataSourceTest {
     ReactiveNodeAttributeEntityRepository reactiveNodeAttributeEntityRepository;
     @Mock
     ObjectMapper objectMapper;
+    @Autowired
+    CacheManager cacheManager;
 
     DataSource dataSource;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(getClass());
-        dataSource = new SqlDataSource(reactiveNodeEntityRepository, reactiveNodeAttributeEntityRepository, objectMapper);
+        dataSource = new SqlDataSource(reactiveNodeEntityRepository, reactiveNodeAttributeEntityRepository, objectMapper, cacheManager);
     }
 
     @Test
@@ -61,6 +69,8 @@ class SqlDataSourceTest {
                 .thenReturn(Mono.just(getNodeEntity()));
         Mono<Content> content = dataSource.getContent(1L);
         assertNotNull(content.block());
+        Cache.ValueWrapper content1 = cacheManager.getCache("content").get(content.block().getId());
+        assertNotNull(content1);
     }
 
     @Test

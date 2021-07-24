@@ -12,6 +12,7 @@ import io.keepup.cms.core.persistence.Node;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -20,6 +21,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -30,18 +32,22 @@ import java.util.stream.Collectors;
  */
 public class SqlDataSource implements DataSource {
 
+    public static final String CONTENT_CACHE_NAME = "content";
     private final Log log = LogFactory.getLog(getClass());
     private final ReactiveNodeEntityRepository nodeEntityRepository;
     private final ReactiveNodeAttributeEntityRepository nodeAttributeEntityRepository;
     private final ObjectMapper mapper;
+    private final CacheManager cacheManager;
 
     @Autowired
     public SqlDataSource(ReactiveNodeEntityRepository reactiveNodeEntityRepository,
                          ReactiveNodeAttributeEntityRepository reactiveNodeAttributeEntityRepository,
-                         ObjectMapper objectMapper) {
+                         ObjectMapper objectMapper,
+                         CacheManager manager) {
         nodeEntityRepository = reactiveNodeEntityRepository;
         nodeAttributeEntityRepository = reactiveNodeAttributeEntityRepository;
         mapper = objectMapper;
+        cacheManager = manager;
     }
 
     /**
@@ -114,6 +120,9 @@ public class SqlDataSource implements DataSource {
         setOtherPrivileges(nodeEntity, content);
         setRolePrivileges(nodeEntity, content);
         nodeEntity.getAttributes().forEach(nodeAttributeDao -> addNodeAttributeToContent(content, nodeAttributeDao));
+        Optional.ofNullable(cacheManager)
+                .map(manager -> manager.getCache(CONTENT_CACHE_NAME))
+                .ifPresent(cache -> cache.put(content.getId(), content));
         return content;
     }
 

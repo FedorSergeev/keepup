@@ -15,6 +15,8 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'org.apache.commons:commons-lang3:3.12.0'
     implementation 'org.hibernate:hibernate-core:5.5.3.Final'
+    implementation 'org.apache.ignite:ignite-core:2.10.0'
+    implementation 'org.apache.ignite:ignite-spring:2.10.0'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     runtimeOnly 'com.h2database:h2:1.4.200'
