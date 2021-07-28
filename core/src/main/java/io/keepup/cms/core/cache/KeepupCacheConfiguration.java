@@ -21,14 +21,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static io.keepup.cms.core.datasource.dao.SqlDataSource.CONTENT_CACHE_NAME;
+
 /**
  * Contains configurations for different cache types.
  */
 @Configuration
 @EnableCaching
 public class KeepupCacheConfiguration {
-
-    public static final String CONTENT_CACHE_NAME = "content";
 
     @Profile("dev")
     @Bean("cacheManager")

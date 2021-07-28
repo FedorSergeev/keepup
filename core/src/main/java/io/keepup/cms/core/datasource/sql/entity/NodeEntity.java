@@ -1,13 +1,11 @@
 package io.keepup.cms.core.datasource.sql.entity;
 
 import io.keepup.cms.core.persistence.Content;
+import org.springframework.data.annotation.Id;
 
 import javax.persistence.*;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 
 /**
@@ -16,7 +14,7 @@ import java.util.Map;
  * @author Fedor Sergeev
  */
 @Entity
-@Table(name="node", indexes = {
+@Table(name="node_entity", indexes = {
         @Index(name = "IDX_ID", columnList = "id"),
         @Index(name = "IDX_PARENT_ID", columnList = "parent_id"),
         @Index(name = "IDX_OWNER_ID", columnList = "owner_id")})
@@ -25,8 +23,6 @@ public class NodeEntity implements Serializable  {
     private static final long serialVersionUID = 24523L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "content_seq_generator")
-    @SequenceGenerator(name = "content_seq_generator", sequenceName = "content_seq", allocationSize = 1)
     Long id;
     @Column(name = "parent_id", nullable = false)
     private Long parentId;
@@ -57,27 +53,15 @@ public class NodeEntity implements Serializable  {
     @Column(name = "other_create_children_privilege", nullable = false)
     private boolean otherCreateChildrenPrivilege;
 
-    @JoinColumn(name = "contentId")
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    private List<NodeAttributeEntity> attributes;
-
     public NodeEntity() {
-        attributes = new ArrayList<>();
-    }
-
-    public NodeEntity(Content content, boolean noAttributes) {
-        this(content);
-        if (!noAttributes) {
-            content.getAttributes().entrySet().forEach(this::accept);
-        }
+        super();
     }
 
     public NodeEntity(Content content) {
-        if (content.getId() == null || content.getId() == 0) {
-            this.id = -1L;
-        } else {
-            this.id = content.getId();
-        }
+        this.id = content.getId() == null || content.getId() == 0
+                ? null
+                : content.getId();
+
         ownerId = content.getOwnerId();
         parentId = content.getParentId();
         ownerReadPrivilege = content.getContentPrivileges().getOwnerPrivileges().canRead();
@@ -92,7 +76,6 @@ public class NodeEntity implements Serializable  {
         otherWritePrivilege = content.getContentPrivileges().getOtherPrivileges().canWrite();
         otherExecutePrivilege = content.getContentPrivileges().getOtherPrivileges().canExecute();
         otherCreateChildrenPrivilege = content.getContentPrivileges().getOtherPrivileges().canCreateChildren();
-        attributes = new ArrayList<>();
     }
 
     public Long getId() {
@@ -213,17 +196,5 @@ public class NodeEntity implements Serializable  {
 
     public void setOtherCreateChildrenPrivilege(boolean otherCreateChildrenPrivilege) {
         this.otherCreateChildrenPrivilege = otherCreateChildrenPrivilege;
-    }
-
-    public List<NodeAttributeEntity> getAttributes() {
-        return attributes;
-    }
-
-    public void setAttributes(List<NodeAttributeEntity> attributes) {
-        this.attributes = attributes;
-    }
-
-    private void accept(Map.Entry<String, Serializable> entry) {
-        attributes.add(new NodeAttributeEntity(id, entry.getKey(), entry.getValue()));
     }
 }
