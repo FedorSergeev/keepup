@@ -13,7 +13,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.Cacheable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -142,7 +141,6 @@ public class SqlDataSource implements DataSource {
         }
     }
 
-    @Cacheable
     Content buildNode(NodeEntity nodeEntity, List <NodeAttributeEntity> attributeEntities) {
         // as we call this method from reactive chain there is no success result with null NodeEntity
         final Content content = new Node(nodeEntity.getId());
@@ -152,12 +150,23 @@ public class SqlDataSource implements DataSource {
         setOwnerPrivileges(nodeEntity, content);
         setOtherPrivileges(nodeEntity, content);
         setRolePrivileges(nodeEntity, content);
-        ofNullable(cacheManager)
-                .map(manager -> manager.getCache(CONTENT_CACHE_NAME))
-                .ifPresent(cache -> cache.putIfAbsent(content.getId(), content));
+        saveContentToCache(content);
 
         attributeEntities.forEach(nodeAttributeEntity -> addNodeAttributeToContent(content, nodeAttributeEntity));
         return content;
+    }
+
+    /**
+     * One decided not use cache via AOP for two reasons:
+     * - reactive streaming and possible problems with caching
+     * - additional proxy configurations for intercepting methods and classes annotated for caching
+     *
+     * @param content record to be cached
+     */
+    private void saveContentToCache(Content content) {
+        ofNullable(cacheManager)
+                .map(manager -> manager.getCache(CONTENT_CACHE_NAME))
+                .ifPresent(cache -> cache.putIfAbsent(content.getId(), content));
     }
 
     private void setOwnerPrivileges(NodeEntity nodeEntity, Content content) {

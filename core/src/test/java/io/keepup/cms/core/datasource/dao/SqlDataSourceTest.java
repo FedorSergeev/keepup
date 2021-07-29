@@ -17,7 +17,6 @@ import org.apache.commons.logging.LogFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
-import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.r2dbc.DataR2dbcTest;
 import org.springframework.cache.Cache;
@@ -30,10 +29,7 @@ import reactor.core.publisher.Mono;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 import static io.keepup.cms.core.datasource.access.ContentPrivilegesFactory.STANDARD_PRIVILEGES;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -67,7 +63,6 @@ class SqlDataSourceTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(getClass());
         reactiveNodeEntityRepository.save(getNodeEntity());
         dataSource = new SqlDataSource(reactiveNodeEntityRepository, reactiveNodeAttributeEntityRepository, objectMapper, cacheManager);
     }
@@ -77,9 +72,13 @@ class SqlDataSourceTest {
         Node node = getNode();
         Mono<Content> contentMono = dataSource.createContent(node).flatMap(id -> dataSource.getContent(id));
         Content fromDatabase = contentMono.block();
+        assertNotNull(fromDatabase);
         node.setId(fromDatabase.getId());
-        Cache.ValueWrapper cachedContent = cacheManager.getCache("content").get(fromDatabase.getId());
+        Cache.ValueWrapper cachedContent = Optional.ofNullable(cacheManager)
+                .map(manager -> manager.getCache("content"))
+                .map(cache -> cache.get(fromDatabase.getId())).orElse(null);
         assertNotNull(cachedContent);
+        assertNotNull(cachedContent.get());
         assertEquals(cachedContent.get(), fromDatabase);
         // remove enhanced attributes because they will not be equal - to be solved
         fromDatabase.getAttributes().remove("enhanced");
@@ -124,7 +123,6 @@ class SqlDataSourceTest {
 
     private NodeEntity getNodeEntity() {
         NodeEntity nodeEntity = new NodeEntity();
-//        nodeEntity.setId(new Random().nextLong());
         nodeEntity.setOwnerId(2L);
         nodeEntity.setParentId(0L);
         nodeEntity.setOwnerReadPrivilege(STANDARD_PRIVILEGES.getOwnerPrivileges().canRead());
