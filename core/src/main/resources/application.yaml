@@ -1,5 +1,2 @@
 spring:
-  jpa:
-    hibernate:
-      ddl-auto: update
-  datasource:
+  profiles.active: dev,h2

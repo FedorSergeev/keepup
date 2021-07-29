@@ -4,12 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.util.internal.StringUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.data.annotation.Id;
 
 import javax.persistence.*;
 import java.io.IOException;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Optional;
 
 import static java.lang.String.format;
@@ -43,8 +46,8 @@ public class NodeAttributeEntity extends AbstractEntityAttribute {
         final var log = LogFactory.getLog(getClass());
         this.contentId = contentId;
         setAttributeKey(key);
-        setCreationTime(new Date());
-        setModificationTime(new Date());
+        setCreationTime(convertToLocalDateViaInstant(new Date()));
+        setModificationTime(convertToLocalDateViaInstant(new Date()));
         if (value == null) {
             log.warn(format("[NODE#%d] Attribute '%s' is null, setting value tu empty byte array", contentId, key));
             setDefaultValue();
@@ -81,7 +84,7 @@ public class NodeAttributeEntity extends AbstractEntityAttribute {
                 .concat(" attributeKey=").concat(getAttributeKey())
                 .concat(" attributeValue=").concat(stringAttributeValue)
                 .concat(" creationTime=").concat(getCreationTime().toString())
-                .concat(" modificationTime=").concat(Optional.ofNullable(getModificationTime()).map(Date::toString).orElse("null"));
+                .concat(" modificationTime=").concat(Optional.ofNullable(getModificationTime()).map(LocalDate::toString).orElse("null"));
     }
 
     public NodeAttributeEntity(Long id, Long contentId, String key, Serializable value) {
@@ -92,4 +95,12 @@ public class NodeAttributeEntity extends AbstractEntityAttribute {
     private static String apply(Long cId) {
         return Long.toString(cId);
     }
+
+
+    private static LocalDate convertToLocalDateViaInstant(Date dateToConvert) {
+        return dateToConvert.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate();
+    }
+
 }

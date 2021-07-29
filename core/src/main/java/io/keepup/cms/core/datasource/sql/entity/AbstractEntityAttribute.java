@@ -8,8 +8,8 @@ import javax.persistence.Column;
 import javax.persistence.Lob;
 import javax.persistence.MappedSuperclass;
 import java.io.*;
+import java.time.LocalDate;
 import java.util.Arrays;
-import java.util.Date;
 
 /**
  * Not compatible with older KeepUP versions as some column names were changed due to
@@ -46,13 +46,13 @@ public abstract class AbstractEntityAttribute implements Serializable {
      * Defines date and time attribute was created
      */
     @Column(name = "creation_time", nullable = false)
-    private Date creationTime;
+    private LocalDate creationTime;
 
     /**
      * Defines the last time when object was modified
      */
     @Column(name = "modification_time", nullable = false)
-    private Date modificationTime;
+    private LocalDate modificationTime;
 
     public String getAttributeKey() {
         return attributeKey;
@@ -78,19 +78,19 @@ public abstract class AbstractEntityAttribute implements Serializable {
         this.javaClass = javaClass;
     }
 
-    public Date getCreationTime() {
+    public LocalDate getCreationTime() {
         return creationTime;
     }
 
-    public void setCreationTime(Date creationTime) {
+    public void setCreationTime(LocalDate creationTime) {
         this.creationTime = creationTime;
     }
 
-    public Date getModificationTime() {
+    public LocalDate getModificationTime() {
         return modificationTime;
     }
 
-    public void setModificationTime(Date modificationTime) {
+    public void setModificationTime(LocalDate modificationTime) {
         this.modificationTime = modificationTime;
     }
 

@@ -1,0 +1,724 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1601462504025-1
+      author: Fedor Sergeev
+      #      preConditions:
+      #        onFail: MARK_RAN
+      #        onFailMessage: Table 'content_layout' already exists
+      #        not:
+      #          tableExists:
+      #            tableName: content_layout
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: content_layout_pkey
+                  name: id
+                  type: BIGSERIAL
+              - column:
+                  constraints:
+                    nullable: false
+                  name: content_id
+                  type: BIGINT
+            tableName: content_layout
+
+  - changeSet:
+      id: 1601462504025-2
+      author: Fedor Sergeev
+      #      preConditions:
+      #        - onFail: MARK_RAN
+      #          onFailMessage: Table 'enums' already exists
+      #          not:
+      #            tableExists:
+      #              tableName: enums
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: enums_pkey
+                  name: id
+                  type: BIGSERIAL
+              - column:
+                  constraints:
+                    nullable: false
+                  name: body
+                  type: TEXT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(255)
+            tableName: enums
+
+  - changeSet:
+      id: 1601462504026-3
+      author: Fedor Sergeev
+      #      preConditions:
+      #        - onFail: MARK_RAN
+      #          onFailMessage: Table 'enumtags' already exists
+      #          not:
+      #            tableExists:
+      #              tableName: enumtags
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: enumtags_pkey
+                  name: id
+                  type: BIGSERIAL
+              - column:
+                  constraints:
+                    nullable: false
+                  name: layout_attribute_id
+                  type: BIGINT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: view
+                  type: TEXT
+            tableName: enumtags
+        - addUniqueConstraint:
+            columnNames: layout_attribute_id
+            constraintName: uk_apxtds7i0i95nwn93c8r6blmw
+            tableName: enumtags
+
+  - changeSet:
+      id: 1601462504025-39
+      author: Fedor Sergeev
+      #      preConditions:
+      #        - onFail: MARK_RAN
+      #          onFailMessage: Table 'files' already exists
+      #          not:
+      #            tableExists:
+      #              tableName: files
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: files_pkey
+                  name: id
+                  type: BIGSERIAL
+              - column:
+                  constraints:
+                    nullable: false
+                  name: content
+                  type: BYTEA
+              - column:
+                  constraints:
+                    nullable: false
+                  name: content_id
+                  type: BIGINT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: creation_time
+                  type: TIMESTAMP WITHOUT TIME ZONE
+              - column:
+                  constraints:
+                    nullable: false
+                  name: file_name
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: modification_time
+                  type: TIMESTAMP WITHOUT TIME ZONE
+              - column:
+                  constraints:
+                    nullable: false
+                  name: path
+                  type: VARCHAR(255)
+            tableName: files
+        - createIndex:
+            columns:
+              - column:
+                  name: content_id
+            indexName: idx_file_content_id
+            tableName: files
+
+  - changeSet:
+      id: 1601462504025-40
+      author: Fedor Sergeev
+      #      preConditions:
+      #        - onFail: MARK_RAN
+      #          onFailMessage: Table 'node' already exists
+      #          not:
+      #            tableExists:
+      #              tableName: node
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: node_pkey
+                  name: id
+                  type: BIGSERIAL
+              - column:
+                  constraints:
+                    nullable: false
+                  name: other_create_children_privilege
+                  type: BOOLEAN
+              - column:
+                  constraints:
+                    nullable: false
+                  name: other_execute_privilege
+                  type: BOOLEAN
+              - column:
+                  constraints:
+                    nullable: false
+                  name: other_read_privilege
+                  type: BOOLEAN
+              - column:
+                  constraints:
+                    nullable: false
+                  name: other_write_privilege
+                  type: BOOLEAN
+              - column:
+                  constraints:
+                    nullable: false
+                  name: owner_create_children_privilege
+                  type: BOOLEAN
+              - column:
+                  constraints:
+                    nullable: false
+                  name: owner_execute_privilege
+                  type: BOOLEAN
+              - column:
+                  constraints:
+                    nullable: false
+                  name: owner_id
+                  type: BIGINT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: owner_read_privilege
+                  type: BOOLEAN
+              - column:
+                  constraints:
+                    nullable: false
+                  name: owner_write_privilege
+                  type: BOOLEAN
+              - column:
+                  constraints:
+                    nullable: false
+                  name: parent_id
+                  type: BIGINT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: role_create_children_privilege
+                  type: BOOLEAN
+              - column:
+                  constraints:
+                    nullable: false
+                  name: role_execute_privilege
+                  type: BOOLEAN
+              - column:
+                  constraints:
+                    nullable: false
+                  name: role_read_privilege
+                  type: BOOLEAN
+              - column:
+                  constraints:
+                    nullable: false
+                  name: role_write_privilege
+                  type: BOOLEAN
+            tableName: NODE_ENTITY
+        - createIndex:
+            columns:
+              - column:
+                  name: parent_id
+            indexName: idx_parent_id
+            tableName: NODE_ENTITY
+        - createIndex:
+            columns:
+              - column:
+                  name: owner_id
+            indexName: idx_owner_id
+            tableName: NODE_ENTITY
+
+  - changeSet:
+      id: 1601462504025-35
+      author: Fedor Sergeev
+      #      preConditions:
+      #        - onFail: MARK_RAN
+      #          onFailMessage: Table 'node_attributes' already exists
+      #          not:
+      #            tableExists:
+      #              tableName: node_attributes
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: node_attributes_pkey
+                  name: id
+                  type: BIGSERIAL
+              - column:
+                  constraints:
+                    nullable: false
+                  name: attribute_key
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: attribute_value
+                  type: BYTEA
+              - column:
+                  constraints:
+                    nullable: false
+                  name: creation_time
+                  type: TIMESTAMP WITHOUT TIME ZONE
+              - column:
+                  constraints:
+                    nullable: false
+                  name: java_class
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: modification_time
+                  type: TIMESTAMP WITHOUT TIME ZONE
+              - column:
+                  constraints:
+                    nullable: false
+                  name: content_id
+                  type: BIGINT
+            tableName: node_attributes
+        - createIndex:
+            columns:
+              - column:
+                  name: content_id
+            indexName: idx_content_id
+            tableName: node_attributes
+        - addForeignKeyConstraint:
+            baseColumnNames: content_id
+            baseTableName: node_attributes
+            constraintName: fkcggeu5ll3yvu3nqsxq10l3sn4
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: NODE_ENTITY
+            validate: true
+
+  - changeSet:
+      id: 1601462504025-37
+      author: Fedor Sergeev
+      #      preConditions:
+      #        - onFail: MARK_RAN
+      #          onFailMessage: Table 'user_attributes' already exists
+      #          not:
+      #            tableExists:
+      #              tableName: user_attributes
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: user_attributes_pkey
+                  name: id
+                  type: BIGSERIAL
+              - column:
+                  constraints:
+                    nullable: false
+                  name: attribute_key
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: attribute_value
+                  type: BYTEA
+              - column:
+                  constraints:
+                    nullable: false
+                  name: creation_time
+                  type: TIMESTAMP WITHOUT TIME ZONE
+              - column:
+                  constraints:
+                    nullable: false
+                  name: java_class
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: modification_time
+                  type: TIMESTAMP WITHOUT TIME ZONE
+              - column:
+                  constraints:
+                    nullable: false
+                  name: userid
+                  type: BIGINT
+            tableName: user_attributes
+        - createIndex:
+            columns:
+              - column:
+                  name: userid
+            indexName: idx__attribute_owner_user_id
+            tableName: user_attributes
+
+  - changeSet:
+      id: 1601462504025-8
+      author: Fedor Sergeev
+      #      preConditions:
+      #        - onFail: MARK_RAN
+      #          onFailMessage: Table 'userdto' already exists
+      #          not:
+      #            tableExists:
+      #              tableName: userdto
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: userdto_pkey
+                  name: id
+                  type: BIGSERIAL
+              - column:
+                  name: expirationdate
+                  type: TIMESTAMP WITHOUT TIME ZONE
+              - column:
+                  name: passwordhash
+                  type: VARCHAR(255)
+              - column:
+                  name: user_role
+                  type: VARCHAR(255)
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+            tableName: userdto
+            addForeignKeyConstraint:
+              baseColumnNames: userid
+              baseTableName: user_attributes
+              constraintName: fkkwukw3vohuyyqe90m3pro12qm
+              deferrable: false
+              initiallyDeferred: false
+              onDelete: NO ACTION
+              onUpdate: NO ACTION
+              referencedColumnNames: id
+              referencedTableName: userdto
+              validate: true
+            createIndex:
+              columns:
+                - column:
+                    name: user_role
+              indexName: idx_user_role
+              tableName: userdto
+
+  - changeSet:
+      id: 1601462504025-9
+      author: Fedor Sergeev
+      #      preConditions:
+      #        - onFail: MARK_RAN
+      #          onFailMessage: Table 'layout_attributes' already exists
+      #          not:
+      #            tableExists:
+      #              tableName: layout_attributes
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: layout_attributes_pkey
+                  name: id
+                  type: BIGSERIAL
+              - column:
+                  constraints:
+                    nullable: false
+                  name: key
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: layout_id
+                  type: BIGINT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: resolve
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: in_table
+                  type: TEXT
+              - column:
+                  name: tag
+                  type: BYTEA
+            tableName: layout_attributes
+
+  - changeSet:
+      id: 1601462504025-10
+      author: Fedor Sergeev
+      #      preConditions:
+      #        - onFail: MARK_RAN
+      #          onFailMessage: Table 'layouts' already exists
+      #          not:
+      #            tableExists:
+      #              tableName: layouts
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: layouts_pkey
+                  name: id
+                  type: BIGSERIAL
+              - column:
+                  constraints:
+                    nullable: false
+                  name: html
+                  type: TEXT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(255)
+            tableName: layouts
+
+
+  - changeSet:
+      id: 1601462504025-12
+      author: Fedor Sergeev
+      #      preConditions:
+      #        - onFail: MARK_RAN
+      #          not:
+      #            - indexExists:
+      #                indexName: cl_idx_content_id
+      #                tableName: content_layout
+      changes:
+        - createIndex:
+            columns:
+              - column:
+                  name: content_id
+            indexName: cl_idx_content_id
+            tableName: content_layout
+
+
+
+  - changeSet:
+      id: 1601462504025-22
+      author: Fedor Sergeev
+      #      preConditions:
+      #        - onFail: MARK_RAN
+      #          oFailMessage: cl_seq already exists
+      #          not:
+      #            sequenceExists:
+      #              sequenceName: cl_seq
+      changes:
+        - createSequence:
+            cacheSize: 1
+            cycle: false
+            incrementBy: 1
+            maxValue: 9223372036854775807
+            minValue: 1
+            sequenceName: cl_seq
+            startValue: 1
+
+  - changeSet:
+      id: 1601462504025-23
+      author: Fedor Sergeev
+      #      preConditions:
+      #        - onFail: MARK_RAN
+      #          oFailMessage: content_attribute_seq already exists
+      #          not:
+      #            sequenceExists:
+      #              sequenceName: content_attribute_seq
+      changes:
+        - createSequence:
+            cacheSize: 1
+            cycle: false
+            incrementBy: 1
+            maxValue: 9223372036854775807
+            minValue: 1
+            sequenceName: content_attribute_seq
+            startValue: 1
+
+  - changeSet:
+      id: 1601462504025-24
+      author: Fedor Sergeev
+      #      preConditions:
+      #        - onFail: MARK_RAN
+      #          oFailMessage: content_seq already exists
+      #          not:
+      #            sequenceExists:
+      #              sequenceName: content_seq
+      changes:
+        - createSequence:
+            cacheSize: 1
+            cycle: false
+            incrementBy: 1
+            maxValue: 9223372036854775807
+            minValue: 1
+            sequenceName: content_seq
+            startValue: 1
+
+  - changeSet:
+      id: 1601462504025-25
+      author: Fedor Sergeev
+      #      preConditions:
+      #        - onFail: MARK_RAN
+      #          oFailMessage: enum_seq already exists
+      #          not:
+      #            sequenceExists:
+      #              sequenceName: enum_seq
+      changes:
+        - createSequence:
+            cacheSize: 1
+            cycle: false
+
+            incrementBy: 1
+            maxValue: 9223372036854775807
+            minValue: 1
+            sequenceName: enum_seq
+            startValue: 1
+
+  - changeSet:
+      id: 1601462504025-26
+      author: Fedor Sergeev
+      #      preConditions:
+      #        - onFail: MARK_RAN
+      #          oFailMessage: enumtag_seq already exists
+      #          not:
+      #            sequenceExists:
+      #              sequenceName: enumtag_seq
+      changes:
+        - createSequence:
+            cacheSize: 1
+            cycle: false
+
+            incrementBy: 1
+            maxValue: 9223372036854775807
+            minValue: 1
+            sequenceName: enumtag_seq
+            startValue: 1
+
+  - changeSet:
+      id: 1601462504025-27
+      author: Fedor Sergeev
+      preConditions:
+      #        - onFail: MARK_RAN
+      #          oFailMessage: file_seq already exists
+      #          not:
+      #            sequenceExists:
+      #              sequenceName: file_seq
+      changes:
+        - createSequence:
+            cacheSize: 1
+            cycle: false
+
+            incrementBy: 1
+            maxValue: 9223372036854775807
+            minValue: 1
+            sequenceName: file_seq
+            startValue: 1
+
+  - changeSet:
+      id: 1601462504025-28
+      author: Fedor Sergeev
+      preConditions:
+      #        - onFail: MARK_RAN
+      #          oFailMessage: layout_attr_seq already exists
+      #          not:
+      #            sequenceExists:
+      #              sequenceName: layout_attr_seq
+      changes:
+        - createSequence:
+            cacheSize: 1
+            cycle: false
+
+            incrementBy: 1
+            maxValue: 9223372036854775807
+            minValue: 1
+            sequenceName: layout_attr_seq
+            startValue: 1
+
+  - changeSet:
+      id: 1601462504025-29
+      author: Fedor Sergeev
+      preConditions:
+      #        - onFail: MARK_RAN
+      #          oFailMessage: layout_seq already exists
+      #          not:
+      #            sequenceExists:
+      #              sequenceName: layout_seq
+      changes:
+        - createSequence:
+            cacheSize: 1
+            cycle: false
+
+            incrementBy: 1
+            maxValue: 9223372036854775807
+            minValue: 1
+            sequenceName: layout_seq
+            startValue: 1
+
+  - changeSet:
+      id: 1601462504025-31
+      author: Fedor Sergeev
+      #      preConditions:
+      #        - onFail: MARK_RAN
+      #          oFailMessage: user_attribute_seq already exists
+      #          not:
+      #            sequenceExists:
+      #              sequenceName: user_attribute_seq
+      changes:
+        - createSequence:
+            cacheSize: 1
+            cycle: false
+
+            incrementBy: 1
+            maxValue: 9223372036854775807
+            minValue: 1
+            sequenceName: user_attribute_seq
+            startValue: 1
+
+  - changeSet:
+      id: 1601462504025-33
+      author: Fedor Sergeev
+      #      preConditions:
+      #        - onFail: MARK_RAN
+      #          oFailMessage: user_seq already exists
+      #          not:
+      #            sequenceExists:
+      #              sequenceName: user_seq
+      changes:
+        - createSequence:
+            cacheSize: 1
+            cycle: false
+
+            incrementBy: 1
+            maxValue: 9223372036854775807
+            minValue: 1
+            sequenceName: user_seq
+            startValue: 1

@@ -36,8 +36,8 @@ public class Node extends AbstractNode<Serializable> implements Content, Seriali
      * @param id {@link Content} identifier
      */
     public Node(Long id) {
+        this();
         this.id = id;
-        this.attributes = new HashMap<>();
     }
 
     /**

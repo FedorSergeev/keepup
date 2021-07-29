@@ -1,6 +1,7 @@
 package io.keepup.cms.core.datasource.dao;
 
 import io.keepup.cms.core.persistence.Content;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -11,6 +12,7 @@ import reactor.core.publisher.Mono;
 public interface DataSource {
 
     Mono<Content> getContent(Long id);
+    Flux<Content> getContent();
     Mono<Long> createContent(Content content);
 
 }

@@ -12,6 +12,7 @@ import io.keepup.cms.core.persistence.Node;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -23,6 +24,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static java.util.Optional.ofNullable;
+
 /**
  * Abstract representation of the data source provider service.
  *
@@ -30,18 +33,22 @@ import java.util.stream.Collectors;
  */
 public class SqlDataSource implements DataSource {
 
+    public static final String CONTENT_CACHE_NAME = "content";
     private final Log log = LogFactory.getLog(getClass());
     private final ReactiveNodeEntityRepository nodeEntityRepository;
     private final ReactiveNodeAttributeEntityRepository nodeAttributeEntityRepository;
     private final ObjectMapper mapper;
+    private final CacheManager cacheManager;
 
     @Autowired
     public SqlDataSource(ReactiveNodeEntityRepository reactiveNodeEntityRepository,
                          ReactiveNodeAttributeEntityRepository reactiveNodeAttributeEntityRepository,
-                         ObjectMapper objectMapper) {
+                         ObjectMapper objectMapper,
+                         CacheManager manager) {
         nodeEntityRepository = reactiveNodeEntityRepository;
         nodeAttributeEntityRepository = reactiveNodeAttributeEntityRepository;
         mapper = objectMapper;
+        cacheManager = manager;
     }
 
     /**
@@ -51,31 +58,61 @@ public class SqlDataSource implements DataSource {
      * @return record by identifier
      */
     @Override
-    public Mono<Content> getContent(Long id) {
-        return nodeEntityRepository.findById(id)
-                .map(this::buildNode);
+    public Mono<Content> getContent(final Long id) {
+        var valueWrapper = ofNullable(cacheManager.getCache(CONTENT_CACHE_NAME))
+                .map(cache -> cache.get(id))
+                .orElse(null);
+        if (valueWrapper != null) {
+            return ofNullable(valueWrapper.get())
+                    .map(o -> Mono.just((Content)o))
+                    .orElse(Mono.empty());
+        }
+
+        final List <NodeAttributeEntity> attributeEntities = new ArrayList<>();
+        return nodeAttributeEntityRepository.findAllByContentId(id)
+                .collect(Collectors.toList())
+                .flatMap(attributes -> {
+                    attributeEntities.addAll(attributes);
+                    return nodeEntityRepository.findById(id);
+                })
+                .map(entity -> buildNode(entity, attributeEntities));
+    }
+
+    /**
+     * Find all {@link Content} records from the data source
+     *
+     * @return publisher that emits all the records
+     */
+    @Override
+    public Flux<Content> getContent() {
+        return nodeEntityRepository.findAll()
+                .flatMap(node ->
+                    nodeAttributeEntityRepository.findAllByContentId(node.getId())
+                            .collect(Collectors.toList())
+                            .map(nodeAttributeEntities -> buildNode(node, nodeAttributeEntities)));
     }
 
 
     @Override
-    public Mono<Long> createContent(Content content) {
+    public Mono<Long> createContent(final Content content) {
         AtomicReference<Long> contentId = new AtomicReference<>();
         if (content.getId() != null) {
             content.setId(null);
         }
-        var entity = new NodeEntity(content, true);
+        final var entity = new NodeEntity(content);
         return nodeEntityRepository.save(entity)
-                .map(saved -> getNodeAttributeEntityFlux(content, contentId, saved))
-                .map(r -> contentId.get());
+                .flatMap(saved -> getNodeAttributeEntityFlux(content, contentId, saved));
     }
 
-    private Flux<NodeAttributeEntity> getNodeAttributeEntityFlux(Content content, AtomicReference<Long> contentId, NodeEntity saved) {
+
+    private Mono<Long> getNodeAttributeEntityFlux(Content content, AtomicReference<Long> contentId, NodeEntity saved) {
         contentId.set(saved.getId());
         Map<String, Serializable> contentAttributes = content.getAttributes();
         List<NodeAttributeEntity> nodeAttributes = contentAttributes.entrySet().stream()
                 .map(entry -> new NodeAttributeEntity(saved.getId(), entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
-        return nodeAttributeEntityRepository.saveAll(nodeAttributes);
+        return nodeAttributeEntityRepository.saveAll(nodeAttributes)
+                .then(Mono.just(saved.getId()));
     }
 
     /**
@@ -104,7 +141,7 @@ public class SqlDataSource implements DataSource {
         }
     }
 
-    Content buildNode(NodeEntity nodeEntity) {
+    Content buildNode(NodeEntity nodeEntity, List <NodeAttributeEntity> attributeEntities) {
         // as we call this method from reactive chain there is no success result with null NodeEntity
         final Content content = new Node(nodeEntity.getId());
         content.setParentId(nodeEntity.getParentId());
@@ -113,8 +150,23 @@ public class SqlDataSource implements DataSource {
         setOwnerPrivileges(nodeEntity, content);
         setOtherPrivileges(nodeEntity, content);
         setRolePrivileges(nodeEntity, content);
-        nodeEntity.getAttributes().forEach(nodeAttributeDao -> addNodeAttributeToContent(content, nodeAttributeDao));
+        saveContentToCache(content);
+
+        attributeEntities.forEach(nodeAttributeEntity -> addNodeAttributeToContent(content, nodeAttributeEntity));
         return content;
+    }
+
+    /**
+     * One decided not use cache via AOP for two reasons:
+     * - reactive streaming and possible problems with caching
+     * - additional proxy configurations for intercepting methods and classes annotated for caching
+     *
+     * @param content record to be cached
+     */
+    private void saveContentToCache(Content content) {
+        ofNullable(cacheManager)
+                .map(manager -> manager.getCache(CONTENT_CACHE_NAME))
+                .ifPresent(cache -> cache.putIfAbsent(content.getId(), content));
     }
 
     private void setOwnerPrivileges(NodeEntity nodeEntity, Content content) {
