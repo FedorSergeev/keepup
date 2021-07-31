@@ -2,10 +2,12 @@ package io.keepup.cms.core.datasource.dao;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.keepup.cms.core.boot.KeepupApplication;
+import io.keepup.cms.core.cache.CacheAdapter;
 import io.keepup.cms.core.cache.KeepupCacheConfiguration;
 import io.keepup.cms.core.config.DataSourceConfiguration;
 import io.keepup.cms.core.config.R2dbcConfiguration;
 import io.keepup.cms.core.config.WebFluxConfig;
+import io.keepup.cms.core.datasource.sql.H2ConsoleService;
 import io.keepup.cms.core.datasource.sql.entity.NodeAttributeEntity;
 import io.keepup.cms.core.datasource.sql.entity.NodeEntity;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveNodeAttributeEntityRepository;
@@ -30,6 +32,7 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static io.keepup.cms.core.datasource.access.ContentPrivilegesFactory.STANDARD_PRIVILEGES;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -40,10 +43,12 @@ import static org.junit.jupiter.api.Assertions.*;
 @ContextConfiguration(classes = {
         KeepupApplication.class,
         KeepupCacheConfiguration.class,
+        CacheAdapter.class,
         WebFluxConfig.class,
         ReactiveNodeEntityRepository.class,
         ReactiveNodeAttributeEntityRepository.class,
         DataSourceConfiguration.class,
+        H2ConsoleService.class,
         R2dbcConfiguration.class})
 @DataR2dbcTest
 class SqlDataSourceTest {
@@ -58,13 +63,15 @@ class SqlDataSourceTest {
     ObjectMapper objectMapper;
     @Autowired
     CacheManager cacheManager;
+    @Autowired
+    CacheAdapter cacheAdapter;
 
     DataSource dataSource;
 
     @BeforeEach
     void setUp() {
         reactiveNodeEntityRepository.save(getNodeEntity());
-        dataSource = new SqlDataSource(reactiveNodeEntityRepository, reactiveNodeAttributeEntityRepository, objectMapper, cacheManager);
+        dataSource = new SqlDataSource(reactiveNodeEntityRepository, reactiveNodeAttributeEntityRepository, objectMapper, cacheManager, cacheAdapter);
     }
 
     @Test
@@ -96,6 +103,40 @@ class SqlDataSourceTest {
     void createContent() {
         Mono<Long> content = dataSource.createContent(getNode());
         assertNotNull(content.block());
+    }
+
+    @Test
+    void updateContent() {
+        Content node = getNode();
+        Long contentId = dataSource.createContent(node)
+                .flatMap(id -> dataSource.getContent(id))
+                .map(result -> result.getId()).block();
+        node.setId(contentId);
+        node.setAttribute("attributeToUpdate", 456);
+        node.setAttribute("testAttr", "newTestValue");
+
+        Map<String, Serializable> newAttributes = dataSource.updateContent(contentId, node.getAttributes())
+                .block();
+        assertEquals(456, newAttributes.get("attributeToUpdate"));
+        assertEquals("newTestValue", newAttributes.get("testAttr"));
+        assertEquals(456, cacheAdapter.getContent(contentId).get().getAttribute("attributeToUpdate"));
+        assertEquals("newTestValue", cacheAdapter.getContent(contentId).get().getAttribute("testAttr"));
+    }
+
+    @Test
+    void deleteContent() {
+        final AtomicLong identifier = new AtomicLong();
+        Content node = getNode();
+        Content result = dataSource.createContent(node)
+                .flatMap(id -> dataSource.getContent(id))
+                .map(content -> {
+                    identifier.set(content.getId());
+                    return content.getId();
+                })
+                .map(id -> dataSource.deleteContent(id))
+                .then(dataSource.getContent(identifier.get())).block();
+        assertTrue(cacheAdapter.getContent(identifier.get()).isEmpty());
+        assertNull(result);
     }
 
     private Node getNode() {

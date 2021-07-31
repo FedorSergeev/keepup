@@ -1,6 +1,7 @@
 package io.keepup.cms.core.datasource.dao;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.keepup.cms.core.cache.CacheAdapter;
 import io.keepup.cms.core.datasource.access.ContentPrivileges;
 import io.keepup.cms.core.datasource.access.Privilege;
 import io.keepup.cms.core.datasource.sql.entity.NodeAttributeEntity;
@@ -11,14 +12,17 @@ import io.keepup.cms.core.persistence.Content;
 import io.keepup.cms.core.persistence.Node;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import javax.transaction.Transactional;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -39,16 +43,19 @@ public class SqlDataSource implements DataSource {
     private final ReactiveNodeAttributeEntityRepository nodeAttributeEntityRepository;
     private final ObjectMapper mapper;
     private final CacheManager cacheManager;
+    private final CacheAdapter cacheAdapter;
 
     @Autowired
     public SqlDataSource(ReactiveNodeEntityRepository reactiveNodeEntityRepository,
                          ReactiveNodeAttributeEntityRepository reactiveNodeAttributeEntityRepository,
                          ObjectMapper objectMapper,
-                         CacheManager manager) {
+                         CacheManager manager,
+                         CacheAdapter adapter) {
         nodeEntityRepository = reactiveNodeEntityRepository;
         nodeAttributeEntityRepository = reactiveNodeAttributeEntityRepository;
         mapper = objectMapper;
         cacheManager = manager;
+        cacheAdapter = adapter;
     }
 
     /**
@@ -64,11 +71,11 @@ public class SqlDataSource implements DataSource {
                 .orElse(null);
         if (valueWrapper != null) {
             return ofNullable(valueWrapper.get())
-                    .map(o -> Mono.just((Content)o))
+                    .map(o -> Mono.just((Content) o))
                     .orElse(Mono.empty());
         }
 
-        final List <NodeAttributeEntity> attributeEntities = new ArrayList<>();
+        final List<NodeAttributeEntity> attributeEntities = new ArrayList<>();
         return nodeAttributeEntityRepository.findAllByContentId(id)
                 .collect(Collectors.toList())
                 .flatMap(attributes -> {
@@ -87,9 +94,10 @@ public class SqlDataSource implements DataSource {
     public Flux<Content> getContent() {
         return nodeEntityRepository.findAll()
                 .flatMap(node ->
-                    nodeAttributeEntityRepository.findAllByContentId(node.getId())
-                            .collect(Collectors.toList())
-                            .map(nodeAttributeEntities -> buildNode(node, nodeAttributeEntities)));
+                        nodeAttributeEntityRepository.findAllByContentId(node.getId())
+                                .collect(Collectors.toList())
+                                .map(nodeAttributeEntities -> buildNode(node, nodeAttributeEntities)))
+                .doOnNext(cacheAdapter::updateContent);
     }
 
 
@@ -104,6 +112,62 @@ public class SqlDataSource implements DataSource {
                 .flatMap(saved -> getNodeAttributeEntityFlux(content, contentId, saved));
     }
 
+    /**
+     * First takes persistent attributes and intersects it with new ones, then adds
+     * new elements from argument map and save all elements, finally collects saved elements
+     * to the result map of {@link Content} attributes.
+     * <p>
+     * Yet the logic is a little bit complicated while we should use KISS...
+     *
+     * @param id            record identifier
+     * @param newAttributes list of attributes to be added or updated
+     * @return result saved map of record attributes
+     */
+    @Transactional
+    public Mono<Map<String, Serializable>> updateContent(Long id, Map<String, Serializable> newAttributes) {
+        final List<NodeAttributeEntity> nodeAttributeEntities = new ArrayList<>();
+        final Map<String, Serializable> result = new HashMap<>();
+        return nodeAttributeEntityRepository.findAllByContentId(id)
+                .doOnNext(oldAttribute -> {
+                    var attributeKey = oldAttribute.getAttributeKey();
+                    var newValue = newAttributes.get(attributeKey);
+                    if (newValue != null) {
+                        nodeAttributeEntities.add(new NodeAttributeEntity(id, oldAttribute.getContentId(), attributeKey, newValue));
+                        newAttributes.remove(attributeKey);
+                    }
+                })
+                .collect(Collectors.toList())
+                .map(attributes -> {
+                    newAttributes.forEach((key, value) -> nodeAttributeEntities.add(new NodeAttributeEntity(id, key, value)));
+                    return nodeAttributeEntities;
+                })
+                .then(nodeAttributeEntityRepository.saveAll(nodeAttributeEntities)
+                        .collect(Collectors.toList()))
+                .map(savedElements -> {
+                    savedElements.forEach(element -> result.put(element.getAttributeKey(), getContentAttribute(element)));
+                    return result;
+                })
+                .map(res -> {
+                    cacheAdapter.getContent(id).ifPresent(content -> {
+                        res.forEach(content::setAttribute);
+                        cacheAdapter.updateContent(content);
+                    });
+                    return res;
+                });
+    }
+
+    @Override
+    public Mono<Void> deleteContent(Long id) {
+        return nodeAttributeEntityRepository
+                .deleteByContentId(id)
+                .then(doDeleteContent(id));
+    }
+
+    @NotNull
+    private Mono<Void> doDeleteContent(Long id) {
+        cacheAdapter.deleteContent(id);
+        return  nodeEntityRepository.deleteById(id);
+    }
 
     private Mono<Long> getNodeAttributeEntityFlux(Content content, AtomicReference<Long> contentId, NodeEntity saved) {
         contentId.set(saved.getId());
@@ -122,26 +186,31 @@ public class SqlDataSource implements DataSource {
      * so for now we just serialize values from byte arrays.
      *
      * @param content          {@link Content} record
-     * @param nodeAttributeDao attribute entity to paste
+     * @param nodeAttributeEntity attribute entity to paste
      */
-    private void addNodeAttributeToContent(Content content, NodeAttributeEntity nodeAttributeDao) {
-        try {
-            Object newValue;
-            Class<?> attributeType = Class.forName(nodeAttributeDao.getJavaClass());
-
-            if (List.class.isAssignableFrom(attributeType) || nodeAttributeDao.getJavaClass().contains("$ArrayList")) {
-                nodeAttributeDao.setJavaClass(ArrayList.class.getName());
-            }
-            newValue = mapper.readValue(nodeAttributeDao.getAttributeValue(), attributeType);
-            content.setAttribute(nodeAttributeDao.getAttributeKey(), (Serializable) newValue);
-        } catch (IOException ex) {
-            log.error("Failed to serialize value from persistent content: %s".formatted(ex));
-        } catch (ClassNotFoundException e) {
-            log.error("Class %s not found in classpath: %s".formatted(nodeAttributeDao.getJavaClass(), e.getMessage()));
+    private void addNodeAttributeToContent(Content content, NodeAttributeEntity nodeAttributeEntity) {
+        var contentAttribute = getContentAttribute(nodeAttributeEntity);
+        if (contentAttribute != null) {
+            content.setAttribute(nodeAttributeEntity.getAttributeKey(), contentAttribute);
         }
     }
 
-    Content buildNode(NodeEntity nodeEntity, List <NodeAttributeEntity> attributeEntities) {
+    private Serializable getContentAttribute(NodeAttributeEntity nodeAttributeEntity) {
+        try {
+            Class<?> attributeType = Class.forName(nodeAttributeEntity.getJavaClass());
+            if (List.class.isAssignableFrom(attributeType) || nodeAttributeEntity.getJavaClass().contains("$ArrayList")) {
+                nodeAttributeEntity.setJavaClass(ArrayList.class.getName());
+            }
+            return (Serializable)mapper.readValue(nodeAttributeEntity.getAttributeValue(), attributeType);
+        } catch (IOException ex) {
+            log.error("Failed to serialize value from persistent content: %s".formatted(ex));
+        } catch (ClassNotFoundException e) {
+            log.error("Class %s not found in classpath: %s".formatted(nodeAttributeEntity.getJavaClass(), e.getMessage()));
+        }
+        return null;
+    }
+
+    Content buildNode(NodeEntity nodeEntity, List<NodeAttributeEntity> attributeEntities) {
         // as we call this method from reactive chain there is no success result with null NodeEntity
         final Content content = new Node(nodeEntity.getId());
         content.setParentId(nodeEntity.getParentId());
