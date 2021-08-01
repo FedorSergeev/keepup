@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 
+import java.io.Serializable;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -26,7 +27,7 @@ public class CacheAdapter {
     /**
      * Looks up for the {@link Content} record in cache
      *
-     * @param  id record identifier
+     * @param id record identifier
      * @return record with the specified identifier or empty Optional in case if nothing was found in
      * cache, or if id is null
      */
@@ -62,6 +63,7 @@ public class CacheAdapter {
 
     /**
      * Evicts the cache if {@link Content} record was there
+     *
      * @param id record identifier
      */
     public void deleteContent(Long id) {
@@ -71,5 +73,26 @@ public class CacheAdapter {
         }
         ofNullable(cacheManager.getCache(SqlDataSource.CONTENT_CACHE_NAME))
                 .ifPresent(cache -> cache.evictIfPresent(id));
+    }
+
+    /**
+     * Updated just one record attribute in case when {@link Content} entity is cached
+     *
+     * @param contentId      record id
+     * @param attributeKey   attribute key to be updated
+     * @param attributeValue new attribute value
+     */
+    public void updateContent(Long contentId, String attributeKey, Serializable attributeValue) {
+        ofNullable(cacheManager.getCache(SqlDataSource.CONTENT_CACHE_NAME))
+                .ifPresent(cache ->
+                    ofNullable(cache.get(contentId, Content.class))
+                            .ifPresent(rec -> {
+                                rec.setAttribute(attributeKey, attributeValue);
+                                ofNullable(cacheManager.getCache(SqlDataSource.CONTENT_CACHE_NAME))
+                                        .ifPresent(contentCache -> {
+                                            contentCache.put(contentId, rec);
+                                            log.debug("[CONTENT#%d] Updated attribute key = %s, value = %s".formatted(contentId, attributeKey, attributeValue));
+                                        });
+                            }));
     }
 }

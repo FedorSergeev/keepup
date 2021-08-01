@@ -12,6 +12,7 @@ import io.keepup.cms.core.datasource.sql.entity.NodeAttributeEntity;
 import io.keepup.cms.core.datasource.sql.entity.NodeEntity;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveNodeAttributeEntityRepository;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveNodeEntityRepository;
+import io.keepup.cms.core.persistence.BasicEntity;
 import io.keepup.cms.core.persistence.Content;
 import io.keepup.cms.core.persistence.Node;
 import org.apache.commons.logging.Log;
@@ -33,6 +34,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import static io.keepup.cms.core.datasource.access.ContentPrivilegesFactory.STANDARD_PRIVILEGES;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -91,6 +93,14 @@ class SqlDataSourceTest {
         fromDatabase.getAttributes().remove("enhanced");
         node.getAttributes().remove("enhanced");
         assertEquals(fromDatabase, node);
+        List<Content> storedContent = dataSource.getContent()
+                .collect(Collectors.toList())
+                .block()
+                .stream()
+                .filter(element -> Objects.equals(element.getId(), fromDatabase.getId()))
+                .collect(Collectors.toList());
+
+        assertFalse(storedContent.isEmpty());
     }
 
     @Test
@@ -110,7 +120,7 @@ class SqlDataSourceTest {
         Content node = getNode();
         Long contentId = dataSource.createContent(node)
                 .flatMap(id -> dataSource.getContent(id))
-                .map(result -> result.getId()).block();
+                .map(BasicEntity::getId).block();
         node.setId(contentId);
         node.setAttribute("attributeToUpdate", 456);
         node.setAttribute("testAttr", "newTestValue");
@@ -137,6 +147,48 @@ class SqlDataSourceTest {
                 .then(dataSource.getContent(identifier.get())).block();
         assertTrue(cacheAdapter.getContent(identifier.get()).isEmpty());
         assertNull(result);
+    }
+
+    @Test
+    void getContentAttribute() {
+        Content node = getNode();
+        node.setAttribute("attributeToGet", "someValue");
+
+        Serializable attributeToGet = dataSource.createContent(node)
+                .flatMap(id -> dataSource.getContentAttribute(id, "attributeToGet"))
+                .block();
+        assertNotNull(attributeToGet);
+        assertEquals("someValue", attributeToGet);
+    }
+
+    @Test
+    void updateContentAttribute() {
+        String attributeToUpdate = "attributeToUpdate";
+        final AtomicLong identifier = new AtomicLong();
+        Content node = getNode();
+        node.setAttribute(attributeToUpdate, "someValue");
+        Serializable updatedValue = dataSource.createContent(node)
+                .flatMap(id -> {
+                    identifier.set(id);
+                    return dataSource.updateContentAttribute(id, attributeToUpdate, 123);
+                })
+                .block();
+        Serializable value = dataSource.getContentAttribute(identifier.get(), attributeToUpdate).block();
+        Serializable storedEntityAttribute = dataSource.getContent(identifier.get()).block().getAttribute(attributeToUpdate);
+
+        Content updatedOneMoreTime = dataSource.updateContentAttribute(identifier.get(), "attributeToUpdate", 1234)
+                .then(dataSource.getContent(identifier.get()))
+                .block();
+
+        assertNotNull(updatedValue);
+        assertEquals(123, updatedValue);
+        assertNotNull(value);
+        assertEquals(123, value);
+        assertNotNull(storedEntityAttribute);
+        assertEquals(123, storedEntityAttribute);
+        assertNotNull(updatedOneMoreTime.getAttribute(attributeToUpdate));
+        assertEquals(1234, updatedOneMoreTime.getAttribute(attributeToUpdate));
+
     }
 
     private Node getNode() {

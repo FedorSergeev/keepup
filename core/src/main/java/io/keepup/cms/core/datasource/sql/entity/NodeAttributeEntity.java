@@ -113,7 +113,13 @@ public class NodeAttributeEntity extends AbstractEntityAttribute {
     }
 
 
-    private static LocalDate convertToLocalDateViaInstant(Date dateToConvert) {
+    /**
+     * TODO: move to special utility class
+     *
+     * @param dateToConvert date
+     * @return converted date
+     */
+    public static LocalDate convertToLocalDateViaInstant(Date dateToConvert) {
         return dateToConvert.toInstant()
                 .atZone(ZoneId.systemDefault())
                 .toLocalDate();

@@ -21,13 +21,12 @@ import reactor.core.publisher.Mono;
 import javax.transaction.Transactional;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static io.keepup.cms.core.datasource.sql.entity.NodeAttributeEntity.convertToLocalDateViaInstant;
+import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 
 /**
@@ -57,6 +56,8 @@ public class SqlDataSource implements DataSource {
         cacheManager = manager;
         cacheAdapter = adapter;
     }
+
+    // region public API
 
     /**
      * Finds {@link Content} record and returns as it is ready
@@ -101,6 +102,12 @@ public class SqlDataSource implements DataSource {
     }
 
 
+    /**
+     * Save the new {@link Content} record to database
+     *
+     * @param content local record instance
+     * @return created record identifier
+     */
     @Override
     public Mono<Long> createContent(final Content content) {
         AtomicReference<Long> contentId = new AtomicReference<>();
@@ -156,6 +163,12 @@ public class SqlDataSource implements DataSource {
                 });
     }
 
+    /**
+     * Remove record from database with all its attributes
+     *
+     * @param id record identifier
+     * @return actually nothing but you can synchronize further actions
+     */
     @Override
     public Mono<Void> deleteContent(Long id) {
         return nodeAttributeEntityRepository
@@ -163,10 +176,72 @@ public class SqlDataSource implements DataSource {
                 .then(doDeleteContent(id));
     }
 
+    /**
+     * Finds the {@link Content} attribute
+     * @param contentId record identifier
+     * @param attributeName name of attribute to be fetched
+     * @return publisher for requested attribute
+     */
+    @Override
+    public Mono<Serializable> getContentAttribute(Long contentId, String attributeName) {
+        return cacheAdapter.getContent(contentId).map(content -> content.getAttribute(attributeName)).map(Mono::just)
+                .orElse(nodeAttributeEntityRepository.findByContentIdAndAttributeKey(contentId, attributeName)
+                .map(this::getContentAttribute)
+                .onErrorReturn(null));
+    }
+
+    @Override
+    public Mono<Serializable> updateContentAttribute(final Long contentId, final String attributeName, final Serializable attributeValue) {
+        if (attributeValue == null) {
+            log.warn("Attempt to insert null value for attribute '%s' in content node [%d], setting value as empty object".formatted(attributeName, contentId));
+        }
+        log.debug("Update content attribute: contentId = %d, attributeName = %s".formatted(contentId, attributeName));
+
+        return nodeAttributeEntityRepository.findByContentIdAndAttributeKey(contentId, attributeName)
+                .flatMap(nodeAttributeEntity -> {
+                    if (nodeAttributeEntity == null) {
+                        try {
+                            nodeAttributeEntity = new NodeAttributeEntity(contentId, attributeName, attributeValue);
+                        } catch (ClassCastException e) {
+                            log.error(format("Failed to serialize %s to Serializable", attributeValue));
+                        }
+                    }
+                    return saveContentAttribute(attributeName, attributeValue, nodeAttributeEntity);
+                });
+    }
+
+    // endregion
+
+    private Mono<Serializable> saveContentAttribute(String attributeName, Serializable attributeValue, NodeAttributeEntity nodeAttributeEntity) {
+        if (nodeAttributeEntity == null) {
+            log.error("Attempt to save empty content attribute with key = " + attributeName + ", value = " + attributeValue);
+            return Mono.empty();
+        }
+        nodeAttributeEntity.setModificationTime(convertToLocalDateViaInstant(new Date()));
+
+        try {
+            nodeAttributeEntity.setAttributeValue(mapper.writeValueAsBytes(attributeValue));
+            nodeAttributeEntity.setJavaClass(attributeValue.getClass().toString().substring(6));
+        } catch (IOException ex) {
+            log.error(format("Unable to convert attribute value o byte array: %s", ex.getMessage()));
+            nodeAttributeEntity.setAttributeValue(new byte[0]);
+            nodeAttributeEntity.setJavaClass(Byte.class.getName());
+        }
+
+        return nodeAttributeEntityRepository.save(nodeAttributeEntity)
+                .map(updatedNodeAttributeEntity -> updateContentAttributeCache(attributeName, attributeValue, updatedNodeAttributeEntity));
+    }
+
+    private Serializable updateContentAttributeCache(String attributeName, Serializable attributeValue, NodeAttributeEntity updatedNodeAttributeEntity) {
+        log.debug("Node attribute updated: %s".formatted(updatedNodeAttributeEntity.toString()));
+        cacheAdapter.updateContent(updatedNodeAttributeEntity.getContentId(), attributeName, attributeValue);
+        return attributeValue;
+    }
+
     @NotNull
     private Mono<Void> doDeleteContent(Long id) {
         cacheAdapter.deleteContent(id);
-        return  nodeEntityRepository.deleteById(id);
+        return nodeEntityRepository.deleteById(id);
     }
 
     private Mono<Long> getNodeAttributeEntityFlux(Content content, AtomicReference<Long> contentId, NodeEntity saved) {
@@ -185,7 +260,7 @@ public class SqlDataSource implements DataSource {
      * or content.getIntegerAttribute(), but this approach leads to many requests or huge joins,
      * so for now we just serialize values from byte arrays.
      *
-     * @param content          {@link Content} record
+     * @param content             {@link Content} record
      * @param nodeAttributeEntity attribute entity to paste
      */
     private void addNodeAttributeToContent(Content content, NodeAttributeEntity nodeAttributeEntity) {
@@ -201,7 +276,7 @@ public class SqlDataSource implements DataSource {
             if (List.class.isAssignableFrom(attributeType) || nodeAttributeEntity.getJavaClass().contains("$ArrayList")) {
                 nodeAttributeEntity.setJavaClass(ArrayList.class.getName());
             }
-            return (Serializable)mapper.readValue(nodeAttributeEntity.getAttributeValue(), attributeType);
+            return (Serializable) mapper.readValue(nodeAttributeEntity.getAttributeValue(), attributeType);
         } catch (IOException ex) {
             log.error("Failed to serialize value from persistent content: %s".formatted(ex));
         } catch (ClassNotFoundException e) {
