@@ -34,10 +34,10 @@ public class NodeAttributeEntity extends AbstractEntityAttribute {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "content_attribute_seq_generator")
     @SequenceGenerator(name = "content_attribute_seq_generator", sequenceName = "content_attribute_seq", allocationSize = 1)
-    public Long id;
+    private Long id;
 
     @Column(name = "content_id", nullable = false)
-    public Long contentId;
+    private Long contentId;
 
     public NodeAttributeEntity() {
     }
@@ -60,6 +60,22 @@ public class NodeAttributeEntity extends AbstractEntityAttribute {
                 setDefaultValue();
             }
         }
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getContentId() {
+        return contentId;
+    }
+
+    public void setContentId(Long contentId) {
+        this.contentId = contentId;
     }
 
     @Override
@@ -97,7 +113,13 @@ public class NodeAttributeEntity extends AbstractEntityAttribute {
     }
 
 
-    private static LocalDate convertToLocalDateViaInstant(Date dateToConvert) {
+    /**
+     * TODO: move to special utility class
+     *
+     * @param dateToConvert date
+     * @return converted date
+     */
+    public static LocalDate convertToLocalDateViaInstant(Date dateToConvert) {
         return dateToConvert.toInstant()
                 .atZone(ZoneId.systemDefault())
                 .toLocalDate();
