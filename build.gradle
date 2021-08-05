@@ -1,13 +1,22 @@
-plugins {
-    id 'java'
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'maven'
+    apply plugin: 'jacoco'
+
+    sourceCompatibility = 15
+    targetCompatibility = 15
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        jcenter()
+
+        maven { url "http://repo1.maven.org/maven2/" }
+    }
 }
 
 group 'io.keepup.cms'
 version '2.0-SNAPSHOT'
-
-repositories {
-    mavenCentral()
-}
 
 dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
@@ -16,4 +25,27 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+subprojects {
+    test.useTestNG()
+}
+
+task codeCoverageReport(type: JacocoReport) {
+    executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
+
+    subprojects.each {
+        sourceSets it.sourceSets.main
+    }
+
+    reports {
+        xml.enabled true
+        xml.destination file("${buildDir}/reports/jacoco/report.xml")
+        html.enabled false
+        csv.enabled false
+    }
+}
+
+codeCoverageReport.dependsOn {
+    subprojects*.test
 }
