@@ -11,4 +11,7 @@ public interface ReactiveNodeEntityRepository extends ReactiveCrudRepository<Nod
 
     @Query("SELECT * from NODE_ENTITY as node WHERE node.id IN (:ids)")
     Flux<NodeEntity> findByIds(Iterable<Long> ids);
+
+    @Query("SELECT * from NODE_ENTITY as node WHERE node.parent_id IN (:ids)")
+    Flux<NodeEntity> findByParentIds(Iterable<Long> ids);
 }

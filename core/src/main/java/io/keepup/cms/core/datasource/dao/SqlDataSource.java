@@ -14,6 +14,7 @@ import io.keepup.cms.core.persistence.Node;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jetbrains.annotations.NotNull;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import reactor.core.publisher.Flux;
@@ -24,6 +25,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static io.keepup.cms.core.datasource.sql.EntityUtils.convertToLocalDateViaInstant;
@@ -179,6 +181,7 @@ public class SqlDataSource implements DataSource {
 
     /**
      * Finds the {@link Content} attribute
+     *
      * @param contentId record identifier
      * @param attributeName name of attribute to be fetched
      * @return publisher for requested attribute
@@ -188,7 +191,10 @@ public class SqlDataSource implements DataSource {
         return cacheAdapter.getContent(contentId).map(content -> content.getAttribute(attributeName)).map(Mono::just)
                 .orElse(nodeAttributeEntityRepository.findByContentIdAndAttributeKey(contentId, attributeName)
                 .map(this::getContentAttribute)
-                .onErrorReturn(null));
+                .onErrorResume(throwable -> {
+                    log.error("Error while getting Content attribute by name: " + throwable.toString());
+                    return Mono.empty();
+                }));
     }
 
     /**
@@ -240,7 +246,7 @@ public class SqlDataSource implements DataSource {
         }
 
         final Map<Long, List<NodeAttributeEntity>> sortedEntities = new HashMap<>();
-        return nodeAttributeEntityRepository.findAllByContentIdWithAttributeNames(parentId, attributeNames)
+        return nodeAttributeEntityRepository.findAllByContentParentIdWithAttributeNames(parentId, attributeNames)
                 .map(attribute -> {
                     var contentId = attribute.getContentId();
                     if (!sortedEntities.containsKey(contentId)) {
@@ -299,7 +305,50 @@ public class SqlDataSource implements DataSource {
                 .map(cacheAdapter::updateContent);
     }
 
+    /**
+     * Finds and returns all {@link Content} records witch are children of records with the specified identifiers.
+     * Result of the operation is being cached.
+     *
+     * @param parentIds parent record identifiers
+     * @return publisher for {@link Content} records
+     */
+    @Override
+    public Flux<Content> getContentByParentIds(Iterable <Long> parentIds) {
+        if (parentIds == null) {
+            log.error("Null parameter parentIds was passed to getContentByParentIds method");
+            return Flux.empty();
+        }
+        return nodeEntityRepository.findByParentIds(parentIds)
+                .flatMap(getNodeEntityPublisherFunction());
+    }
+
+    /**
+     * Finds and returns all {@link Content} records witch are children of record with the specified identifier.
+     * Result of the operation is being cached. Difference between this method and getContentByParentIds is just in
+     * signature as SQL query is the same
+     *
+     * @param parentId parent record identifier
+     * @return publisher for {@link Content} records
+     */
+    @Override
+    public Flux<Content> getContentByParentId(Long parentId) {
+        if (parentId == null) {
+            log.error("Null parameter parentId was passed to getContentByParentId method");
+            return Flux.empty();
+        }
+        return nodeEntityRepository.findByParentIds(Collections.singletonList(parentId))
+                .flatMap(getNodeEntityPublisherFunction());
+    }
+
     // endregion
+
+    @NotNull
+    private Function<NodeEntity, Publisher<? extends Content>> getNodeEntityPublisherFunction() {
+        return nodeEntity -> nodeAttributeEntityRepository.findAllByContentId(nodeEntity.getId())
+                .collect(Collectors.toList())
+                .map(nodeAttributeEntities -> buildNode(nodeEntity, nodeAttributeEntities))
+                .map(cacheAdapter::updateContent);
+    }
 
     private Mono<Serializable> saveContentAttribute(String attributeName, Serializable attributeValue, NodeAttributeEntity nodeAttributeEntity) {
         if (nodeAttributeEntity == null) {

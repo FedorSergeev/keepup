@@ -39,10 +39,10 @@ public interface ReactiveNodeAttributeEntityRepository extends ReactiveCrudRepos
            "    WHERE attribute.content_id " +
            "    IN (SELECT id FROM node_entity " +
            "        AS node " +
-           "        WHERE node.parent_id = :parentId) " +
+           "        WHERE node.parent_id = :contentParentId) " +
            "    AND attribute.attribute_key in (:attributeNames))")
-    Flux<NodeAttributeEntity> findAllByContentIdWithAttributeNames(@Param("parentId") Long parentId,
-                                                                  @Param("attributeNames") List<String> attributeNames);
+    Flux<NodeAttributeEntity> findAllByContentParentIdWithAttributeNames(@Param("contentParentId") Long parentId,
+                                                                         @Param("attributeNames") List<String> attributeNames);
 
     /**
      * Finds ALL node attributes for the records witch contain the specified attribute name and value

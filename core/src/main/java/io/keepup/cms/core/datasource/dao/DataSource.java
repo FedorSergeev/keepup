@@ -22,6 +22,8 @@ public interface DataSource {
     Mono<Serializable> updateContentAttribute(Long contentId, String attributeName, Serializable attributeValue);
     Flux<Content> getContentByParentIdAndByAttributeNames(Long parentId, List<String> attributeNames);
     Flux<Content> getContentByParentIdAndAttributeValue(Long parentId, String attributeName, Serializable attributeValue);
+    Flux<Content> getContentByParentIds(Iterable <Long> parentIds);
+    Flux<Content> getContentByParentId(Long parentId);
     Mono<Long> createContent(Content content);
     Mono<Void> deleteContent(Long id);
 

@@ -108,7 +108,7 @@ class SqlDataSourceTest {
 
     @Test
     void getEmptyContent() {
-        Mono<Content> content = dataSource.getContent(1L);
+        Mono<Content> content = dataSource.getContent(Long.MAX_VALUE);
         assertNull(content.block());
     }
 
@@ -230,6 +230,42 @@ class SqlDataSourceTest {
         assertTrue(dataSource.getContentByParentIdAndAttributeValue(null, null, null).collect(Collectors.toList()).block().isEmpty());
         assertFalse(contentByKey.isEmpty());
         assertEquals(1, contentByKey.stream().filter(element -> element.getAttribute("key") != null).count());
+    }
+
+    @Test
+    void getContentByParentId() {
+        var node0 = getNode();
+        Long contentId = dataSource.createContent(node0)
+                .flatMap(id -> {
+                    var node1 = getNode();
+                    node1.setParentId(id);
+                    return dataSource.createContent(node1);
+                }).block();
+
+        var result = dataSource.getContent(contentId)
+                .flatMap(content -> dataSource.getContentByParentId(content.getParentId())
+                                              .collect(Collectors.toList())).block();
+
+        assertEquals(1, result.size());
+        assertTrue(dataSource.getContentByParentId(null).collect(Collectors.toList()).block().isEmpty());
+    }
+
+    @Test
+    void getContentByParentIds() {
+        var node0 = getNode();
+        Long contentId = dataSource.createContent(node0)
+                .flatMap(id -> {
+                    var node1 = getNode();
+                    node1.setParentId(id);
+                    return dataSource.createContent(node1);
+                }).block();
+
+        var result = dataSource.getContent(contentId)
+                .flatMap(content -> dataSource.getContentByParentIds(Collections.singletonList(content.getParentId()))
+                        .collect(Collectors.toList())).block();
+
+        assertEquals(1, result.size());
+        assertTrue(dataSource.getContentByParentIds(null).collect(Collectors.toList()).block().isEmpty());
     }
 
     private Node getNode() {
