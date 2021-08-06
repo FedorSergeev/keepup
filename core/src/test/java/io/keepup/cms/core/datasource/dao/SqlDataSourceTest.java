@@ -40,6 +40,9 @@ import static io.keepup.cms.core.datasource.access.ContentPrivilegesFactory.STAN
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Mostly all the tests are blocking, but that does not affect the logic being checked
+ */
 @RunWith(SpringRunner.class)
 @ActiveProfiles({"dev", "h2"})
 @ContextConfiguration(classes = {
@@ -189,6 +192,44 @@ class SqlDataSourceTest {
         assertNotNull(updatedOneMoreTime.getAttribute(attributeToUpdate));
         assertEquals(1234, updatedOneMoreTime.getAttribute(attributeToUpdate));
 
+    }
+
+    @Test
+    void getContentByAttributeNames() {
+        var node0 = getNode();
+        node0.setAttribute("key", "value_0");
+        var node1 = getNode();
+        node1.setAttribute("key", "value_1");
+
+        node0.setId(dataSource.createContent(node0).block());
+        node1.setId(dataSource.createContent(node1).block());
+
+        List<Content> contentByKey = dataSource.getContentByParentIdAndByAttributeNames(node0.getParentId(), Arrays.asList("key"))
+                                        .collect(Collectors.toList())
+                                        .block();
+        assertTrue(dataSource.getContentByParentIdAndByAttributeNames(null, null).collect(Collectors.toList()).block().isEmpty());
+        assertFalse(contentByKey.isEmpty());
+        assertEquals(2, contentByKey.stream().filter(element -> element.getAttribute("key") != null).count());
+    }
+
+    @Test
+    void getContentByAttributeValue() {
+        var attr = Long.toString(new Date().getTime()).concat(UUID.randomUUID().toString());
+        var node0 = getNode();
+        node0.setAttribute("key", "value_0");
+        var node1 = getNode();
+        node1.setAttribute("key", attr);
+
+        node0.setId(dataSource.createContent(node0).block());
+        node1.setId(dataSource.createContent(node1).block());
+
+        List<Content> contentByKey = dataSource.getContentByParentIdAndAttributeValue(node0.getParentId(), "key", attr)
+                .collect(Collectors.toList())
+                .block();
+
+        assertTrue(dataSource.getContentByParentIdAndAttributeValue(null, null, null).collect(Collectors.toList()).block().isEmpty());
+        assertFalse(contentByKey.isEmpty());
+        assertEquals(1, contentByKey.stream().filter(element -> element.getAttribute("key") != null).count());
     }
 
     private Node getNode() {

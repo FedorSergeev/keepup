@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.keepup.cms.core.cache.CacheAdapter;
 import io.keepup.cms.core.datasource.access.ContentPrivileges;
 import io.keepup.cms.core.datasource.access.Privilege;
+import io.keepup.cms.core.datasource.sql.EntityUtils;
 import io.keepup.cms.core.datasource.sql.entity.NodeAttributeEntity;
 import io.keepup.cms.core.datasource.sql.entity.NodeEntity;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveNodeAttributeEntityRepository;
@@ -25,7 +26,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import static io.keepup.cms.core.datasource.sql.entity.NodeAttributeEntity.convertToLocalDateViaInstant;
+import static io.keepup.cms.core.datasource.sql.EntityUtils.convertToLocalDateViaInstant;
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 
@@ -190,6 +191,14 @@ public class SqlDataSource implements DataSource {
                 .onErrorReturn(null));
     }
 
+    /**
+     * Put the new value for the {@link Content} record field according to it's name.
+     *
+     * @param contentId {@link Content} record attribute
+     * @param attributeName name of the field to be updated
+     * @param attributeValue value to update the field
+     * @return Publisher for the updated attribute value
+     */
     @Override
     public Mono<Serializable> updateContentAttribute(final Long contentId, final String attributeName, final Serializable attributeValue) {
         if (attributeValue == null) {
@@ -208,6 +217,86 @@ public class SqlDataSource implements DataSource {
                     }
                     return saveContentAttribute(attributeName, attributeValue, nodeAttributeEntity);
                 });
+    }
+
+    /**
+     * Fetches reactive set of {@link Content} records with the same parent identifier and the same specified set of
+     * attributes. These records can have also some additional fields, but the criteria is to have the number of
+     * concrete fields.
+     *
+     * Please beware that the result of operation will be cached but we cannot look up for all the records in cache
+     * as there can be new records in the data source witch were not put in cache.
+     *
+     * @param parentId parent record identifier
+     * @param attributeNames list of record field names
+     * @return Flux with records meeting the criterion
+     */
+    @Override
+    public Flux<Content> getContentByParentIdAndByAttributeNames(Long parentId, List<String> attributeNames) {
+        if (attributeNames == null || parentId == null) {
+            log.error("Null params passed to getContentByAttributeNames method: %s %s"
+                    .formatted(getNullParameterName(parentId, "parentId"), getNullParameterName(attributeNames, "attributeNames")));
+            return Flux.empty();
+        }
+
+        final Map<Long, List<NodeAttributeEntity>> sortedEntities = new HashMap<>();
+        return nodeAttributeEntityRepository.findAllByContentIdWithAttributeNames(parentId, attributeNames)
+                .map(attribute -> {
+                    var contentId = attribute.getContentId();
+                    if (!sortedEntities.containsKey(contentId)) {
+                        sortedEntities.put(contentId, new ArrayList<>());
+                    }
+                    sortedEntities.get(contentId).add(attribute);
+                    return contentId;
+                })
+                .collect(Collectors.toList())
+                .flatMapMany(contentIds -> nodeEntityRepository.findByIds(contentIds.stream()
+                        .distinct()
+                        .collect(Collectors.toList())))
+                .map(entity -> buildNode(entity, sortedEntities.get(entity.getId())))
+                .map(cacheAdapter::updateContent);
+    }
+
+    /**
+     * Finds all {@link Content} records witch have the specified by name and value attribute.
+     *
+     * Note that this operation is very expensive as we check attribute values equality byte per byte on
+     * database side so we do not recommend to use him in really high-load workflows.
+     *
+     * Please beware that the result of operation will be cached but we cannot look up for all the records in cache
+     * as there can be new records in the data source witch were not put in cache.
+     *
+     * @param parentId parent record identifier
+     * @param attributeName record field name
+     * @param attributeValue record field value
+     * @return reactive sequence of {@link Content} records meeting the specified condition
+     */
+    @Override
+    public Flux<Content> getContentByParentIdAndAttributeValue(Long parentId, String attributeName, Serializable attributeValue) {
+        if (attributeName == null || attributeValue == null || parentId == null) {
+            log.error("Null params passed to getContentByAttributeNames method: %s %s %s"
+                    .formatted(getNullParameterName(parentId, "parentId"),
+                            getNullParameterName(attributeName, "attributeName"),
+                            getNullParameterName(attributeValue, "attributeValue")));
+            return Flux.empty();
+        }
+
+        final Map<Long, List<NodeAttributeEntity>> sortedEntities = new HashMap<>();
+        return nodeAttributeEntityRepository.findAllByParentIdAndAttributeNameAndContentId(parentId, attributeName, EntityUtils.toByteArray(attributeValue))
+                .map(attribute -> {
+                    var contentId = attribute.getContentId();
+                    if (!sortedEntities.containsKey(contentId)) {
+                        sortedEntities.put(contentId, new ArrayList<>());
+                    }
+                    sortedEntities.get(contentId).add(attribute);
+                    return contentId;
+                })
+                .collect(Collectors.toList())
+                .flatMapMany(contentIds -> nodeEntityRepository.findByIds(contentIds.stream()
+                        .distinct()
+                        .collect(Collectors.toList())))
+                .map(entity -> buildNode(entity, sortedEntities.get(entity.getId())))
+                .map(cacheAdapter::updateContent);
     }
 
     // endregion
@@ -338,5 +427,21 @@ public class SqlDataSource implements DataSource {
         rolePrivileges.setExecute(nodeEntity.isRoleExecutePrivilege());
         rolePrivileges.setCreateChildren(nodeEntity.isRoleCreateChildrenPrivilege());
         content.getContentPrivileges().setRolePrivileges(rolePrivileges);
+    }
+
+    /**
+     * Get variable name if it is null for logging
+     *
+     * @param parameter parameter object
+     * @param parameterName parameter object name in context
+     * @return variable name in case it is null
+     */
+    private String getNullParameterName(Object parameter, String parameterName) {
+        if (parameterName == null) {
+            return "null";
+        }
+        return parameter == null
+                ? parameterName
+                : "";
     }
 }
