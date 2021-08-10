@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static io.keepup.cms.core.datasource.dao.SqlDataSource.CONTENT_CACHE_NAME;
+import static io.keepup.cms.core.datasource.dao.sql.SqlContentDao.CONTENT_CACHE_NAME;
 
 /**
  * Contains configurations for different cache types.
