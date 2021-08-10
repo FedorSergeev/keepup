@@ -10,11 +10,11 @@ import javax.persistence.*;
 import java.io.IOException;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.Date;
 import java.time.LocalDate;
-import java.time.ZoneId;
+import java.util.Date;
 import java.util.Optional;
 
+import static io.keepup.cms.core.datasource.sql.EntityUtils.convertToLocalDateViaInstant;
 import static java.lang.String.format;
 
 /**
@@ -110,19 +110,6 @@ public class NodeAttributeEntity extends AbstractEntityAttribute {
 
     private static String apply(Long cId) {
         return Long.toString(cId);
-    }
-
-
-    /**
-     * TODO: move to special utility class
-     *
-     * @param dateToConvert date
-     * @return converted date
-     */
-    public static LocalDate convertToLocalDateViaInstant(Date dateToConvert) {
-        return dateToConvert.toInstant()
-                .atZone(ZoneId.systemDefault())
-                .toLocalDate();
     }
 
 }

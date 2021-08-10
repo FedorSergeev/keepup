@@ -29,16 +29,3 @@ jobs:
       uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-
-#  coverage:
-#    needs: build
-#    runs-on: ubuntu-latest
-#    steps:
-#    - uses: actions/checkout@master
-#    - uses: codecov/codecov-action@v2
-#      with:
-#        token: ${{ secrets.CODECOV_TOKEN }}
-#        flags: unittests
-#        name: codecov-keepup
-#        fail_ci_if_error: true
-#        verbose: true
