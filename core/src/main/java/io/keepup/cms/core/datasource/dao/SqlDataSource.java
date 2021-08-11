@@ -40,6 +40,7 @@ import static java.util.Optional.ofNullable;
 public class SqlDataSource implements DataSource {
 
     public static final String CONTENT_CACHE_NAME = "content";
+    public static final String PARENT_ID_PARAMETER = "parentId";
     private final Log log = LogFactory.getLog(getClass());
     private final ReactiveNodeEntityRepository nodeEntityRepository;
     private final ReactiveNodeAttributeEntityRepository nodeAttributeEntityRepository;
@@ -245,21 +246,10 @@ public class SqlDataSource implements DataSource {
             return Flux.empty();
         }
 
-        final Map<Long, List<NodeAttributeEntity>> sortedEntities = new HashMap<>();
         return nodeAttributeEntityRepository.findAllByContentParentIdWithAttributeNames(parentId, attributeNames)
-                .map(attribute -> {
-                    var contentId = attribute.getContentId();
-                    if (!sortedEntities.containsKey(contentId)) {
-                        sortedEntities.put(contentId, new ArrayList<>());
-                    }
-                    sortedEntities.get(contentId).add(attribute);
-                    return contentId;
-                })
-                .collect(Collectors.toList())
-                .flatMapMany(contentIds -> nodeEntityRepository.findByIds(contentIds.stream()
-                        .distinct()
-                        .collect(Collectors.toList())))
-                .map(entity -> buildNode(entity, sortedEntities.get(entity.getId())))
+                .collect(Collectors.groupingBy(NodeAttributeEntity::getContentId, Collectors.toList()))
+                .flatMapMany(attributesByContentId -> nodeEntityRepository.findByIds(attributesByContentId.keySet())
+                                                                          .map(entity -> buildNode(entity, attributesByContentId.get(entity.getId()))))
                 .map(cacheAdapter::updateContent);
     }
 
@@ -281,27 +271,15 @@ public class SqlDataSource implements DataSource {
     public Flux<Content> getContentByParentIdAndAttributeValue(Long parentId, String attributeName, Serializable attributeValue) {
         if (attributeName == null || attributeValue == null || parentId == null) {
             log.error("Null params passed to getContentByAttributeNames method: %s %s %s"
-                    .formatted(getNullParameterName(parentId, "parentId"),
+                    .formatted(getNullParameterName(parentId, PARENT_ID_PARAMETER),
                             getNullParameterName(attributeName, "attributeName"),
                             getNullParameterName(attributeValue, "attributeValue")));
             return Flux.empty();
         }
-
-        final Map<Long, List<NodeAttributeEntity>> sortedEntities = new HashMap<>();
         return nodeAttributeEntityRepository.findAllByParentIdAndAttributeNameAndContentId(parentId, attributeName, EntityUtils.toByteArray(attributeValue))
-                .map(attribute -> {
-                    var contentId = attribute.getContentId();
-                    if (!sortedEntities.containsKey(contentId)) {
-                        sortedEntities.put(contentId, new ArrayList<>());
-                    }
-                    sortedEntities.get(contentId).add(attribute);
-                    return contentId;
-                })
-                .collect(Collectors.toList())
-                .flatMapMany(contentIds -> nodeEntityRepository.findByIds(contentIds.stream()
-                        .distinct()
-                        .collect(Collectors.toList())))
-                .map(entity -> buildNode(entity, sortedEntities.get(entity.getId())))
+                .collect(Collectors.groupingBy(NodeAttributeEntity::getContentId, Collectors.toList()))
+                .flatMapMany(attributesByContentId -> nodeEntityRepository.findByIds(attributesByContentId.keySet())
+                                                                          .map(entity -> buildNode(entity, attributesByContentId.get(entity.getId()))))
                 .map(cacheAdapter::updateContent);
     }
 

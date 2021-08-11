@@ -9,7 +9,7 @@ import reactor.core.publisher.Flux;
 @Repository
 public interface ReactiveNodeEntityRepository extends ReactiveCrudRepository<NodeEntity, Long> {
 
-    @Query("SELECT * from NODE_ENTITY as node WHERE node.id IN (:ids)")
+    @Query("SELECT * FROM node_entity as node WHERE node.id IN (:ids)")
     Flux<NodeEntity> findByIds(Iterable<Long> ids);
 
     @Query("SELECT * from NODE_ENTITY as node WHERE node.parent_id IN (:ids)")
