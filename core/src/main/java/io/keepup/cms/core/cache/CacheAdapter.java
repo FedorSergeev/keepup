@@ -1,6 +1,5 @@
 package io.keepup.cms.core.cache;
 
-import io.keepup.cms.core.datasource.dao.SqlDataSource;
 import io.keepup.cms.core.persistence.Content;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -12,6 +11,7 @@ import java.io.Serializable;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static io.keepup.cms.core.datasource.dao.sql.SqlContentDao.CONTENT_CACHE_NAME;
 import static java.util.Optional.ofNullable;
 
 /**
@@ -36,7 +36,7 @@ public class CacheAdapter {
             log.error("Content identifier is null");
             return Optional.empty();
         }
-        return Optional.ofNullable(cacheManager.getCache(SqlDataSource.CONTENT_CACHE_NAME))
+        return Optional.ofNullable(cacheManager.getCache(CONTENT_CACHE_NAME))
                 .map(cache -> cache.get(id, Content.class));
     }
 
@@ -49,7 +49,7 @@ public class CacheAdapter {
      */
     public Content updateContent(Content content) {
         AtomicReference<Content> success = new AtomicReference<>(content);
-        ofNullable(cacheManager.getCache(SqlDataSource.CONTENT_CACHE_NAME))
+        ofNullable(cacheManager.getCache(CONTENT_CACHE_NAME))
                 .ifPresent(cache -> {
                     var cachedContent = cache.get(content.getId(), Content.class);
                     if (cachedContent == null || cachedContent.hashCode() != content.hashCode()) {
@@ -71,7 +71,7 @@ public class CacheAdapter {
             log.error("Cannot delete Content record from cache with empty id");
             return;
         }
-        ofNullable(cacheManager.getCache(SqlDataSource.CONTENT_CACHE_NAME))
+        ofNullable(cacheManager.getCache(CONTENT_CACHE_NAME))
                 .ifPresent(cache -> cache.evictIfPresent(id));
     }
 
@@ -83,12 +83,12 @@ public class CacheAdapter {
      * @param attributeValue new attribute value
      */
     public void updateContent(Long contentId, String attributeKey, Serializable attributeValue) {
-        ofNullable(cacheManager.getCache(SqlDataSource.CONTENT_CACHE_NAME))
+        ofNullable(cacheManager.getCache(CONTENT_CACHE_NAME))
                 .ifPresent(cache ->
                     ofNullable(cache.get(contentId, Content.class))
                             .ifPresent(rec -> {
                                 rec.setAttribute(attributeKey, attributeValue);
-                                ofNullable(cacheManager.getCache(SqlDataSource.CONTENT_CACHE_NAME))
+                                ofNullable(cacheManager.getCache(CONTENT_CACHE_NAME))
                                         .ifPresent(contentCache -> {
                                             contentCache.put(contentId, rec);
                                             log.debug("[CONTENT#%d] Updated attribute key = %s, value = %s".formatted(contentId, attributeKey, attributeValue));

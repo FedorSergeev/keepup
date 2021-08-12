@@ -1,9 +1,10 @@
-package io.keepup.cms.core.datasource.dao;
+package io.keepup.cms.core.datasource.dao.sql;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.keepup.cms.core.cache.CacheAdapter;
 import io.keepup.cms.core.datasource.access.ContentPrivileges;
 import io.keepup.cms.core.datasource.access.Privilege;
+import io.keepup.cms.core.datasource.dao.ContentDao;
 import io.keepup.cms.core.datasource.sql.EntityUtils;
 import io.keepup.cms.core.datasource.sql.entity.NodeAttributeEntity;
 import io.keepup.cms.core.datasource.sql.entity.NodeEntity;
@@ -31,29 +32,28 @@ import java.util.stream.Collectors;
 import static io.keepup.cms.core.datasource.sql.EntityUtils.convertToLocalDateViaInstant;
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
-/**
- * Abstract representation of the data source provider service.
- *
- * @author Fedor Sergeev
- */
-public class SqlDataSource implements DataSource {
+public class SqlContentDao implements ContentDao {
 
     public static final String CONTENT_CACHE_NAME = "content";
+
     public static final String PARENT_ID_PARAMETER = "parentId";
+    private static final String KEEPUP_STORAGE_USER_DIRECTORY_PATH_APP_FILES = "${keepup.storage.user-directory-path:/app/files}";
     private final Log log = LogFactory.getLog(getClass());
     private final ReactiveNodeEntityRepository nodeEntityRepository;
     private final ReactiveNodeAttributeEntityRepository nodeAttributeEntityRepository;
+
     private final ObjectMapper mapper;
     private final CacheManager cacheManager;
     private final CacheAdapter cacheAdapter;
 
     @Autowired
-    public SqlDataSource(ReactiveNodeEntityRepository reactiveNodeEntityRepository,
-                         ReactiveNodeAttributeEntityRepository reactiveNodeAttributeEntityRepository,
-                         ObjectMapper objectMapper,
-                         CacheManager manager,
-                         CacheAdapter adapter) {
+    public SqlContentDao(ReactiveNodeEntityRepository reactiveNodeEntityRepository,
+                               ReactiveNodeAttributeEntityRepository reactiveNodeAttributeEntityRepository,
+                               ObjectMapper objectMapper,
+                               CacheManager manager,
+                               CacheAdapter adapter) {
         nodeEntityRepository = reactiveNodeEntityRepository;
         nodeAttributeEntityRepository = reactiveNodeAttributeEntityRepository;
         mapper = objectMapper;
@@ -62,7 +62,6 @@ public class SqlDataSource implements DataSource {
     }
 
     // region public API
-
     /**
      * Finds {@link Content} record and returns as it is ready
      *
@@ -191,11 +190,11 @@ public class SqlDataSource implements DataSource {
     public Mono<Serializable> getContentAttribute(Long contentId, String attributeName) {
         return cacheAdapter.getContent(contentId).map(content -> content.getAttribute(attributeName)).map(Mono::just)
                 .orElse(nodeAttributeEntityRepository.findByContentIdAndAttributeKey(contentId, attributeName)
-                .map(this::getContentAttribute)
-                .onErrorResume(throwable -> {
-                    log.error("Error while getting Content attribute by name: " + throwable.toString());
-                    return Mono.empty();
-                }));
+                        .map(this::getContentAttribute)
+                        .onErrorResume(throwable -> {
+                            log.error("Error while getting Content attribute by name: " + throwable.toString());
+                            return Mono.empty();
+                        }));
     }
 
     /**
@@ -330,7 +329,7 @@ public class SqlDataSource implements DataSource {
 
     private Mono<Serializable> saveContentAttribute(String attributeName, Serializable attributeValue, NodeAttributeEntity nodeAttributeEntity) {
         if (nodeAttributeEntity == null) {
-            log.error("Attempt to save empty content attribute with key = " + attributeName + ", value = " + attributeValue);
+            log.error("Attempt to save empty content attribute with key = %s, value = %s".formatted(attributeName, attributeValue));
             return Mono.empty();
         }
         nodeAttributeEntity.setModificationTime(convertToLocalDateViaInstant(new Date()));
@@ -339,7 +338,7 @@ public class SqlDataSource implements DataSource {
             nodeAttributeEntity.setAttributeValue(mapper.writeValueAsBytes(attributeValue));
             nodeAttributeEntity.setJavaClass(attributeValue.getClass().toString().substring(6));
         } catch (IOException ex) {
-            log.error(format("Unable to convert attribute value o byte array: %s", ex.getMessage()));
+            log.error("Unable to convert attribute value o byte array: %s".formatted(ex.getMessage()));
             nodeAttributeEntity.setAttributeValue(new byte[0]);
             nodeAttributeEntity.setJavaClass(Byte.class.getName());
         }
@@ -469,6 +468,6 @@ public class SqlDataSource implements DataSource {
         }
         return parameter == null
                 ? parameterName
-                : "";
+                : EMPTY;
     }
 }

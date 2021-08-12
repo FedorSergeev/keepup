@@ -1,20 +1,25 @@
 package io.keepup.cms.core.datasource.dao;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.keepup.cms.core.boot.KeepupApplication;
 import io.keepup.cms.core.cache.CacheAdapter;
 import io.keepup.cms.core.cache.KeepupCacheConfiguration;
 import io.keepup.cms.core.config.DataSourceConfiguration;
 import io.keepup.cms.core.config.R2dbcConfiguration;
 import io.keepup.cms.core.config.WebFluxConfig;
+import io.keepup.cms.core.datasource.dao.sql.SqlContentDao;
+import io.keepup.cms.core.datasource.dao.sql.SqlFileDao;
 import io.keepup.cms.core.datasource.sql.H2ConsoleService;
+import io.keepup.cms.core.datasource.sql.entity.FileEntity;
 import io.keepup.cms.core.datasource.sql.entity.NodeAttributeEntity;
 import io.keepup.cms.core.datasource.sql.entity.NodeEntity;
+import io.keepup.cms.core.datasource.sql.repository.ReactiveFileRepository;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveNodeAttributeEntityRepository;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveNodeEntityRepository;
 import io.keepup.cms.core.persistence.BasicEntity;
 import io.keepup.cms.core.persistence.Content;
+import io.keepup.cms.core.persistence.FileWrapper;
 import io.keepup.cms.core.persistence.Node;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +34,9 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import reactor.core.publisher.Mono;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -37,6 +45,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static io.keepup.cms.core.datasource.access.ContentPrivilegesFactory.STANDARD_PRIVILEGES;
+import static io.keepup.cms.core.datasource.sql.EntityUtils.convertToLocalDateViaInstant;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -54,10 +63,15 @@ import static org.junit.jupiter.api.Assertions.*;
         ReactiveNodeAttributeEntityRepository.class,
         DataSourceConfiguration.class,
         H2ConsoleService.class,
-        R2dbcConfiguration.class})
+        R2dbcConfiguration.class,
+        SqlContentDao.class,
+        SqlFileDao.class,
+        DataSourceFacadeImpl.class
+})
 @DataR2dbcTest
-class SqlDataSourceTest {
+class SqlDataSourceFacadeTest {
 
+    private static final String FILE_NAME = "file_%s".formatted(UUID.randomUUID().toString());
     private final Log log = LogFactory.getLog(getClass());
 
     @Autowired
@@ -65,24 +79,23 @@ class SqlDataSourceTest {
     @Autowired
     ReactiveNodeAttributeEntityRepository reactiveNodeAttributeEntityRepository;
     @Autowired
-    ObjectMapper objectMapper;
+    ReactiveFileRepository reactiveFileRepository;
     @Autowired
     CacheManager cacheManager;
     @Autowired
     CacheAdapter cacheAdapter;
-
-    DataSource dataSource;
+    @Autowired
+    DataSourceFacade dataSourceFacade;
 
     @BeforeEach
     void setUp() {
         reactiveNodeEntityRepository.save(getNodeEntity());
-        dataSource = new SqlDataSource(reactiveNodeEntityRepository, reactiveNodeAttributeEntityRepository, objectMapper, cacheManager, cacheAdapter);
     }
 
     @Test
     void getContent() {
         Node node = getNode();
-        Mono<Content> contentMono = dataSource.createContent(node).flatMap(id -> dataSource.getContent(id));
+        Mono<Content> contentMono = dataSourceFacade.createContent(node).flatMap(id -> dataSourceFacade.getContent(id));
         Content fromDatabase = contentMono.block();
         assertNotNull(fromDatabase);
         node.setId(fromDatabase.getId());
@@ -96,7 +109,7 @@ class SqlDataSourceTest {
         fromDatabase.getAttributes().remove("enhanced");
         node.getAttributes().remove("enhanced");
         assertEquals(fromDatabase, node);
-        List<Content> storedContent = dataSource.getContent()
+        List<Content> storedContent = dataSourceFacade.getContent()
                 .collect(Collectors.toList())
                 .block()
                 .stream()
@@ -108,27 +121,27 @@ class SqlDataSourceTest {
 
     @Test
     void getEmptyContent() {
-        Mono<Content> content = dataSource.getContent(Long.MAX_VALUE);
+        Mono<Content> content = dataSourceFacade.getContent(Long.MAX_VALUE);
         assertNull(content.block());
     }
 
     @Test
     void createContent() {
-        Mono<Long> content = dataSource.createContent(getNode());
+        Mono<Long> content = dataSourceFacade.createContent(getNode());
         assertNotNull(content.block());
     }
 
     @Test
     void updateContent() {
         Content node = getNode();
-        Long contentId = dataSource.createContent(node)
-                .flatMap(id -> dataSource.getContent(id))
+        Long contentId = dataSourceFacade.createContent(node)
+                .flatMap(id -> dataSourceFacade.getContent(id))
                 .map(BasicEntity::getId).block();
         node.setId(contentId);
         node.setAttribute("attributeToUpdate", 456);
         node.setAttribute("testAttr", "newTestValue");
 
-        Map<String, Serializable> newAttributes = dataSource.updateContent(contentId, node.getAttributes())
+        Map<String, Serializable> newAttributes = dataSourceFacade.updateContent(contentId, node.getAttributes())
                 .block();
         assertEquals(456, newAttributes.get("attributeToUpdate"));
         assertEquals("newTestValue", newAttributes.get("testAttr"));
@@ -140,14 +153,14 @@ class SqlDataSourceTest {
     void deleteContent() {
         final AtomicLong identifier = new AtomicLong();
         Content node = getNode();
-        Content result = dataSource.createContent(node)
-                .flatMap(id -> dataSource.getContent(id))
+        Content result = dataSourceFacade.createContent(node)
+                .flatMap(id -> dataSourceFacade.getContent(id))
                 .map(content -> {
                     identifier.set(content.getId());
                     return content.getId();
                 })
-                .map(id -> dataSource.deleteContent(id))
-                .then(dataSource.getContent(identifier.get())).block();
+                .map(id -> dataSourceFacade.deleteContent(id))
+                .then(dataSourceFacade.getContent(identifier.get())).block();
         assertTrue(cacheAdapter.getContent(identifier.get()).isEmpty());
         assertNull(result);
     }
@@ -157,8 +170,8 @@ class SqlDataSourceTest {
         Content node = getNode();
         node.setAttribute("attributeToGet", "someValue");
 
-        Serializable attributeToGet = dataSource.createContent(node)
-                .flatMap(id -> dataSource.getContentAttribute(id, "attributeToGet"))
+        Serializable attributeToGet = dataSourceFacade.createContent(node)
+                .flatMap(id -> dataSourceFacade.getContentAttribute(id, "attributeToGet"))
                 .block();
         assertNotNull(attributeToGet);
         assertEquals("someValue", attributeToGet);
@@ -170,17 +183,17 @@ class SqlDataSourceTest {
         final AtomicLong identifier = new AtomicLong();
         Content node = getNode();
         node.setAttribute(attributeToUpdate, "someValue");
-        Serializable updatedValue = dataSource.createContent(node)
+        Serializable updatedValue = dataSourceFacade.createContent(node)
                 .flatMap(id -> {
                     identifier.set(id);
-                    return dataSource.updateContentAttribute(id, attributeToUpdate, 123);
+                    return dataSourceFacade.updateContentAttribute(id, attributeToUpdate, 123);
                 })
                 .block();
-        Serializable value = dataSource.getContentAttribute(identifier.get(), attributeToUpdate).block();
-        Serializable storedEntityAttribute = dataSource.getContent(identifier.get()).block().getAttribute(attributeToUpdate);
+        Serializable value = dataSourceFacade.getContentAttribute(identifier.get(), attributeToUpdate).block();
+        Serializable storedEntityAttribute = dataSourceFacade.getContent(identifier.get()).block().getAttribute(attributeToUpdate);
 
-        Content updatedOneMoreTime = dataSource.updateContentAttribute(identifier.get(), "attributeToUpdate", 1234)
-                .then(dataSource.getContent(identifier.get()))
+        Content updatedOneMoreTime = dataSourceFacade.updateContentAttribute(identifier.get(), "attributeToUpdate", 1234)
+                .then(dataSourceFacade.getContent(identifier.get()))
                 .block();
 
         assertNotNull(updatedValue);
@@ -201,13 +214,13 @@ class SqlDataSourceTest {
         var node1 = getNode();
         node1.setAttribute("key", "value_1");
 
-        node0.setId(dataSource.createContent(node0).block());
-        node1.setId(dataSource.createContent(node1).block());
+        node0.setId(dataSourceFacade.createContent(node0).block());
+        node1.setId(dataSourceFacade.createContent(node1).block());
 
-        List<Content> contentByKey = dataSource.getContentByParentIdAndByAttributeNames(node0.getParentId(), Arrays.asList("key"))
+        List<Content> contentByKey = dataSourceFacade.getContentByParentIdAndByAttributeNames(node0.getParentId(), Arrays.asList("key"))
                                         .collect(Collectors.toList())
                                         .block();
-        assertTrue(dataSource.getContentByParentIdAndByAttributeNames(null, null).collect(Collectors.toList()).block().isEmpty());
+        assertTrue(dataSourceFacade.getContentByParentIdAndByAttributeNames(null, null).collect(Collectors.toList()).block().isEmpty());
         assertFalse(contentByKey.isEmpty());
         assertEquals(2, contentByKey.stream().filter(element -> element.getAttribute("key") != null).count());
     }
@@ -220,14 +233,14 @@ class SqlDataSourceTest {
         var node1 = getNode();
         node1.setAttribute("key", attr);
 
-        node0.setId(dataSource.createContent(node0).block());
-        node1.setId(dataSource.createContent(node1).block());
+        node0.setId(dataSourceFacade.createContent(node0).block());
+        node1.setId(dataSourceFacade.createContent(node1).block());
 
-        List<Content> contentByKey = dataSource.getContentByParentIdAndAttributeValue(node0.getParentId(), "key", attr)
+        List<Content> contentByKey = dataSourceFacade.getContentByParentIdAndAttributeValue(node0.getParentId(), "key", attr)
                 .collect(Collectors.toList())
                 .block();
 
-        assertTrue(dataSource.getContentByParentIdAndAttributeValue(null, null, null).collect(Collectors.toList()).block().isEmpty());
+        assertTrue(dataSourceFacade.getContentByParentIdAndAttributeValue(null, null, null).collect(Collectors.toList()).block().isEmpty());
         assertFalse(contentByKey.isEmpty());
         assertEquals(1, contentByKey.stream().filter(element -> element.getAttribute("key") != null).count());
     }
@@ -235,37 +248,85 @@ class SqlDataSourceTest {
     @Test
     void getContentByParentId() {
         var node0 = getNode();
-        Long contentId = dataSource.createContent(node0)
+        Long contentId = dataSourceFacade.createContent(node0)
                 .flatMap(id -> {
                     var node1 = getNode();
                     node1.setParentId(id);
-                    return dataSource.createContent(node1);
+                    return dataSourceFacade.createContent(node1);
                 }).block();
 
-        var result = dataSource.getContent(contentId)
-                .flatMap(content -> dataSource.getContentByParentId(content.getParentId())
+        var result = dataSourceFacade.getContent(contentId)
+                .flatMap(content -> dataSourceFacade.getContentByParentId(content.getParentId())
                                               .collect(Collectors.toList())).block();
 
         assertEquals(1, result.size());
-        assertTrue(dataSource.getContentByParentId(null).collect(Collectors.toList()).block().isEmpty());
+        assertTrue(dataSourceFacade.getContentByParentId(null).collect(Collectors.toList()).block().isEmpty());
     }
 
     @Test
     void getContentByParentIds() {
         var node0 = getNode();
-        Long contentId = dataSource.createContent(node0)
+        Long contentId = dataSourceFacade.createContent(node0)
                 .flatMap(id -> {
                     var node1 = getNode();
                     node1.setParentId(id);
-                    return dataSource.createContent(node1);
+                    return dataSourceFacade.createContent(node1);
                 }).block();
 
-        var result = dataSource.getContent(contentId)
-                .flatMap(content -> dataSource.getContentByParentIds(Collections.singletonList(content.getParentId()))
+        var result = dataSourceFacade.getContent(contentId)
+                .flatMap(content -> dataSourceFacade.getContentByParentIds(Collections.singletonList(content.getParentId()))
                         .collect(Collectors.toList())).block();
 
         assertEquals(1, result.size());
-        assertTrue(dataSource.getContentByParentIds(null).collect(Collectors.toList()).block().isEmpty());
+        assertTrue(dataSourceFacade.getContentByParentIds(null).collect(Collectors.toList()).block().isEmpty());
+    }
+
+    @Test
+    void getFileAsStream() throws IOException {
+
+        Long contentId = dataSourceFacade.createContent(getNode()).block();
+        var testOutputStream = dataSourceFacade.getFileAsStream("test").block();
+
+        File existingFile = new File("existing");
+        existingFile.createNewFile();
+        FileUtils.writeStringToFile(existingFile, "some content", UTF_8);
+        FileEntity existingFileEntity = new FileEntity();
+        existingFileEntity.setId(null);
+        existingFileEntity.setFileName("existing");
+        existingFileEntity.setPath("/app/files");
+        existingFileEntity.setContentId(contentId);
+        existingFileEntity.setCreationTime(convertToLocalDateViaInstant(new Date()));
+        existingFileEntity.setModificationTime(convertToLocalDateViaInstant(new Date()));
+        existingFileEntity.setContent(FileUtils.readFileToByteArray(existingFile));
+        FileEntity savedExistingFileEntity = reactiveFileRepository.save(existingFileEntity).block();
+        FileUtils.writeByteArrayToFile(existingFile, savedExistingFileEntity.getContent(), false);
+        String result = FileUtils.readFileToString(existingFile, UTF_8);
+
+        var existingFromDb = dataSourceFacade.getFileAsStream("existing").block();
+
+        assertNull(testOutputStream);
+        assertNotNull(savedExistingFileEntity);
+        assertNotNull(result);
+        assertNotNull(existingFromDb);
+        assertEquals("some content", ((ByteArrayOutputStream) existingFromDb).toString(UTF_8));
+        assertEquals("some content", result);
+    }
+
+    @Test
+    void getFileWrapper() throws IOException {
+        String fileContent = "some content";
+        File existingFile = new File(FILE_NAME);
+        existingFile.createNewFile();
+        FileUtils.writeStringToFile(existingFile, fileContent, UTF_8);
+        Long contentId = dataSourceFacade.createContent(getNode()).block();
+        FileEntity existingFileEntity = new FileEntity(FILE_NAME, "/app/files", contentId, convertToLocalDateViaInstant(new Date()), convertToLocalDateViaInstant(new Date()), FileUtils.readFileToByteArray(existingFile));
+        reactiveFileRepository.save(existingFileEntity).block();
+        FileUtils.writeStringToFile(existingFile, fileContent, UTF_8);
+        FileWrapper existingFileWrapper = dataSourceFacade.getFile(FILE_NAME).block();
+        assertEquals(existingFile.getName(), existingFileWrapper.getName());
+        assertTrue(existingFileWrapper.isExists());
+        assertNotNull(existingFileWrapper.getPath());
+        assertEquals(fileContent, existingFileWrapper.getContent().toString());
     }
 
     private Node getNode() {
