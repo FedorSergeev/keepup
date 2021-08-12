@@ -20,6 +20,7 @@ dependencies {
     implementation 'org.apache.ignite:ignite-spring:2.10.0'
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.liquibase:liquibase-core'
     implementation 'javax.servlet:javax.servlet-api:4.0.1'
     runtimeOnly 'com.h2database:h2:1.4.200'

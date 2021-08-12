@@ -8,6 +8,8 @@ import io.keepup.cms.core.config.R2dbcConfiguration;
 import io.keepup.cms.core.config.WebFluxConfig;
 import io.keepup.cms.core.datasource.dao.sql.SqlContentDao;
 import io.keepup.cms.core.datasource.dao.sql.SqlFileDao;
+import io.keepup.cms.core.datasource.dao.sql.SqlUserDao;
+import io.keepup.cms.core.datasource.sql.EntityUtils;
 import io.keepup.cms.core.datasource.sql.H2ConsoleService;
 import io.keepup.cms.core.datasource.sql.entity.FileEntity;
 import io.keepup.cms.core.datasource.sql.entity.NodeAttributeEntity;
@@ -15,13 +17,12 @@ import io.keepup.cms.core.datasource.sql.entity.NodeEntity;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveFileRepository;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveNodeAttributeEntityRepository;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveNodeEntityRepository;
-import io.keepup.cms.core.persistence.BasicEntity;
-import io.keepup.cms.core.persistence.Content;
-import io.keepup.cms.core.persistence.FileWrapper;
-import io.keepup.cms.core.persistence.Node;
+import io.keepup.cms.core.datasource.sql.repository.ReactiveUserEntityRepository;
+import io.keepup.cms.core.persistence.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -29,6 +30,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.r2dbc.DataR2dbcTest;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -61,11 +64,13 @@ import static org.junit.jupiter.api.Assertions.*;
         WebFluxConfig.class,
         ReactiveNodeEntityRepository.class,
         ReactiveNodeAttributeEntityRepository.class,
+        ReactiveUserEntityRepository.class,
         DataSourceConfiguration.class,
         H2ConsoleService.class,
         R2dbcConfiguration.class,
         SqlContentDao.class,
         SqlFileDao.class,
+        SqlUserDao.class,
         DataSourceFacadeImpl.class
 })
 @DataR2dbcTest
@@ -84,6 +89,8 @@ class SqlDataSourceFacadeTest {
     CacheManager cacheManager;
     @Autowired
     CacheAdapter cacheAdapter;
+    @Autowired
+    ReactiveUserEntityRepository userEntityRepository;
     @Autowired
     DataSourceFacade dataSourceFacade;
 
@@ -303,13 +310,16 @@ class SqlDataSourceFacadeTest {
         String result = FileUtils.readFileToString(existingFile, UTF_8);
 
         var existingFromDb = dataSourceFacade.getFileAsStream("existing").block();
+        var nonExistingFile = dataSourceFacade.getFileAsStream("nonExisting").block();
 
+        // region assert
         assertNull(testOutputStream);
         assertNotNull(savedExistingFileEntity);
         assertNotNull(result);
         assertNotNull(existingFromDb);
         assertEquals("some content", ((ByteArrayOutputStream) existingFromDb).toString(UTF_8));
         assertEquals("some content", result);
+        // endregion
     }
 
     @Test
@@ -323,10 +333,116 @@ class SqlDataSourceFacadeTest {
         reactiveFileRepository.save(existingFileEntity).block();
         FileUtils.writeStringToFile(existingFile, fileContent, UTF_8);
         FileWrapper existingFileWrapper = dataSourceFacade.getFile(FILE_NAME).block();
+        reactiveFileRepository.save(new FileEntity(FILE_NAME, "/app/files", contentId, convertToLocalDateViaInstant(new Date()), convertToLocalDateViaInstant(new Date()), null));
+
+
+        // region assert
         assertEquals(existingFile.getName(), existingFileWrapper.getName());
         assertTrue(existingFileWrapper.isExists());
         assertNotNull(existingFileWrapper.getPath());
         assertEquals(fileContent, existingFileWrapper.getContent().toString());
+        // endregion
+    }
+
+    @Test
+    void createUser() {
+        User user = getUser();
+        User userWithNullAttributes = getUserWithNullAttributes();
+
+        User userFromDb = dataSourceFacade.createUser(user).block();
+        User savedUserWithoutAttributes = dataSourceFacade.createUser(userWithNullAttributes).block();
+
+        // region assert
+        assertNotNull(userFromDb);
+        assertNotNull(savedUserWithoutAttributes);
+        assertNotNull(savedUserWithoutAttributes.getAttributes());
+        assertTrue(savedUserWithoutAttributes.getAttributes().isEmpty());
+        assertEquals(user.getUsername(), userFromDb.getUsername());
+        assertEquals(user.getPassword(), userFromDb.getPassword());
+        assertEquals(user.getAuthorities(), userFromDb.getAuthorities());
+        assertEquals(user.getAttributes(), userFromDb.getAttributes());
+
+        // endregion
+    }
+
+    @Test
+    void createNullUser() {
+        User userFromDb = dataSourceFacade.createUser(null).block();
+        assertNull(userFromDb);
+    }
+
+    @Test
+    void deleteUser() {
+        final var atomicId = new AtomicLong();
+        dataSourceFacade.deleteUser(0L).block();
+        User user = getUser();
+        var userFromDb = dataSourceFacade.createUser(user)
+                .map(user1 -> {
+                    atomicId.set(user1.getId());
+                    return dataSourceFacade.deleteUser(user1.getId());
+                })
+                .then(dataSourceFacade.getUser(atomicId.get())).block();
+        assertNull(userFromDb);
+    }
+
+    @Test
+    void getUsers() {
+        List<User> savedUsers = new ArrayList<>();
+        dataSourceFacade.getUsers(null)
+                .flatMap(user -> dataSourceFacade.deleteUser(user.getId()))
+                .collect(Collectors.toList())
+                .block();
+
+        for (var i = 0; i < 10; i++) {
+            savedUsers.add(dataSourceFacade.createUser(getUser()).block());
+        }
+        List<User> block = dataSourceFacade.getUsers(null).collect(Collectors.toList()).block();
+        List<User> usersByRoles = dataSourceFacade.getUsers(getRoles(savedUsers)).collect(Collectors.toList()).block();
+
+        // region assert
+        assertNotNull(block);
+        assertNotNull(usersByRoles);
+        assertEquals(10, block.size());
+        assertEquals(10, usersByRoles.size());
+        // endregion
+    }
+
+    @NotNull
+    private List<String> getRoles(List<User> savedUsers) {
+        return savedUsers
+                .stream()
+                .flatMap(user -> user.getAuthorities()
+                        .stream()
+                        .map(GrantedAuthority::getAuthority))
+                .collect(Collectors.toList());
+    }
+
+    @NotNull
+    private User getUser() {
+        var user = new User();
+        user.setUsername("user_" + UUID.randomUUID());
+        user.setPassword("12345");
+        user.setAuthorities(new ArrayList<>());
+        user.getAuthorities().add(new SimpleGrantedAuthority("user_".concat(UUID.randomUUID().toString())));
+        user.setAttributes(new HashMap<>());
+        user.getAttributes().put("testKey", "testValue");
+        user.setExpirationDate(EntityUtils.convertToLocalDateViaInstant(new Date(999999999999999L)));
+        user.setEnabled(true);
+        user.setAdditionalInfo("{'sex':'male'}");
+        return user;
+    }
+
+    @NotNull
+    private User getUserWithNullAttributes() {
+        var user = new User();
+        user.setUsername("user_" + UUID.randomUUID());
+        user.setPassword("12345");
+        user.setAuthorities(new ArrayList<>());
+        user.setAttributes(null);
+        user.setExpirationDate(EntityUtils.convertToLocalDateViaInstant(new Date(999999999999999L)));
+        user.setEnabled(true);
+        user.setAdditionalInfo("{'sex':'male'}");
+        return user;
     }
 
     private Node getNode() {
@@ -367,6 +483,8 @@ class SqlDataSourceFacadeTest {
         nodeEntity.setOtherCreateChildrenPrivilege(STANDARD_PRIVILEGES.getOtherPrivileges().canCreateChildren());
 
         NodeAttributeEntity nodeAttributeEntity_0 = new NodeAttributeEntity();
+        nodeAttributeEntity_0.setId(null);
+        nodeAttributeEntity_0.setContentId(3243L);
         nodeAttributeEntity_0.setAttributeKey("testKey");
         nodeAttributeEntity_0.setAttributeValue("testValue".getBytes(UTF_8));
         nodeAttributeEntity_0.setJavaClass(String.class.getName());

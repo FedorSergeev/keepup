@@ -1,11 +1,13 @@
 package io.keepup.cms.core.datasource.sql.entity;
 
 import org.hibernate.annotations.Type;
+import org.springframework.data.annotation.Id;
 
 import javax.persistence.*;
-import org.springframework.data.annotation.Id;
 import java.time.LocalDate;
 import java.util.Arrays;
+
+import static java.util.Optional.ofNullable;
 
 /**
  * Data access object for static files.
@@ -104,7 +106,9 @@ public class FileEntity {
         this.contentId = contentId;
         this.creationTime = creationTime;
         this.modificationTime = modificationTime;
-        this.content = Arrays.copyOf(content, content.length);
+        this.content = ofNullable(content)
+                .map(contentBytes -> Arrays.copyOf(contentBytes, contentBytes.length))
+                .orElse(null);
     }
 }
 

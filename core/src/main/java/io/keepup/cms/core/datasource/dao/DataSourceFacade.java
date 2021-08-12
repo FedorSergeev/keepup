@@ -2,6 +2,7 @@ package io.keepup.cms.core.datasource.dao;
 
 import io.keepup.cms.core.persistence.Content;
 import io.keepup.cms.core.persistence.FileWrapper;
+import io.keepup.cms.core.persistence.User;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -16,6 +17,7 @@ import java.util.Map;
  * @author Fedor Sergeev
  */
 public interface DataSourceFacade {
+    // region Content operations
     Mono<Content> getContent(Long id);
     Flux<Content> getContent();
     Mono<Map<String, Serializable>> updateContent(Long id, Map<String, Serializable> newAttributes);
@@ -27,7 +29,17 @@ public interface DataSourceFacade {
     Flux<Content> getContentByParentId(Long parentId);
     Mono<Long> createContent(Content content);
     Mono<Void> deleteContent(Long id);
+    // endregion
+
+    // region File operations
     Mono<OutputStream> getFileAsStream(String fileName);
     Mono<FileWrapper> getFile(String filename);
+    // endregion
 
+    // region User operations
+    Mono<User> createUser(User user);
+    Mono<User> getUser(long userId);
+    Flux<User> getUsers(Iterable<String> roles);
+    Mono<Void> deleteUser(long id);
+    // endregion
 }
