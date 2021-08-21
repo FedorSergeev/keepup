@@ -2,6 +2,7 @@ package io.keepup.cms.core.datasource.sql.repository;
 
 import io.keepup.cms.core.datasource.sql.entity.RoleByUserIdEntity;
 import io.keepup.cms.core.datasource.sql.entity.RoleEntity;
+import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
@@ -64,4 +65,13 @@ public interface ReactiveRoleByUserEntityRepository extends ReactiveCrudReposito
             "        SELECT user_id, role FROM user_roles WHERE user_id = :userId AND role = :role" +
             "    )")
     Mono<Void> updateRole(@Param("userId") Long userId, @Param("role") String role);
+
+    /**
+     * Removes user role bindings
+     *
+     * @param id identifier of the user
+     * @return Mono signaling the operation execution
+     */
+    @Modifying
+    Mono<Void> deleteByUserId(Long id);
 }

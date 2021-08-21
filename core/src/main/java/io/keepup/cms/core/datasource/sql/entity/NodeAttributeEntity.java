@@ -20,7 +20,7 @@ import static java.lang.String.format;
 /**
  * Persistent node attribute
  *
- * @author Fedor Sergeev f.sergeev@trans-it.pro
+ * @author Fedor Sergeev
  */
 @Entity
 @Table(name = "node_attributes", indexes = {

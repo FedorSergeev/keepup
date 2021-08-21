@@ -4,6 +4,7 @@ import io.keepup.cms.core.persistence.Content;
 import io.keepup.cms.core.persistence.FileWrapper;
 import io.keepup.cms.core.persistence.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -19,9 +20,9 @@ import java.util.Map;
 @Service
 public class DataSourceFacadeImpl implements DataSourceFacade {
 
-    private ContentDao contentDao;
-    private FileDao fileDao;
-    private UserDao userDao;
+    private final ContentDao contentDao;
+    private final FileDao fileDao;
+    private final UserDao userDao;
 
     @Autowired
     public DataSourceFacadeImpl(ContentDao contentDao, FileDao fileDao, UserDao userDao) {
@@ -113,5 +114,10 @@ public class DataSourceFacadeImpl implements DataSourceFacade {
     @Override
     public Mono<Void> deleteUser(long id) {
         return userDao.deleteUser(id);
+    }
+
+    @Override
+    public Mono<UserDetails> getUserByName(String username) {
+        return userDao.getByName(username);
     }
 }

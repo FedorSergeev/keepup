@@ -18,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
+import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -34,12 +35,12 @@ import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
+@Service
 public class SqlContentDao implements ContentDao {
 
     public static final String CONTENT_CACHE_NAME = "content";
-
     public static final String PARENT_ID_PARAMETER = "parentId";
-    private static final String KEEPUP_STORAGE_USER_DIRECTORY_PATH_APP_FILES = "${keepup.storage.user-directory-path:/app/files}";
+
     private final Log log = LogFactory.getLog(getClass());
     private final ReactiveNodeEntityRepository nodeEntityRepository;
     private final ReactiveNodeAttributeEntityRepository nodeAttributeEntityRepository;
@@ -241,7 +242,7 @@ public class SqlContentDao implements ContentDao {
     public Flux<Content> getContentByParentIdAndByAttributeNames(Long parentId, List<String> attributeNames) {
         if (attributeNames == null || parentId == null) {
             log.error("Null params passed to getContentByAttributeNames method: %s %s"
-                    .formatted(getNullParameterName(parentId, "parentId"), getNullParameterName(attributeNames, "attributeNames")));
+                    .formatted(getNullParameterName(parentId, PARENT_ID_PARAMETER), getNullParameterName(attributeNames, "attributeNames")));
             return Flux.empty();
         }
 

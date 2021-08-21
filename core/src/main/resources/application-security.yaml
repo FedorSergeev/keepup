@@ -1,0 +1,7 @@
+keepup:
+  security:
+    enabled: true
+    path-matchers: /user,/content,/file
+    login-url: login
+    logout-url: logout
+

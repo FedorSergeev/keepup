@@ -3,6 +3,7 @@ package io.keepup.cms.core.datasource.dao;
 import io.keepup.cms.core.persistence.Content;
 import io.keepup.cms.core.persistence.FileWrapper;
 import io.keepup.cms.core.persistence.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -41,5 +42,6 @@ public interface DataSourceFacade {
     Mono<User> getUser(long userId);
     Flux<User> getUsers(Iterable<String> roles);
     Mono<Void> deleteUser(long id);
+    Mono<UserDetails> getUserByName(String username);
     // endregion
 }

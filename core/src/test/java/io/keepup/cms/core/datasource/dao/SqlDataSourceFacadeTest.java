@@ -32,6 +32,7 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -404,6 +405,27 @@ class SqlDataSourceFacadeTest {
         assertNotNull(usersByRoles);
         assertEquals(10, block.size());
         assertEquals(10, usersByRoles.size());
+        // endregion
+    }
+
+    @Test
+    void getUserByName() {
+        List<User> savedUsers = new ArrayList<>();
+        for (var i = 0; i < 10; i++) {
+            savedUsers.add(dataSourceFacade.createUser(getUser()).block());
+        }
+
+        List<UserDetails> resultUsersByUsernames = new ArrayList<>();
+        for (var user : savedUsers) {
+            resultUsersByUsernames.add(dataSourceFacade.getUserByName(user.getUsername()).block());
+        }
+
+        // region assert
+        assertFalse(resultUsersByUsernames.isEmpty());
+        assertEquals(10, resultUsersByUsernames.size());
+        for (User u : savedUsers) {
+            assertEquals(u.getUsername(), resultUsersByUsernames.get(savedUsers.indexOf(u)).getUsername());
+        }
         // endregion
     }
 
