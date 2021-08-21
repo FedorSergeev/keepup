@@ -2,12 +2,6 @@ databaseChangeLog:
   - changeSet:
       id: 1601462504025-1
       author: Fedor Sergeev
-      #      preConditions:
-      #        onFail: MARK_RAN
-      #        onFailMessage: Table 'content_layout' already exists
-      #        not:
-      #          tableExists:
-      #            tableName: content_layout
       changes:
         - createTable:
             columns:
@@ -28,12 +22,6 @@ databaseChangeLog:
   - changeSet:
       id: 1601462504025-2
       author: Fedor Sergeev
-      #      preConditions:
-      #        - onFail: MARK_RAN
-      #          onFailMessage: Table 'enums' already exists
-      #          not:
-      #            tableExists:
-      #              tableName: enums
       changes:
         - createTable:
             columns:
@@ -59,12 +47,6 @@ databaseChangeLog:
   - changeSet:
       id: 1601462504026-3
       author: Fedor Sergeev
-      #      preConditions:
-      #        - onFail: MARK_RAN
-      #          onFailMessage: Table 'enumtags' already exists
-      #          not:
-      #            tableExists:
-      #              tableName: enumtags
       changes:
         - createTable:
             columns:
@@ -94,12 +76,6 @@ databaseChangeLog:
   - changeSet:
       id: 1601462504025-39
       author: Fedor Sergeev
-      #      preConditions:
-      #        - onFail: MARK_RAN
-      #          onFailMessage: Table 'files' already exists
-      #          not:
-      #            tableExists:
-      #              tableName: files
       changes:
         - createTable:
             columns:
@@ -151,12 +127,6 @@ databaseChangeLog:
   - changeSet:
       id: 1601462504025-40
       author: Fedor Sergeev
-      #      preConditions:
-      #        - onFail: MARK_RAN
-      #          onFailMessage: Table 'node' already exists
-      #          not:
-      #            tableExists:
-      #              tableName: node
       changes:
         - createTable:
             columns:
@@ -254,12 +224,6 @@ databaseChangeLog:
   - changeSet:
       id: 1601462504025-35
       author: Fedor Sergeev
-      #      preConditions:
-      #        - onFail: MARK_RAN
-      #          onFailMessage: Table 'node_attributes' already exists
-      #          not:
-      #            tableExists:
-      #              tableName: node_attributes
       changes:
         - createTable:
             columns:
@@ -322,12 +286,6 @@ databaseChangeLog:
   - changeSet:
       id: 1601462504025-37
       author: Fedor Sergeev
-      #      preConditions:
-      #        - onFail: MARK_RAN
-      #          onFailMessage: Table 'user_attributes' already exists
-      #          not:
-      #            tableExists:
-      #              tableName: user_attributes
       changes:
         - createTable:
             columns:
@@ -366,25 +324,19 @@ databaseChangeLog:
               - column:
                   constraints:
                     nullable: false
-                  name: userid
+                  name: user_id
                   type: BIGINT
             tableName: user_attributes
         - createIndex:
             columns:
               - column:
-                  name: userid
+                  name: user_id
             indexName: idx__attribute_owner_user_id
             tableName: user_attributes
 
   - changeSet:
       id: 1601462504025-8
       author: Fedor Sergeev
-      #      preConditions:
-      #        - onFail: MARK_RAN
-      #          onFailMessage: Table 'userdto' already exists
-      #          not:
-      #            tableExists:
-      #              tableName: userdto
       changes:
         - createTable:
             columns:
@@ -392,24 +344,24 @@ databaseChangeLog:
                   constraints:
                     nullable: false
                     primaryKey: true
-                    primaryKeyName: userdto_pkey
+                    primaryKeyName: user_pkey
                   name: id
                   type: BIGSERIAL
               - column:
-                  name: expirationdate
+                  name: expiration_date
                   type: TIMESTAMP WITHOUT TIME ZONE
               - column:
-                  name: passwordhash
-                  type: VARCHAR(255)
-              - column:
-                  name: user_role
+                  name: password_hash
                   type: VARCHAR(255)
               - column:
                   name: username
                   type: VARCHAR(255)
-            tableName: userdto
+              - column:
+                  name: additional_info
+                  type: VARCHAR
+            tableName: users
             addForeignKeyConstraint:
-              baseColumnNames: userid
+              baseColumnNames: user_id
               baseTableName: user_attributes
               constraintName: fkkwukw3vohuyyqe90m3pro12qm
               deferrable: false
@@ -419,22 +371,50 @@ databaseChangeLog:
               referencedColumnNames: id
               referencedTableName: userdto
               validate: true
+
+
+  - changeSet:
+      id: 1601462504025-34
+      author: Fedor Sergeev
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: user_roles_pkey
+                  name: id
+                  type: BIGSERIAL
+              - column:
+                  name: user_id
+                  type: VARCHAR(255)
+              - column:
+                  name: role
+                  type: VARCHAR(255)
+            tableName: user_roles
+            addForeignKeyConstraint:
+              baseColumnNames: user_id
+              baseTableName: user_roles
+              constraintName: userid
+              deferrable: false
+              initiallyDeferred: false
+              onDelete: NO ACTION
+              onUpdate: NO ACTION
+              referencedColumnNames: id
+              referencedTableName: users
+              validate: true
             createIndex:
               columns:
                 - column:
-                    name: user_role
-              indexName: idx_user_role
-              tableName: userdto
+                    name: id
+              indexName: idx_user_roles
+              tableName: user_roles
+
 
   - changeSet:
       id: 1601462504025-9
       author: Fedor Sergeev
-      #      preConditions:
-      #        - onFail: MARK_RAN
-      #          onFailMessage: Table 'layout_attributes' already exists
-      #          not:
-      #            tableExists:
-      #              tableName: layout_attributes
       changes:
         - createTable:
             columns:
@@ -478,12 +458,6 @@ databaseChangeLog:
   - changeSet:
       id: 1601462504025-10
       author: Fedor Sergeev
-      #      preConditions:
-      #        - onFail: MARK_RAN
-      #          onFailMessage: Table 'layouts' already exists
-      #          not:
-      #            tableExists:
-      #              tableName: layouts
       changes:
         - createTable:
             columns:
@@ -510,12 +484,6 @@ databaseChangeLog:
   - changeSet:
       id: 1601462504025-12
       author: Fedor Sergeev
-      #      preConditions:
-      #        - onFail: MARK_RAN
-      #          not:
-      #            - indexExists:
-      #                indexName: cl_idx_content_id
-      #                tableName: content_layout
       changes:
         - createIndex:
             columns:
@@ -529,12 +497,6 @@ databaseChangeLog:
   - changeSet:
       id: 1601462504025-22
       author: Fedor Sergeev
-      #      preConditions:
-      #        - onFail: MARK_RAN
-      #          oFailMessage: cl_seq already exists
-      #          not:
-      #            sequenceExists:
-      #              sequenceName: cl_seq
       changes:
         - createSequence:
             cacheSize: 1
@@ -548,12 +510,6 @@ databaseChangeLog:
   - changeSet:
       id: 1601462504025-23
       author: Fedor Sergeev
-      #      preConditions:
-      #        - onFail: MARK_RAN
-      #          oFailMessage: content_attribute_seq already exists
-      #          not:
-      #            sequenceExists:
-      #              sequenceName: content_attribute_seq
       changes:
         - createSequence:
             cacheSize: 1
@@ -567,12 +523,6 @@ databaseChangeLog:
   - changeSet:
       id: 1601462504025-24
       author: Fedor Sergeev
-      #      preConditions:
-      #        - onFail: MARK_RAN
-      #          oFailMessage: content_seq already exists
-      #          not:
-      #            sequenceExists:
-      #              sequenceName: content_seq
       changes:
         - createSequence:
             cacheSize: 1
@@ -586,12 +536,6 @@ databaseChangeLog:
   - changeSet:
       id: 1601462504025-25
       author: Fedor Sergeev
-      #      preConditions:
-      #        - onFail: MARK_RAN
-      #          oFailMessage: enum_seq already exists
-      #          not:
-      #            sequenceExists:
-      #              sequenceName: enum_seq
       changes:
         - createSequence:
             cacheSize: 1
@@ -606,12 +550,6 @@ databaseChangeLog:
   - changeSet:
       id: 1601462504025-26
       author: Fedor Sergeev
-      #      preConditions:
-      #        - onFail: MARK_RAN
-      #          oFailMessage: enumtag_seq already exists
-      #          not:
-      #            sequenceExists:
-      #              sequenceName: enumtag_seq
       changes:
         - createSequence:
             cacheSize: 1
@@ -626,12 +564,6 @@ databaseChangeLog:
   - changeSet:
       id: 1601462504025-27
       author: Fedor Sergeev
-      preConditions:
-      #        - onFail: MARK_RAN
-      #          oFailMessage: file_seq already exists
-      #          not:
-      #            sequenceExists:
-      #              sequenceName: file_seq
       changes:
         - createSequence:
             cacheSize: 1
@@ -646,17 +578,10 @@ databaseChangeLog:
   - changeSet:
       id: 1601462504025-28
       author: Fedor Sergeev
-      preConditions:
-      #        - onFail: MARK_RAN
-      #          oFailMessage: layout_attr_seq already exists
-      #          not:
-      #            sequenceExists:
-      #              sequenceName: layout_attr_seq
       changes:
         - createSequence:
             cacheSize: 1
             cycle: false
-
             incrementBy: 1
             maxValue: 9223372036854775807
             minValue: 1
@@ -666,12 +591,6 @@ databaseChangeLog:
   - changeSet:
       id: 1601462504025-29
       author: Fedor Sergeev
-      preConditions:
-      #        - onFail: MARK_RAN
-      #          oFailMessage: layout_seq already exists
-      #          not:
-      #            sequenceExists:
-      #              sequenceName: layout_seq
       changes:
         - createSequence:
             cacheSize: 1
@@ -686,12 +605,6 @@ databaseChangeLog:
   - changeSet:
       id: 1601462504025-31
       author: Fedor Sergeev
-      #      preConditions:
-      #        - onFail: MARK_RAN
-      #          oFailMessage: user_attribute_seq already exists
-      #          not:
-      #            sequenceExists:
-      #              sequenceName: user_attribute_seq
       changes:
         - createSequence:
             cacheSize: 1
@@ -706,12 +619,6 @@ databaseChangeLog:
   - changeSet:
       id: 1601462504025-33
       author: Fedor Sergeev
-      #      preConditions:
-      #        - onFail: MARK_RAN
-      #          oFailMessage: user_seq already exists
-      #          not:
-      #            sequenceExists:
-      #              sequenceName: user_seq
       changes:
         - createSequence:
             cacheSize: 1

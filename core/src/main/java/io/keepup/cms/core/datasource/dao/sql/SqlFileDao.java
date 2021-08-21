@@ -55,10 +55,15 @@ public class SqlFileDao implements FileDao {
     @Override
     public Mono<OutputStream> getFileAsStream(String fileName) {
         return fileRepository.findByFilenameAndPath(fileName, userFileDirectoryPath)
-                .map(this::getOutputStream)
+                .map(this::createNewOutputStreamFromDatabase)
                 .flatMap(Mono::justOrEmpty);
     }
 
+    /**
+     * Looks for the file and wraps it if found
+     * @param fileName
+     * @return
+     */
     @Override
     public Mono<FileWrapper> getFile(final String fileName) {
         return fileRepository.findByFilenameAndPath(fileName, userFileDirectoryPath)
@@ -79,20 +84,19 @@ public class SqlFileDao implements FileDao {
         fileWrapper.setName(fileName);
         fileWrapper.setPath(finalPath);
         fileWrapper.setExists(true);
-        fileWrapper.setContent(getOutputStream(fileEntity).orElse(null));
+        fileWrapper.setContent(createNewOutputStreamFromDatabase(fileEntity).orElse(null));
         fileWrapper.setCreationDate(fileEntity.getCreationTime());
         fileWrapper.setLastModified(fileEntity.getModificationTime());
         return fileWrapper;
     }
 
-    private Optional<OutputStream> getOutputStream(FileEntity fileEntity) {
-        if (fileEntity == null) {
-            log.error("No file attribute was found");
-            return Optional.empty();
-        }
-        return createNewOutputStreamFromDatabase(fileEntity);
-    }
-
+    /**
+     * No nullability check as we get in the private method only from reactive methods witch finish
+     * call chains when receiving null as the result of previous function call
+     *
+     * @param fileEntity representation of file stored in the databsde
+     * @return OutputStream with file content wrapped with Optional or empty Optional in case of IOException
+     */
     private Optional<OutputStream> createNewOutputStreamFromDatabase(FileEntity fileEntity) {
         try {
             var byteArrayOutputStream = new ByteArrayOutputStream();

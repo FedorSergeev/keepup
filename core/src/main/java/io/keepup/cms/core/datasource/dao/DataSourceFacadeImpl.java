@@ -2,6 +2,7 @@ package io.keepup.cms.core.datasource.dao;
 
 import io.keepup.cms.core.persistence.Content;
 import io.keepup.cms.core.persistence.FileWrapper;
+import io.keepup.cms.core.persistence.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -20,11 +21,13 @@ public class DataSourceFacadeImpl implements DataSourceFacade {
 
     private ContentDao contentDao;
     private FileDao fileDao;
+    private UserDao userDao;
 
     @Autowired
-    public DataSourceFacadeImpl(ContentDao contentDao, FileDao fileDao) {
+    public DataSourceFacadeImpl(ContentDao contentDao, FileDao fileDao, UserDao userDao) {
         this.contentDao = contentDao;
         this.fileDao = fileDao;
+        this.userDao = userDao;
     }
 
     @Override
@@ -90,5 +93,25 @@ public class DataSourceFacadeImpl implements DataSourceFacade {
     @Override
     public Mono<FileWrapper> getFile(String filename) {
         return fileDao.getFile(filename);
+    }
+
+    @Override
+    public Mono<User> createUser(User user) {
+        return userDao.saveUser(user);
+    }
+
+    @Override
+    public Mono<User> getUser(long userId) {
+        return userDao.getUser(userId);
+    }
+
+    @Override
+    public Flux<User> getUsers(Iterable<String> roles) {
+        return userDao.getUsers(roles);
+    }
+
+    @Override
+    public Mono<Void> deleteUser(long id) {
+        return userDao.deleteUser(id);
     }
 }
