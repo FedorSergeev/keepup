@@ -278,8 +278,13 @@ public class SqlContentDao implements ContentDao {
         }
         return nodeAttributeEntityRepository.findAllByParentIdAndAttributeNameAndContentId(parentId, attributeName, EntityUtils.toByteArray(attributeValue))
                 .collect(Collectors.groupingBy(NodeAttributeEntity::getContentId, Collectors.toList()))
-                .flatMapMany(attributesByContentId -> nodeEntityRepository.findByIds(attributesByContentId.keySet())
-                                                                          .map(entity -> buildNode(entity, attributesByContentId.get(entity.getId()))))
+                .flatMapMany(attributesByContentId -> {
+                    if (attributesByContentId.isEmpty()) {
+                        return Flux.empty();
+                    }
+                    return nodeEntityRepository.findByIds(attributesByContentId.keySet())
+                                               .map(entity -> buildNode(entity, attributesByContentId.get(entity.getId())));
+                })
                 .map(cacheAdapter::updateContent);
     }
 

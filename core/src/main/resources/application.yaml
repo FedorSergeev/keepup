@@ -5,3 +5,6 @@ spring:
 logging:
   level:
     root: INFO
+keepup:
+  paths:
+    static1: /app/static
