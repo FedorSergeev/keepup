@@ -2,8 +2,12 @@ package io.keepup.cms.core.boot;
 
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.UnsatisfiedDependencyException;
+import org.junit.runner.RunWith;
+import org.springframework.test.context.junit4.SpringRunner;
 
+import java.lang.reflect.UndeclaredThrowableException;
+
+@RunWith(SpringRunner.class)
 class KeepupApplicationTest {
 
     /**
@@ -11,6 +15,6 @@ class KeepupApplicationTest {
      */
     @Test
     void main() {
-        Assert.assertThrows(UnsatisfiedDependencyException.class, KeepupApplication::main);
+        Assert.assertThrows(UndeclaredThrowableException.class, KeepupApplication::main);
     }
 }

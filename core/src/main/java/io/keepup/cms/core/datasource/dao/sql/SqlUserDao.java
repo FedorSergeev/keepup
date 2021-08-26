@@ -17,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -106,9 +107,7 @@ public class SqlUserDao implements UserDao {
         return userEntityRepository.findById(userId)
                 .flatMap(userEntity -> userAttributeEntityRepository.findAllByUserId(userId).collect(toList())
                         .map(userAttributeEntities -> buildUser(userEntity, userAttributeEntities)))
-                .flatMap(user -> roleByUserEntityRepository.findRolesByUserId(user.getId())
-                        .collect(toList())
-                        .map(roles -> getUserWithRoles(user, roles)));
+                .flatMap(this::mapUserRoles);
     }
 
     /**
@@ -132,12 +131,40 @@ public class SqlUserDao implements UserDao {
                                         .map(userAttributeEntities -> buildUser(userEntity, getUserRoles(userRoleEntities.get(userEntity.getId())), userAttributeEntities)))));
     }
 
+    /**
+     * Deletes user;s entity
+     * @param id identifier of user
+     * @return Publisher signaling the operation execution success
+     */
     @Override
     public Mono<Void> deleteUser(long id) {
-        return userEntityRepository.deleteById(id);
+        return userEntityRepository.deleteById(id)
+                .then(userAttributeEntityRepository.deleteByUserId(id))
+                .then(roleByUserEntityRepository.deleteByUserId(id));
     }
 
-    // endregion
+    /**
+     * Looks for the user spoecified by username, mostly used for security purposes
+     *
+     * @param username name of user
+     * @return Mono signaling the end of operation execution
+     */
+    @Override
+    public Mono<UserDetails> getByName(String username) {
+        return userEntityRepository.findByUsername(username)
+                .flatMap(userEntity -> userAttributeEntityRepository.findAllByUserId(userEntity.getId()).collect(toList())
+                        .map(userAttributeEntities -> buildUser(userEntity, userAttributeEntities)))
+                .flatMap(this::mapUserRoles);
+    }
+
+// endregion
+
+    @NotNull
+    private Mono<User> mapUserRoles(User user) {
+        return roleByUserEntityRepository.findRolesByUserId(user.getId())
+                .collect(toList())
+                .map(roles -> getUserWithRoles(user, roles));
+    }
 
     Iterable<String> getUserRoles(List<RoleByUserIdEntity> roleEntities) {
         return ofNullable(roleEntities)
