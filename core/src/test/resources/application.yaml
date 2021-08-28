@@ -1,0 +1,12 @@
+spring:
+  profiles.active: local-testing
+  main:
+    allow-bean-definition-overriding: true
+keepup:
+  cms:
+    resources:
+      ftp:
+        server: localhost
+        port: 4000
+        user: user
+        password: password

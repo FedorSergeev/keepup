@@ -1,14 +1,29 @@
 plugins {
+    id 'maven-publish'
     id 'org.springframework.boot' version '2.5.2'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
+    id 'jacoco'
 }
 
 group 'io.keepup.cms'
-version '2.0-SNAPSHOT'
+version '2.0'
+description = "keepup-core"
+
+sourceCompatibility = 15
+targetCompatibility = 15
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from(components.java)
+        }
+    }
+}
 
 repositories {
     mavenCentral()
+    mavenLocal()
 }
 
 dependencies {
@@ -31,11 +46,13 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
     implementation 'io.r2dbc:r2dbc-h2:0.8.1.RELEASE'
     implementation 'javax.persistence:javax.persistence-api:2.2'
+    implementation 'commons-net:commons-net:3.8.0'
     testImplementation 'org.junit.platform:junit-platform-runner:1.7.2'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testImplementation 'io.projectreactor:reactor-test'
+    testImplementation 'org.mockftpserver:MockFtpServer:2.8.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
 }
 
