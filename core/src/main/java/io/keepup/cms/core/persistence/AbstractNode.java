@@ -100,7 +100,8 @@ public abstract class AbstractNode<T> implements BasicEntity<T> {
     @SuppressWarnings("unchecked")
     @Override
     public T addAttribute(String key, Object value) {
-        T valueToSave = getType().isAssignableFrom(value.getClass())
+
+        T valueToSave = value != null && getType().isAssignableFrom(value.getClass())
                 ? (T)value
                 : convertToPersistentValue(value);
         return attributes.put(key, valueToSave);
@@ -157,7 +158,7 @@ public abstract class AbstractNode<T> implements BasicEntity<T> {
         if (attributes.get(attrName) == null && attrName.contains(".")) {
             return hasAttribute(attrName.split("\\.")[0]);
         }
-        return getAttribute(attrName) != null && !EMPTY.equals(getAttribute(attrName));
+        return attributes.containsKey(attrName);
     }
 
     /**

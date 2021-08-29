@@ -8,6 +8,7 @@ import io.keepup.cms.core.config.KeepupConfiguration;
 import io.keepup.cms.core.config.WebFluxConfig;
 import io.keepup.cms.core.datasource.resources.*;
 import io.keepup.cms.core.plugins.TestAbstractKeepupDeployBeanImpl;
+import org.boon.core.Sys;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -95,7 +96,7 @@ class StaticContentDeliveryServiceTest {
     }
 
     @Test
-    void storeWithoutFile() throws URISyntaxException, NoSuchFieldException, IllegalAccessException {
+    void storeWithoutFile() throws NoSuchFieldException, IllegalAccessException {
         setStorageType(1);
         setUpFakeServer("user");
 
@@ -104,7 +105,7 @@ class StaticContentDeliveryServiceTest {
 
         assertFalse(transferOperationResult.isSuccess());
         assertEquals(1, transferOperationResult.getCode());
-        assertTrue(transferOperationResult.getMessage().contains("java.io.FileNotFoundException: unknown_file (No such file or directory)"));
+        assertTrue(transferOperationResult.getMessage().contains("java.io.FileNotFoundException: unknown_file"));
     }
 
     @Test

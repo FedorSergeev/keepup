@@ -16,6 +16,7 @@ import java.util.Map;
  */
 public interface ContentDao {
     Mono<Content> getContent(Long id);
+    Mono<Content> getContentByIdAndType(Long id, String type);
     Flux<Content> getContent();
     Mono<Map<String, Serializable>> updateContent(Long id, Map<String, Serializable> newAttributes);
     Mono<Serializable> getContentAttribute(Long contentId, String attributeName);
@@ -23,6 +24,7 @@ public interface ContentDao {
     Flux<Content> getContentByParentIdAndByAttributeNames(Long parentId, List<String> attributeNames);
     Flux<Content> getContentByParentIdAndAttributeValue(Long parentId, String attributeName, Serializable attributeValue);
     Flux<Content> getContentByParentIds(Iterable <Long> parentIds);
+    Flux<Content> getContentByParentIdsAndType(Iterable <Long> parentIds, String type);
     Flux<Content> getContentByParentId(Long parentId);
     Mono<Long> createContent(Content content);
     Mono<Void> deleteContent(Long id);

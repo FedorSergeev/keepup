@@ -52,6 +52,8 @@ public class NodeEntity implements Serializable  {
     private boolean otherExecutePrivilege;
     @Column(name = "other_create_children_privilege", nullable = false)
     private boolean otherCreateChildrenPrivilege;
+    @Column(name = "entity_type")
+    private String entityType;
 
     public NodeEntity() {
         super();
@@ -76,6 +78,7 @@ public class NodeEntity implements Serializable  {
         otherWritePrivilege = content.getContentPrivileges().getOtherPrivileges().canWrite();
         otherExecutePrivilege = content.getContentPrivileges().getOtherPrivileges().canExecute();
         otherCreateChildrenPrivilege = content.getContentPrivileges().getOtherPrivileges().canCreateChildren();
+        setEntityType(content.getEntityType());
     }
 
     public Long getId() {
@@ -196,5 +199,13 @@ public class NodeEntity implements Serializable  {
 
     public void setOtherCreateChildrenPrivilege(boolean otherCreateChildrenPrivilege) {
         this.otherCreateChildrenPrivilege = otherCreateChildrenPrivilege;
+    }
+
+    public String getEntityType() {
+        return entityType;
+    }
+
+    public void setEntityType(String entityType) {
+        this.entityType = entityType;
     }
 }

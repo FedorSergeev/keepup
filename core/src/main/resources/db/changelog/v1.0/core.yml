@@ -125,7 +125,7 @@ databaseChangeLog:
             tableName: files
 
   - changeSet:
-      id: 1601462504025-40
+      id: 1601462504025-41
       author: Fedor Sergeev
       changes:
         - createTable:
@@ -207,6 +207,9 @@ databaseChangeLog:
                     nullable: false
                   name: role_write_privilege
                   type: BOOLEAN
+              - column:
+                  name: entity_type
+                  type: VARCHAR(255)
             tableName: NODE_ENTITY
         - createIndex:
             columns:
@@ -235,13 +238,9 @@ databaseChangeLog:
                   name: id
                   type: BIGSERIAL
               - column:
-                  constraints:
-                    nullable: false
                   name: attribute_key
                   type: VARCHAR(255)
               - column:
-                  constraints:
-                    nullable: false
                   name: attribute_value
                   type: BYTEA
               - column:
@@ -250,8 +249,6 @@ databaseChangeLog:
                   name: creation_time
                   type: TIMESTAMP WITHOUT TIME ZONE
               - column:
-                  constraints:
-                    nullable: false
                   name: java_class
                   type: VARCHAR(255)
               - column:

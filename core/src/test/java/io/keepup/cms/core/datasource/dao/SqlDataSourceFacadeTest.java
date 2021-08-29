@@ -23,6 +23,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -94,10 +96,17 @@ class SqlDataSourceFacadeTest {
     ReactiveUserEntityRepository userEntityRepository;
     @Autowired
     DataSourceFacade dataSourceFacade;
+    @Autowired
+    H2ConsoleService h2ConsoleService;
 
     @BeforeEach
     void setUp() {
         reactiveNodeEntityRepository.save(getNodeEntity());
+    }
+
+    @AfterEach
+    void tearDown() {
+        h2ConsoleService.stop();
     }
 
     @Test
@@ -125,6 +134,13 @@ class SqlDataSourceFacadeTest {
                 .collect(Collectors.toList());
 
         assertFalse(storedContent.isEmpty());
+    }
+
+    @Test
+    void getContentByNullId() {
+        Node node = getNode();
+        var fromDb = dataSourceFacade.createContent(node).flatMap(id -> dataSourceFacade.getContent(null)).block();
+        assertNull(fromDb);
     }
 
     @Test
@@ -186,6 +202,11 @@ class SqlDataSourceFacadeTest {
     }
 
     @Test
+    void updateContentAttributeWithNullContentId() {
+        assertNull(dataSourceFacade.updateContentAttribute(null, "key", "value").block());
+    }
+
+    @Test
     void updateContentAttribute() {
         String attributeToUpdate = "attributeToUpdate";
         final AtomicLong identifier = new AtomicLong();
@@ -212,6 +233,31 @@ class SqlDataSourceFacadeTest {
         assertEquals(123, storedEntityAttribute);
         assertNotNull(updatedOneMoreTime.getAttribute(attributeToUpdate));
         assertEquals(1234, updatedOneMoreTime.getAttribute(attributeToUpdate));
+
+    }
+
+    @Test
+    void updateContentAttributeBySettingNullValue() {
+        String attributeToUpdate = "attributeToUpdate";
+        final AtomicLong identifier = new AtomicLong();
+        Content node = getNode();
+        node.setAttribute(attributeToUpdate, "someValue");
+        Serializable updatedValue = dataSourceFacade.createContent(node)
+                .flatMap(id -> {
+                    identifier.set(id);
+                    return dataSourceFacade.updateContentAttribute(id, attributeToUpdate, null);
+                })
+                .block();
+        Serializable value = dataSourceFacade.getContentAttribute(identifier.get(), attributeToUpdate).block();
+        var content = dataSourceFacade.getContent(identifier.get()).block();
+
+        // region assert
+        assertNull(updatedValue);
+        assertNull(value);
+        assertTrue(content.hasAttribute(attributeToUpdate));
+        assertTrue(content.hasAttribute("%s.text".formatted(attributeToUpdate)));
+        assertFalse(content.hasAttribute(null));
+        // endregion
 
     }
 
@@ -286,6 +332,43 @@ class SqlDataSourceFacadeTest {
                         .collect(Collectors.toList())).block();
 
         assertEquals(1, result.size());
+        assertTrue(dataSourceFacade.getContentByParentIds(null).collect(Collectors.toList()).block().isEmpty());
+    }
+
+    @Test
+    void getContentByParentIdsAndType() {
+        var node0 = getNode();
+        Long contentId = dataSourceFacade.createContent(node0)
+                .flatMap(id -> {
+                    var node1 = getNode();
+                    node1.setParentId(id);
+                    node1.setEntityType("type_1");
+                    return dataSourceFacade.createContent(node1).map(savedId -> {
+                        node1.setId(savedId);
+                        return node1;
+                    });
+                })
+                .flatMap(node -> {
+                    var node1 = getNode();
+                    node1.setParentId(node.getParentId());
+                    node1.setEntityType("type_1");
+                    return dataSourceFacade.createContent(node1).map(savedId -> {
+                        node1.setId(savedId);
+                        return node1;
+                    });
+                })
+                .flatMap(node -> {
+                    var node2 = getNode();
+                    node2.setParentId(node.getParentId());
+                    node2.setEntityType("type_2");
+                    return dataSourceFacade.createContent(node2);
+                }).block();
+
+        var result = dataSourceFacade.getContent(contentId)
+                .flatMap(content -> dataSourceFacade.getContentByParentIdsAndType(Collections.singletonList(content.getParentId()), "type_1")
+                        .collect(Collectors.toList())).block();
+
+        assertEquals(2, result.size());
         assertTrue(dataSourceFacade.getContentByParentIds(null).collect(Collectors.toList()).block().isEmpty());
     }
 

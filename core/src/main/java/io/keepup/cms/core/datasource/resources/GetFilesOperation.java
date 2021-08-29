@@ -5,6 +5,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
+import org.h2.store.fs.FileUtils;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -28,6 +29,9 @@ public class GetFilesOperation implements FtpOperation<List<StoredFileData>> {
     public GetFilesOperation(String relativePath, String dumpFilePath) {
         localFilePath = "%s/ftp/".formatted(dumpFilePath);
         final var localFileDirectory = new File(localFilePath);
+        if (!localFileDirectory.exists()) {
+            FileUtils.createDirectories(localFilePath);
+        }
         this.relativePath = relativePath;
         if (!localFileDirectory.exists() && localFileDirectory.mkdir()) {
             log.debug("Local directory for files temporary storage created with path " + localFilePath);
@@ -56,8 +60,7 @@ public class GetFilesOperation implements FtpOperation<List<StoredFileData>> {
             for (FTPFile ftpFile : ftpFiles) {
                 processFtpFile(ftpClient, currentRelativePath, operationResult, files, ftpFile);
             }
-        } catch (
-                IOException e) {
+        } catch (IOException e) {
             return new TransferOperationResult<List<StoredFileData>>().error(e.toString());
         }
         operationResult.setPayload(files);
@@ -80,7 +83,6 @@ public class GetFilesOperation implements FtpOperation<List<StoredFileData>> {
                         files.addAll(filesFromDirectory.getPayload());
                     });
         } else {
-
             ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
             String filePath = currentRelativePath.endsWith(ftpFile.getName())
                     ? currentRelativePath
