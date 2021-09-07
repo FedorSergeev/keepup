@@ -67,7 +67,9 @@ public abstract class AbstractEntityAttribute implements Serializable {
     }
 
     public void setAttributeValue(byte[] attributeValue) {
-        this.attributeValue = Arrays.copyOf(attributeValue, attributeValue.length);
+        this.attributeValue = attributeValue != null
+                ? Arrays.copyOf(attributeValue, attributeValue.length)
+                : null;
     }
 
     public String getJavaClass() {

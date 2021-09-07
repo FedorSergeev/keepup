@@ -31,9 +31,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static io.keepup.cms.core.datasource.sql.EntityUtils.convertToLocalDateViaInstant;
-import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static reactor.core.publisher.Mono.empty;
 
 @Service
 public class SqlContentDao implements ContentDao {
@@ -71,13 +71,16 @@ public class SqlContentDao implements ContentDao {
      */
     @Override
     public Mono<Content> getContent(final Long id) {
+        if (id == null) {
+            return empty();
+        }
         var valueWrapper = ofNullable(cacheManager.getCache(CONTENT_CACHE_NAME))
                 .map(cache -> cache.get(id))
                 .orElse(null);
         if (valueWrapper != null) {
             return ofNullable(valueWrapper.get())
                     .map(o -> Mono.just((Content) o))
-                    .orElse(Mono.empty());
+                    .orElse(empty());
         }
 
         final List<NodeAttributeEntity> attributeEntities = new ArrayList<>();
@@ -86,6 +89,37 @@ public class SqlContentDao implements ContentDao {
                 .flatMap(attributes -> {
                     attributeEntities.addAll(attributes);
                     return nodeEntityRepository.findById(id);
+                })
+                .map(entity -> buildNode(entity, attributeEntities));
+    }
+
+    /**
+     * Looks up for the record and filters it by type
+     *
+     * @param id item identifier
+     * @param type item type
+     * @return Publicher signaling when the satisfying record is found
+     */
+    @Override
+    public Mono<Content> getContentByIdAndType(Long id, String type) {
+        if (id == null) {
+            return empty();
+        }
+        var valueWrapper = ofNullable(cacheManager.getCache(CONTENT_CACHE_NAME))
+                .map(cache -> cache.get(id))
+                .orElse(null);
+        if (valueWrapper != null) {
+            return ofNullable(valueWrapper.get())
+                    .map(o -> Mono.just((Content) o))
+                    .orElse(empty());
+        }
+
+        final List<NodeAttributeEntity> attributeEntities = new ArrayList<>();
+        return nodeAttributeEntityRepository.findAllByContentId(id)
+                .collect(Collectors.toList())
+                .flatMap(attributes -> {
+                    attributeEntities.addAll(attributes);
+                    return nodeEntityRepository.findByIdAndType(id, type);
                 })
                 .map(entity -> buildNode(entity, attributeEntities));
     }
@@ -194,7 +228,7 @@ public class SqlContentDao implements ContentDao {
                         .map(this::getContentAttribute)
                         .onErrorResume(throwable -> {
                             log.error("Error while getting Content attribute by name: " + throwable.toString());
-                            return Mono.empty();
+                            return empty();
                         }));
     }
 
@@ -208,22 +242,14 @@ public class SqlContentDao implements ContentDao {
      */
     @Override
     public Mono<Serializable> updateContentAttribute(final Long contentId, final String attributeName, final Serializable attributeValue) {
-        if (attributeValue == null) {
-            log.warn("Attempt to insert null value for attribute '%s' in content node [%d], setting value as empty object".formatted(attributeName, contentId));
+        if (contentId == null) {
+            log.error("Attempt to save attribute without Content record");
+            return empty();
         }
         log.debug("Update content attribute: contentId = %d, attributeName = %s".formatted(contentId, attributeName));
 
         return nodeAttributeEntityRepository.findByContentIdAndAttributeKey(contentId, attributeName)
-                .flatMap(nodeAttributeEntity -> {
-                    if (nodeAttributeEntity == null) {
-                        try {
-                            nodeAttributeEntity = new NodeAttributeEntity(contentId, attributeName, attributeValue);
-                        } catch (ClassCastException e) {
-                            log.error(format("Failed to serialize %s to Serializable", attributeValue));
-                        }
-                    }
-                    return saveContentAttribute(attributeName, attributeValue, nodeAttributeEntity);
-                });
+                .flatMap(nodeAttributeEntity -> saveContentAttribute(attributeName, attributeValue, nodeAttributeEntity));
     }
 
     /**
@@ -306,6 +332,25 @@ public class SqlContentDao implements ContentDao {
     }
 
     /**
+     * Like getContentByParentIds method, finds and returns {@link Content} records that are children of records
+     * with the specified identifiers, but also filters entities by type. Mostly used by custom user types serving.
+     * Result of the operation is being cached.
+     *
+     * @param parentIds parent record identifiers
+     * @param type name of entity, can be the name of entity class
+     * @return publisher for {@link Content} records
+     */
+    @Override
+    public Flux<Content> getContentByParentIdsAndType(Iterable <Long> parentIds, String type) {
+        if (parentIds == null) {
+            log.error("Null parameter parentIds was passed to getContentByParentIds method");
+            return Flux.empty();
+        }
+        return nodeEntityRepository.findByParentIdsAndType(parentIds, type)
+                .flatMap(getNodeEntityPublisherFunction());
+    }
+
+    /**
      * Finds and returns all {@link Content} records witch are children of record with the specified identifier.
      * Result of the operation is being cached. Difference between this method and getContentByParentIds is just in
      * signature as SQL query is the same
@@ -334,23 +379,32 @@ public class SqlContentDao implements ContentDao {
     }
 
     private Mono<Serializable> saveContentAttribute(String attributeName, Serializable attributeValue, NodeAttributeEntity nodeAttributeEntity) {
-        if (nodeAttributeEntity == null) {
-            log.error("Attempt to save empty content attribute with key = %s, value = %s".formatted(attributeName, attributeValue));
-            return Mono.empty();
-        }
         nodeAttributeEntity.setModificationTime(convertToLocalDateViaInstant(new Date()));
 
-        try {
-            nodeAttributeEntity.setAttributeValue(mapper.writeValueAsBytes(attributeValue));
-            nodeAttributeEntity.setJavaClass(attributeValue.getClass().toString().substring(6));
-        } catch (IOException ex) {
-            log.error("Unable to convert attribute value o byte array: %s".formatted(ex.getMessage()));
-            nodeAttributeEntity.setAttributeValue(new byte[0]);
-            nodeAttributeEntity.setJavaClass(Byte.class.getName());
+        if (attributeValue != null) {
+            try {
+                nodeAttributeEntity.setAttributeValue(mapper.writeValueAsBytes(attributeValue));
+                nodeAttributeEntity.setJavaClass(getValueTypeAsString(attributeValue));
+            } catch (IOException ex) {
+                log.error("Unable to convert attribute value o byte array: %s".formatted(ex.getMessage()));
+                nodeAttributeEntity.setAttributeValue(new byte[0]);
+                nodeAttributeEntity.setJavaClass(Byte.class.getName());
+            }
+        } else {
+            nodeAttributeEntity.setAttributeValue(null);
+            nodeAttributeEntity.setJavaClass(null);
         }
-
         return nodeAttributeEntityRepository.save(nodeAttributeEntity)
-                .map(updatedNodeAttributeEntity -> updateContentAttributeCache(attributeName, attributeValue, updatedNodeAttributeEntity));
+                .mapNotNull(updatedNodeAttributeEntity -> updateContentAttributeCache(attributeName, attributeValue, updatedNodeAttributeEntity));
+    }
+
+    @NotNull
+    private String getValueTypeAsString(Serializable attributeValue) {
+        return ofNullable(attributeValue)
+                .map(Object::getClass)
+                .map(Class::toString)
+                .map(str -> str.substring(6))
+                .orElse(EMPTY);
     }
 
     private Serializable updateContentAttributeCache(String attributeName, Serializable attributeValue, NodeAttributeEntity updatedNodeAttributeEntity) {
@@ -385,13 +439,13 @@ public class SqlContentDao implements ContentDao {
      * @param nodeAttributeEntity attribute entity to paste
      */
     private void addNodeAttributeToContent(Content content, NodeAttributeEntity nodeAttributeEntity) {
-        var contentAttribute = getContentAttribute(nodeAttributeEntity);
-        if (contentAttribute != null) {
-            content.setAttribute(nodeAttributeEntity.getAttributeKey(), contentAttribute);
-        }
+        content.setAttribute(nodeAttributeEntity.getAttributeKey(), getContentAttribute(nodeAttributeEntity));
     }
 
     private Serializable getContentAttribute(NodeAttributeEntity nodeAttributeEntity) {
+        if (nodeAttributeEntity.getJavaClass() == null || nodeAttributeEntity.getAttributeValue() == null) {
+            return null;
+        }
         try {
             Class<?> attributeType = Class.forName(nodeAttributeEntity.getJavaClass());
             if (List.class.isAssignableFrom(attributeType) || nodeAttributeEntity.getJavaClass().contains("$ArrayList")) {
@@ -409,6 +463,7 @@ public class SqlContentDao implements ContentDao {
     Content buildNode(NodeEntity nodeEntity, List<NodeAttributeEntity> attributeEntities) {
         // as we call this method from reactive chain there is no success result with null NodeEntity
         final Content content = new Node(nodeEntity.getId());
+        content.setEntityType(nodeEntity.getEntityType());
         content.setParentId(nodeEntity.getParentId());
         content.setOwnerId(nodeEntity.getOwnerId());
         content.setContentPrivileges(new ContentPrivileges());

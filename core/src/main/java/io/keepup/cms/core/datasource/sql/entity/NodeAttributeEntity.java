@@ -1,8 +1,6 @@
 package io.keepup.cms.core.datasource.sql.entity;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.netty.util.internal.StringUtil;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.data.annotation.Id;
 
@@ -12,10 +10,11 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.Date;
-import java.util.Optional;
 
 import static io.keepup.cms.core.datasource.sql.EntityUtils.convertToLocalDateViaInstant;
 import static java.lang.String.format;
+import static java.util.Optional.ofNullable;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 /**
  * Persistent node attribute
@@ -80,14 +79,16 @@ public class NodeAttributeEntity extends AbstractEntityAttribute {
 
     @Override
     public final String toString() {
-        var stringAttributeValue = StringUtils.EMPTY;
-        if (getAttributeValue() == null) {
-            setDefaultValue();
-        }
-        try {
-            stringAttributeValue = new ObjectMapper().readValue(getAttributeValue(), Class.forName(getJavaClass())).toString();
-        } catch (IOException | ClassNotFoundException ex) {
-            LogFactory.getLog(this.getClass()).error(format("Could not parse attribute value: %s", ex.getMessage()));
+        var stringAttributeValue = EMPTY;
+
+        if (getAttributeValue() == null || getJavaClass() == null) {
+            stringAttributeValue = "NULL";
+        } else {
+            try {
+                stringAttributeValue = new ObjectMapper().readValue(getAttributeValue(), Class.forName(getJavaClass())).toString();
+            } catch (IOException | ClassNotFoundException ex) {
+                LogFactory.getLog(this.getClass()).error(format("Could not parse attribute value: %s", ex.getMessage()));
+            }
         }
         String strId;
         if (id == null) {
@@ -96,11 +97,11 @@ public class NodeAttributeEntity extends AbstractEntityAttribute {
             strId = Long.toString(id);
         }
         return "id= ".concat(strId)
-                .concat(" contentId=").concat(Optional.ofNullable(contentId).map(NodeAttributeEntity::apply).orElse(StringUtil.EMPTY_STRING))
+                .concat(" contentId=").concat(ofNullable(contentId).map(NodeAttributeEntity::apply).orElse(EMPTY))
                 .concat(" attributeKey=").concat(getAttributeKey())
                 .concat(" attributeValue=").concat(stringAttributeValue)
                 .concat(" creationTime=").concat(getCreationTime().toString())
-                .concat(" modificationTime=").concat(Optional.ofNullable(getModificationTime()).map(LocalDate::toString).orElse("null"));
+                .concat(" modificationTime=").concat(ofNullable(getModificationTime()).map(LocalDate::toString).orElse("null"));
     }
 
     public NodeAttributeEntity(Long id, Long contentId, String key, Serializable value) {

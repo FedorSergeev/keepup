@@ -47,4 +47,12 @@ class NodeTest {
         assertEquals(1, map.get(node));
         assertEquals(2, map.get(node2));
     }
+
+    @Test
+    void removeAttribute() {
+        node.addAttribute("toRemove", true);
+        node.removeAttribute("toRemove");
+
+        assertFalse(node.hasAttribute("toDelete"));
+    }
 }

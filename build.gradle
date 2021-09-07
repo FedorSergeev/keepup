@@ -1,6 +1,5 @@
 allprojects {
     apply plugin: 'java'
-    apply plugin: 'maven'
     apply plugin: 'maven-publish'
     apply plugin: 'jacoco'
 
@@ -25,6 +24,7 @@ dependencies {
 }
 
 test {
+    testLogging.showStandardStreams = true
     useJUnitPlatform()
 }
 

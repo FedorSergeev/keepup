@@ -29,6 +29,19 @@ public interface Content extends BasicEntity<Serializable> {
      * Set default content access {@link ContentPrivileges}
      */
     void setDefaultPrivileges();
+
+    /**
+     * Object type, e.g. name of class of entity persisted by {@link Content} storage
+     * @return name of object type
+     */
+    String getEntityType();
+
+    /**
+     * Set object type
+     * @param entityType entity that was converted to {@link Content} record. Can be null if there is
+     *                   no need to wrap {@link Content} objects to some other types.
+     */
+    void setEntityType(String entityType);
     
     boolean isRoot();
 }

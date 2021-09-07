@@ -24,10 +24,6 @@ public class StoredFileData {
         return file;
     }
 
-    public void setFile(File file) {
-        this.file = file;
-    }
-
     public String getPath() {
         return path;
     }

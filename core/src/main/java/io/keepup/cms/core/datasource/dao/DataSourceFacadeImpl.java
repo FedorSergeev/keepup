@@ -37,6 +37,11 @@ public class DataSourceFacadeImpl implements DataSourceFacade {
     }
 
     @Override
+    public Mono<Content> getContentByIdAndType(Long id, String type) {
+        return contentDao.getContentByIdAndType(id, type);
+    }
+
+    @Override
     public Flux<Content> getContent() {
         return contentDao.getContent();
     }
@@ -69,6 +74,11 @@ public class DataSourceFacadeImpl implements DataSourceFacade {
     @Override
     public Flux<Content> getContentByParentIds(Iterable<Long> parentIds) {
         return contentDao.getContentByParentIds(parentIds);
+    }
+
+    @Override
+    public Flux<Content> getContentByParentIdsAndType(Iterable <Long> parentIds, String type) {
+        return contentDao.getContentByParentIdsAndType(parentIds, type);
     }
 
     @Override

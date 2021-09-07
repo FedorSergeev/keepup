@@ -24,11 +24,14 @@ public class Node extends AbstractNode<Serializable> implements Content, Seriali
     private static final long serialVersionUID = 1L;
     private static final String OWNER_ID = "ownerId";
     private static final String PRIVILEGES_KEY = "privileges";
+    private static final String ENTITY_TYPE = "entityType";
 
     @JsonProperty(OWNER_ID)
     protected Long ownerId;
     @JsonProperty(PRIVILEGES_KEY)
     protected ContentPrivileges privileges;
+    @JsonProperty(ENTITY_TYPE)
+    protected String entityType;
 
     /**
      * Constructor.
@@ -195,6 +198,16 @@ public class Node extends AbstractNode<Serializable> implements Content, Seriali
         return Serializable.class;
     }
 
+    @Override
+    public void setEntityType(String entityType) {
+        this.entityType = entityType;
+    }
+
+    @Override
+    public String getEntityType() {
+        return entityType;
+    }
+
     /**
      * Unfortunately does not work with inner classes and classes without default constructor
      *
@@ -203,6 +216,12 @@ public class Node extends AbstractNode<Serializable> implements Content, Seriali
      */
     @Override
     protected Serializable convertToPersistentValue(Object value) {
+        return value == null
+                ? null
+                : getSerializable(value);
+    }
+
+    private Serializable getSerializable(Object value) {
         var enhancer = new Enhancer();
         enhancer.setSuperclass(value.getClass());
         enhancer.setInterfaces(new Class[]{Serializable.class});

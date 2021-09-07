@@ -96,6 +96,7 @@ public class GetFilesOperationTest {
         assertEquals(2, ((List<StoredFileData>)operationResult.getPayload()).size());
         assertFalse(((List<StoredFileData>)operationResult.getPayload()).isEmpty());
         assertNotNull(((List<StoredFileData>)operationResult.getPayload()).get(0).getFile());
+        assertNotNull(((List<StoredFileData>)operationResult.getPayload()).get(0).getPath());
         assertTrue(operationResult.isSuccess());
     }
 
