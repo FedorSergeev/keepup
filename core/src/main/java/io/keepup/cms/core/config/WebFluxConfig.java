@@ -3,6 +3,7 @@ package io.keepup.cms.core.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 
 /**
@@ -19,6 +20,7 @@ public class WebFluxConfig implements WebFluxConfigurer {
      * @return application object mapper
      */
     @Bean
+    @Primary
     public ObjectMapper getObjectMapper() {
         return new ObjectMapper();
     }

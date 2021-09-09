@@ -62,3 +62,5 @@ public class TestEntity implements Serializable {
     private String someValue;
 }
 ```
+
+Please note that entities are being converted taking into account that if there is no such field or if the field has another type then the field in the entity will be null but the whole entity is not filtered. You can add additional filter to the reactive chain if you want to add some nullability checks or other predicates.

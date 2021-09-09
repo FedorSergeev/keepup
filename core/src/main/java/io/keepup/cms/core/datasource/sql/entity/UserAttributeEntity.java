@@ -79,9 +79,7 @@ public class UserAttributeEntity extends AbstractEntityAttribute {
         }
         setModificationTime(convertToLocalDateViaInstant(new Date()));
         if (value == null) {
-            log.warn("[USER#%d] Attribute '%s' is null, setting value tu empty byte array"
-                    .formatted(userId, key));
-            setDefaultValue();
+            log.warn("[USER#%d] Attribute '%s' is null".formatted(userId, key));
         } else {
             try {
                 setAttributeValue(new ObjectMapper().writeValueAsBytes(value));

@@ -299,8 +299,6 @@ databaseChangeLog:
                   name: attribute_key
                   type: VARCHAR(255)
               - column:
-                  constraints:
-                    nullable: false
                   name: attribute_value
                   type: BYTEA
               - column:
@@ -309,8 +307,6 @@ databaseChangeLog:
                   name: creation_time
                   type: TIMESTAMP WITHOUT TIME ZONE
               - column:
-                  constraints:
-                    nullable: false
                   name: java_class
                   type: VARCHAR(255)
               - column:

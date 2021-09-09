@@ -21,7 +21,7 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     - name: Build with Gradle
-      run: ./gradlew build --debug
+      run: ./gradlew build
     - name: JaCoCo
       run: ./gradlew codeCoverageReport
     - name: Coverage

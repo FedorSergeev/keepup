@@ -48,8 +48,7 @@ public class NodeAttributeEntity extends AbstractEntityAttribute {
         setCreationTime(convertToLocalDateViaInstant(new Date()));
         setModificationTime(convertToLocalDateViaInstant(new Date()));
         if (value == null) {
-            log.warn(format("[NODE#%d] Attribute '%s' is null, setting value tu empty byte array", contentId, key));
-            setDefaultValue();
+            log.warn(format("[NODE#%d] Attribute '%s' is null", contentId, key));
         } else {
             try {
                 setAttributeValue(new ObjectMapper().writeValueAsBytes(value));
