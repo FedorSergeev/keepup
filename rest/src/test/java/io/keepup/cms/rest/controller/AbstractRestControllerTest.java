@@ -27,12 +27,14 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -276,5 +278,31 @@ class AbstractRestControllerTest {
                 });
 
         FieldUtils.writeField(someEntityController, "operationService", service, true);
+    }
+
+    @Test
+    void save() {
+        var entity = new SomeEntity();
+        entity.setValue("new_value");
+        client.mutateWith(SecurityMockServerConfigurers.csrf())
+                .post()
+                .uri("/rest-test")
+                .body(Mono.just(entity), SomeEntity.class)
+                .exchange()
+                .expectStatus().isOk();
+    }
+
+    @Test
+    void delete() {
+        var entity = new SomeEntity();
+        entity.setValue("new_value");
+        someEntityService.save(entity, 0L)
+                .map(saved ->
+        client.mutateWith(SecurityMockServerConfigurers.csrf())
+                .delete()
+                .uri("/rest-test/%d".formatted(saved.getId()))
+                .exchange()
+                .expectStatus().isOk())
+                .block();
     }
 }
