@@ -30,7 +30,26 @@ Flags and profiles
 
 Security rules
 
-## 1.3 Managing custom user objects
+## 1.3 Web requests customization
+
+CSRF protection can be disabled in the settings (e.g. application.properties):
+
+```
+keepup.security.csrf-enabled=false
+```
+
+By default CSRF is enabled.
+
+Limit on the number of bytes that can be buffered whenever the input stream needs to be aggregated for web requests can 
+be also customized by setting value of keepup.web.codecs.max-memory-size property:
+
+```
+keepup.web.codecs.max-memory-size=100000
+```
+
+Default value is 8192 bytes.
+
+## 1.4 Managing custom user objects
 
 Usually, in order to write a well-functioning and easily maintainable application, you need to control objects, their field types, possible operations, and other things. It is quite difficult to do this using the standard set of entities of the KeepUP framework, which is based on abstraction that implements the io.keepup.cms.core.persistence.Content interface. Therefore, we added an additional abstract service, from which you can inherit your class, which will manage operations on objects of the type you need:
 

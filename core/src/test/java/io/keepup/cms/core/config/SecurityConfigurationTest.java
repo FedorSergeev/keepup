@@ -43,6 +43,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @RunWith(SpringRunner.class)
 @TestPropertySource(properties = {
         "keepup.security.path-matchers=/testing,/testing/with-role,/with-role-admin",
+        "keepup.security.csrf-enabled=false"
 })
 @ContextConfiguration(classes = {
         BCryptPasswordEncoder.class,
