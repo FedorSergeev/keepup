@@ -67,6 +67,12 @@ public class SecurityConfiguration {
     @Value("${keepup.security.logout-url:/logout}")
     private String logoutUrl;
 
+    /**
+     * CSRF protectyion toggle
+     */
+    @Value("${keepup.security.csrf-enabled:true}")
+    private boolean csrfEnabled;
+
     public SecurityConfiguration(DataSourceFacade dataSourceFacade) {
         this.dataSourceFacade = dataSourceFacade;
         log.debug("Security configuration instantiated with data source facade");
@@ -95,6 +101,9 @@ public class SecurityConfiguration {
                     .requiresLogout(ServerWebExchangeMatchers.pathMatchers(HttpMethod.GET, logoutUrl))
                     .logoutSuccessHandler((exchange, authentication)  -> getLogoutSuccessHandler(exchange))
                 .and()
+                .csrf(csrfSpec -> {
+                    if (!csrfEnabled) csrfSpec.disable();
+                })
                 .build();
     }
 

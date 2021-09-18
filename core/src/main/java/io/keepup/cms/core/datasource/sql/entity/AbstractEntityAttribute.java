@@ -30,7 +30,7 @@ public abstract class AbstractEntityAttribute implements Serializable {
      * when storing some data. One can also build his own DAO repositories in the database if this practice is not
      * efficient for his cases.
      */
-    @Column(name = "attribute_value", nullable = false)
+    @Column(name = "attribute_value")
     @Lob
     @Type(type = "org.hibernate.type.BinaryType")
     private byte[] attributeValue;

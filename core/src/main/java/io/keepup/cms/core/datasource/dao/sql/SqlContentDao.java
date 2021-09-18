@@ -14,6 +14,7 @@ import io.keepup.cms.core.persistence.Content;
 import io.keepup.cms.core.persistence.Node;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.boon.core.Sys;
 import org.jetbrains.annotations.NotNull;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -373,7 +374,7 @@ public class SqlContentDao implements ContentDao {
     @NotNull
     private Function<NodeEntity, Publisher<? extends Content>> getNodeEntityPublisherFunction() {
         return nodeEntity -> nodeAttributeEntityRepository.findAllByContentId(nodeEntity.getId())
-                .collect(Collectors.toList())
+                .collectList()
                 .map(nodeAttributeEntities -> buildNode(nodeEntity, nodeAttributeEntities))
                 .map(cacheAdapter::updateContent);
     }

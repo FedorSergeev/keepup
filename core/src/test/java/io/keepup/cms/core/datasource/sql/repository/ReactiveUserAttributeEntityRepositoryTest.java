@@ -103,6 +103,7 @@ class ReactiveUserAttributeEntityRepositoryTest {
 
     @Test
     void findAllByUserIdWithAttributeNames() {
+        userAttributeEntityRepository.deleteAll().block();
         UserAttributeEntity userAttributeEntity_0 = new UserAttributeEntity();
         userAttributeEntity_0.setUserId(USER_ID);
         userAttributeEntity_0.serializeValue("key_0", "firstValue");

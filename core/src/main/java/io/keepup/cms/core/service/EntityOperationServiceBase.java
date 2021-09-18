@@ -76,7 +76,9 @@ public abstract class EntityOperationServiceBase<T> implements EntityService<T> 
     @Override
     public Mono<T> get(Long id) {
         return dataSourceFacade.getContentByIdAndType(id, typeClass.getTypeName())
-                .map(this::convert);
+                .flatMap(this::convert)
+                .doOnError(throwable -> log.error("Failed to process fetch entity with id %s from data source: %s"
+                        .formatted(id, throwable.toString())));
     }
 
     /**
@@ -89,8 +91,14 @@ public abstract class EntityOperationServiceBase<T> implements EntityService<T> 
      */
     @Override
     public Flux<T> getAll() {
-        return dataSourceFacade.getContentByParentIdsAndType(entityParentIds, this.typeClass.getTypeName())
-                .map(this::convert);
+        return dataSourceFacade.getContentByParentIdsAndType(entityParentIds, typeClass.getTypeName())
+                .flatMap(this::convert)
+                .onErrorResume(t -> {
+                    log.error(t.toString());
+                    return Flux.error(t);
+                })
+                .doOnError(throwable -> log.error("Failed to process fetch entity from data source: %s"
+                        .formatted(throwable.toString())));
     }
 
     /**
@@ -271,13 +279,13 @@ public abstract class EntityOperationServiceBase<T> implements EntityService<T> 
      * @param content content entity to be converted
      * @return converted data transfer object
      */
-    protected T convert(Content content) {
+    protected Mono<T> convert(Content content) {
         final T entity;
         try {
             entity = typeClass.getDeclaredConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             log.error("Failed to instantiate entity by default constructor: %s".formatted(e.toString()));
-            return null;
+            return Mono.error(e);
         }
 
         for (Field field : typeClass.getDeclaredFields()) {
@@ -288,7 +296,7 @@ public abstract class EntityOperationServiceBase<T> implements EntityService<T> 
                 mapEntityField(content, entity, field);
             }
         }
-        return entity;
+        return Mono.just(entity);
     }
 
     private void mapEntityField(Content content, T entity, Field field) {
