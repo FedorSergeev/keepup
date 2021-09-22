@@ -462,16 +462,56 @@ databaseChangeLog:
                   name: id
                   type: BIGSERIAL
               - column:
-                  constraints:
-                    nullable: false
                   name: html
-                  type: TEXT
+                  type: VARCHAR(255)
               - column:
                   constraints:
                     nullable: false
                   name: name
                   type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: attributes
+                  type: VARCHAR(255)
             tableName: layouts
+
+  - changeSet:
+      id: 1632477303727
+      author: Fedor Sergeev
+      changes:
+        - addUniqueConstraint:
+            columnNames: name
+            constraintName: conatrsint_layout_name
+            validate: true
+            disabled: false
+            tableName: layouts
+
+  # Link table between Content record and it's Java types
+  - changeSet:
+      id: 1601462504025-110
+      author: Fedor Sergeev
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: entity_classes_pkey
+                  name: id
+                  type: BIGSERIAL
+              - column:
+                  constraints:
+                    nullable: false
+                  name: content_id
+                  type: BIGSERIAL
+              - column:
+                  constraints:
+                    nullable: false
+                  name: class_name
+                  type: VARCHAR(255)
+            tableName: entity_classes
 
 
   - changeSet:
@@ -533,7 +573,6 @@ databaseChangeLog:
         - createSequence:
             cacheSize: 1
             cycle: false
-
             incrementBy: 1
             maxValue: 9223372036854775807
             minValue: 1

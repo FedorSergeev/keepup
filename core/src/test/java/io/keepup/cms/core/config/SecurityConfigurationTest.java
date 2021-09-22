@@ -122,9 +122,7 @@ class SecurityConfigurationTest {
         user.setEnabled(true);
         dataSourceFacade.createUser(user).map(savedUser ->
                 webClient.mutateWith(SecurityMockServerConfigurers.csrf()).post()
-
                         .uri("/login")
-
                         .body(BodyInserters.fromFormData("username", savedUser.getUsername())
                                 .with("password", "test"))
                         .exchange()

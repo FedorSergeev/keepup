@@ -37,6 +37,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayOutputStream;
@@ -146,6 +147,67 @@ class SqlDataSourceFacadeTest {
     void getEmptyContent() {
         Mono<Content> content = dataSourceFacade.getContent(Long.MAX_VALUE);
         assertNull(content.block());
+    }
+
+    @Test
+    void getContentByIdWithChildrenOnlyOneNode() {
+        Node node = getNode();
+        var contentList = dataSourceFacade.createContent(node)
+                .flatMap(id -> dataSourceFacade.getContentByIdWithChildren(id).collectList())
+                .block();
+        assertNotNull(contentList);
+        assertFalse(contentList.isEmpty());
+        assertEquals(1, contentList.size());
+    }
+
+    @Test
+    void getContentByIdWithChildrenOneParentAndThreeChildren() {
+        final Node parentNode = getNode();
+        final Node childNode0 = getNode();
+        final Node childNode1 = getNode();
+        final Node childNode2 = getNode();
+        var contentList = dataSourceFacade.createContent(parentNode)
+                .flatMap(id -> {
+                    childNode0.setParentId(id);
+                    childNode1.setParentId(id);
+                    childNode2.setParentId(id);
+                    return dataSourceFacade.createContent(childNode0)
+                            .then(dataSourceFacade.createContent(childNode1))
+                            .then(dataSourceFacade.createContent(childNode2))
+                            .thenReturn(id);
+                })
+                .flatMap(id -> dataSourceFacade.getContentByIdWithChildren(id).collectList())
+                .block();
+        assertNotNull(contentList);
+        assertFalse(contentList.isEmpty());
+        assertEquals(4, contentList.size());
+    }
+
+    @Test
+    void getContentByIdWithChildrenWithoutParent() {
+        final Node childNode0 = getNode();
+        childNode0.setAttribute("getContentByIdWithChildrenWithoutParent", true);
+        final Node childNode1 = getNode();
+        childNode1.setAttribute("getContentByIdWithChildrenWithoutParent", true);
+        final Node childNode2 = getNode();
+        childNode2.setAttribute("getContentByIdWithChildrenWithoutParent", true);
+        var content = dataSourceFacade.createContent(childNode0)
+                .then(dataSourceFacade.createContent(childNode1))
+                .then(dataSourceFacade.createContent(childNode2))
+                .then(dataSourceFacade.getContentByIdWithChildren(0L)
+                        .filter(item -> item.hasAttribute("getContentByIdWithChildrenWithoutParent") && (Boolean)item.getAttribute("getContentByIdWithChildrenWithoutParent"))
+                        .collectList())
+                .block();
+        assertNotNull(content);
+        assertFalse(content.isEmpty());
+        assertEquals(3, content.size());
+    }
+
+    @Test
+    void getContentByIdWithChildrenByNullId() {
+        List<Content> contentList = dataSourceFacade.getContentByIdWithChildren(null).collectList().block();
+        assertNotNull(contentList);
+        assertTrue(contentList.isEmpty());
     }
 
     @Test

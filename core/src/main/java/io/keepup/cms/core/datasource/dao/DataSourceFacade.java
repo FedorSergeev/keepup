@@ -21,6 +21,7 @@ public interface DataSourceFacade {
     // region Content operations
     Mono<Content> getContent(Long id);
     Mono<Content> getContentByIdAndType(Long id, String type);
+    Flux<Content> getContentByIdWithChildren(Long id);
     Flux<Content> getContent();
     Mono<Map<String, Serializable>> updateContent(Long id, Map<String, Serializable> newAttributes);
     Mono<Serializable> getContentAttribute(Long contentId, String attributeName);

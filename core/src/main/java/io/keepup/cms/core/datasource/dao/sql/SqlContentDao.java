@@ -14,7 +14,6 @@ import io.keepup.cms.core.persistence.Content;
 import io.keepup.cms.core.persistence.Node;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.boon.core.Sys;
 import org.jetbrains.annotations.NotNull;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -99,7 +98,7 @@ public class SqlContentDao implements ContentDao {
      *
      * @param id item identifier
      * @param type item type
-     * @return Publicher signaling when the satisfying record is found
+     * @return Publisher signaling when the satisfying record is found
      */
     @Override
     public Mono<Content> getContentByIdAndType(Long id, String type) {
@@ -117,12 +116,27 @@ public class SqlContentDao implements ContentDao {
 
         final List<NodeAttributeEntity> attributeEntities = new ArrayList<>();
         return nodeAttributeEntityRepository.findAllByContentId(id)
-                .collect(Collectors.toList())
+                .collectList()
                 .flatMap(attributes -> {
                     attributeEntities.addAll(attributes);
                     return nodeEntityRepository.findByIdAndType(id, type);
                 })
                 .map(entity -> buildNode(entity, attributeEntities));
+    }
+
+    /**
+     * Looks for {@link Content} node with the specified identifier and for it's children
+     *
+     * @param id node identifier
+     * @return Publisher signaling when objects specified by id or parent id found
+     */
+    public Flux<Content> getContentByIdWithChildren(Long id) {
+        return nodeEntityRepository.findByIdOrByParentId(id)
+                .flatMap(node ->
+                        nodeAttributeEntityRepository.findAllByContentId(node.getId())
+                                .collect(Collectors.toList())
+                                .map(nodeAttributeEntities -> buildNode(node, nodeAttributeEntities)))
+                .doOnNext(cacheAdapter::updateContent);
     }
 
     /**

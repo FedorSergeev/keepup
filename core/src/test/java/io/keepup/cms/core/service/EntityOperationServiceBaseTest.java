@@ -11,12 +11,13 @@ import io.keepup.cms.core.datasource.dao.DataSourceFacadeImpl;
 import io.keepup.cms.core.datasource.dao.sql.SqlContentDao;
 import io.keepup.cms.core.datasource.dao.sql.SqlFileDao;
 import io.keepup.cms.core.datasource.dao.sql.SqlUserDao;
+import io.keepup.cms.core.datasource.sql.repository.ReactiveContentClassRepository;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveNodeAttributeEntityRepository;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveNodeEntityRepository;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveUserEntityRepository;
+import io.keepup.cms.core.exception.EntityValidationException;
 import io.keepup.cms.core.persistence.Content;
 import io.keepup.cms.core.persistence.Node;
-import org.boon.core.Sys;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -31,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
@@ -54,7 +56,8 @@ import static org.junit.Assert.*;
         TestEntityOperationService.class,
         TestNotSerializableAttributesEntityOperationService.class,
         TestEntityWithoutDefaultConstructorOperationService.class,
-        EntityWithFinalFieldOperationService.class
+        EntityWithFinalFieldOperationService.class,
+        TestEntityInterfaceService.class
 })
 @DataR2dbcTest
 class EntityOperationServiceBaseTest {
@@ -67,7 +70,11 @@ class EntityOperationServiceBaseTest {
     @Autowired
     EntityWithFinalFieldOperationService entityWithFinalFieldOperationService;
     @Autowired
+    TestEntityInterfaceService testEntityInterfaceService;
+    @Autowired
     DataSourceFacade dataSourceFacade;
+    @Autowired
+    ReactiveContentClassRepository contentClassRepository;
 
     @Test
     void get() {
@@ -259,7 +266,7 @@ class EntityOperationServiceBaseTest {
         testEntity.setSomeValue("some_value");
         var result = entityOperationService.save(testEntity, 0L)
                 .then(Mono.just(entityParentIds.addAll(entityOperationService.getEntityParentIds()))
-                .thenReturn(getObjectMono())
+                .then(getObjectMono())
                 .then(entityOperationService.getAll().collect(Collectors.toList()))).block();
         entityOperationService.setEntityParentIds(entityParentIds);
 
@@ -283,6 +290,77 @@ class EntityOperationServiceBaseTest {
         System.setSecurityManager(securityManager);
 
         assertNotNull(saved);
+    }
+
+    @Test
+    void convertWithNullEntityType() {
+        Content content = getNode();
+        content.setEntityType(null);
+        assertThrows(RuntimeException.class, () -> entityOperationService.convert(content).block());
+    }
+
+    @Test
+    void convertWithWrongClassNameInEntityType() {
+        Throwable exception = null;
+        Content content = getNode();
+        content.setEntityType("WrongClassName");
+        try {
+            entityOperationService.convert(content).block();
+        } catch (Throwable e) {
+            exception = e;
+        }
+        assertNotNull(exception);
+        assertEquals(ClassNotFoundException.class, exception.getCause().getClass());
+    }
+
+    @Test
+    void convertWithAnotherClassNameInEntityType() {
+        Throwable exception = null;
+        Content content = getNode();
+        content.setEntityType("io.keepup.cms.core.service.TestNotSerializableEntity");
+        try {
+            entityOperationService.convert(content).block();
+        } catch (Throwable e) {
+            exception = e;
+        }
+        assertNotNull(exception);
+        assertEquals(ClassCastException.class, exception.getClass());
+    }
+
+    @Test
+    void saveAndGetByInterfaceGenerifiedService() {
+        TestEntityInterface testEntity = new TestEntityInterfaceImpl();
+        var newEntity = testEntityInterfaceService.save(testEntity, 0L)
+                .flatMap(savedEntity -> testEntityInterfaceService.get(savedEntity.getId()))
+                .block();
+        assertNotNull(newEntity);
+        assertNull(newEntity.getName());
+        assertNotNull(newEntity.getId());
+    }
+
+    @Test
+    void saveAndGetByInterfaceGenerifiedServiceWithoutDefinedInterface() {
+        TestEntityInterface testEntity = new TestEntityInterfaceImpl();
+        final AtomicLong id = new AtomicLong();
+        var newEntity = testEntityInterfaceService.save(testEntity, 0L)
+                .map(savedEntity -> {
+                    id.set(savedEntity.getId());
+                    return savedEntity.getId();
+                })
+                .then(contentClassRepository.deleteAll())
+                .then(testEntityInterfaceService.get(id.get()))
+                .block();
+        assertNull(newEntity);
+    }
+
+    @Test
+    void saveEntityByNullIdAndReceiveNull() {
+        assertNull(testEntityInterfaceService.save(null, 0L).block());
+    }
+
+    @Test
+    void saveEntityByNullIdAndReceiveError() {
+        assertThrows(EntityValidationException.class, () -> testEntityInterfaceService.save(new TestEntityInterfaceImpl(), 0L, null).block());
     }
 
     @NotNull
