@@ -83,3 +83,30 @@ public class TestEntity implements Serializable {
 ```
 
 Please note that entities are being converted taking into account that if there is no such field or if the field has another type then the field in the entity will be null but the whole entity is not filtered. You can add additional filter to the reactive chain if you want to add some nullability checks or other predicates.
+
+## Catalog Module
+
+This module is responsible for two possible scenarios for using the CMS:
+* Working with typed objects through the administration panel on the server
+* Publishing web pages to CDN, a separate server for storing static files, or to local storage in the same place where the application is located
+
+### Working with objects via REST requests
+
+We can receive information about objects, as well as carry out work with them, using the web administration panel, or through a mobile application. In some cases, a standalone application can be used to work on the client side, but the concept remains the same: we must receive data from the server and somehow display it. For this, implementations of the abstract class AbstractRestController can be used, but the question arises of how to quickly create a view of objects with which you can display the received data on any client. To solve this issue, we have provided special abstractions: objects of the Layout type.
+
+### The basic concept of Layout
+
+Object fields managed by KeepUP can be described by a set of metadata responsible for displaying it in the catalog (among other objects, possibly of different types). Each field that should be displayed on the client is described using the following characteristics:
+
+* Key - field name (for example, testKey)
+* Name - the name of the field in the table (for example, "Test Value")
+* table - a flag that is responsible for whether the field should be displayed in the table
+* Tag - html tag for displaying an item in a table cell in a list of items
+
+![alt text](catalogEntityMapping.png "Entity and view mapping at front side")
+
+### Switching the plugin
+
+The plugin is disabled by default, but you can activate it by adding the following parameter to the application configuration (for example, the application.properties file):
+
+keepup.plugins.catalog.enabled = true

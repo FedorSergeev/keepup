@@ -2,6 +2,9 @@ package io.keepup.cms.core.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.keepup.cms.core.datasource.dao.DataSourceFacade;
+import io.keepup.cms.core.datasource.sql.entity.ContentClass;
+import io.keepup.cms.core.datasource.sql.repository.ReactiveContentClassRepository;
+import io.keepup.cms.core.exception.EntityValidationException;
 import io.keepup.cms.core.persistence.Content;
 import io.keepup.cms.core.persistence.Node;
 import org.apache.commons.lang3.StringUtils;
@@ -26,10 +29,13 @@ import java.lang.reflect.ParameterizedType;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static java.util.Arrays.stream;
 import static java.util.Optional.ofNullable;
 import static reactor.core.publisher.Mono.empty;
+import static reactor.core.publisher.Mono.error;
 
 /**
  * Provides CRUD methods for work with different turn entities.
@@ -46,6 +52,7 @@ public abstract class EntityOperationServiceBase<T> implements EntityService<T> 
     private final Class<T> typeClass;
 
     private ObjectMapper mapper;
+    private ReactiveContentClassRepository contentClassRepository;
 
     protected final Log log = LogFactory.getLog(getClass());
     protected List<Long> entityParentIds;
@@ -62,12 +69,20 @@ public abstract class EntityOperationServiceBase<T> implements EntityService<T> 
     }
 
     @Autowired
+    public void setContentClassRepository(ReactiveContentClassRepository contentClassRepository) {
+        this.contentClassRepository = contentClassRepository;
+    }
+
+    @Autowired
     public void setDataSourceFacade(DataSourceFacade dataSourceFacade) {
         this.dataSourceFacade = dataSourceFacade;
     }
 
     /**
-     * Basic method for mapping data source records to POJOs
+     * Basic method for mapping data source records to POJOs. If service is specified by interface, not the
+     * implementation class, method attempts to look for all classes stored for record with the specified identifier
+     * then selects for all the {@link Content} records witch have one of those implementations (with the specified id
+     * there can be only one) and take the last from reactive stream.
      *
      * @param id object identifier
      * @return is not supported in abstract implementation as convert method should be implemented
@@ -75,7 +90,7 @@ public abstract class EntityOperationServiceBase<T> implements EntityService<T> 
      */
     @Override
     public Mono<T> get(Long id) {
-        return dataSourceFacade.getContentByIdAndType(id, typeClass.getTypeName())
+        return getContentById(id)
                 .flatMap(this::convert)
                 .doOnError(throwable -> log.error("Failed to process fetch entity with id %s from data source: %s"
                         .formatted(id, throwable.toString())));
@@ -87,7 +102,8 @@ public abstract class EntityOperationServiceBase<T> implements EntityService<T> 
      * if there is a number of different object types with the same parent id they all will
      * be converted to type specified by service and if it not possible an Exception will
      * be thrown
-     * @return Publisher that produces filtered converted entities
+     *
+     * @return Publisher witch produces filtered converted entities
      */
     @Override
     public Flux<T> getAll() {
@@ -107,7 +123,8 @@ public abstract class EntityOperationServiceBase<T> implements EntityService<T> 
      * @param id entity identifier
      */
     public Mono<Void> delete(Long id) {
-        return dataSourceFacade.deleteContent(id);
+        return contentClassRepository.deleteByContentId(id).collectList()
+            .then(dataSourceFacade.deleteContent(id));
     }
 
     /**
@@ -151,16 +168,40 @@ public abstract class EntityOperationServiceBase<T> implements EntityService<T> 
             log.error("Cannot save entity %s under null parent id".formatted(typeClass.getTypeName()));
             return empty();
         }
+        return save(entity, ownerId, entityParentIds.get(0));
+    }
+
+    /**
+     * Stores entity with the specified parent node identifier
+     *
+     * @param entity   object to be saved
+     * @param ownerId  owner user identifier
+     * @param parentId identifier of entity parent node
+     * @return         publisher for saved object
+     */
+    @NotNull
+    public Mono<T> save(T entity, long ownerId, Long parentId) {
         if (entity == null) {
             log.warn("Empty entity cannot be saved for ownerId %s".formatted(ownerId));
             return empty();
         }
-        if (noDefaultConstructor()) {
-            log.warn("Entities of type %s have no default constructor, entity %s won't be saved".formatted(typeClass.getName(), entity.toString()));
+        if (parentId == null) {
+            String errorMessage = "No parent identifier specified for catalog entity";
+            log.error(errorMessage);
+            return error(new EntityValidationException(errorMessage));
+        }
+        if (noDefaultConstructor(entity)) {
+            log.warn("Entities of type %s have no default constructor, entity %s won't be saved"
+                    .formatted(typeClass.getName(), entity.toString()));
             return empty();
         }
+        return saveAsChild(entity, ownerId, parentId);
+    }
+
+    @NotNull
+    private Mono<T> saveAsChild(T entity, long ownerId, Long parentId) {
         var serializedEntity = new Node();
-        serializedEntity.setParentId(entityParentIds.get(0));
+        serializedEntity.setParentId(parentId);
         serializedEntity.setOwnerId(ownerId);
         serializedEntity.setDefaultPrivileges();
         serializedEntity.setEntityType(getValueClassName(entity));
@@ -170,28 +211,45 @@ public abstract class EntityOperationServiceBase<T> implements EntityService<T> 
             fieldValue = processField(entity, serializedEntity, fieldValue, idField, field);
         }
         return dataSourceFacade.createContent(serializedEntity)
-                .map(savedId -> {
-                    String idFieldName = ofNullable(idField.get())
-                            .map(Field::getName)
-                            .orElse(StringUtils.EMPTY);
-                    Field entityIdField;
-                    try {
-                        entityIdField = entity.getClass().getDeclaredField(idFieldName);
-                        FieldUtils.writeField(entityIdField, entity, savedId, true);
+                .flatMap(savedEntityId -> saveEntityInterfaces(entity, savedEntityId))
+                .map(savedId -> buildEntity(entity, idField, savedId));
+    }
 
-                    } catch (NoSuchFieldException e) {
-                        log.error("No field with name '%s' found for class %s"
-                                .formatted(idFieldName, entity.getClass()));
-                    } catch (IllegalArgumentException e) {
-                        log.error("Id field is null or value is not assignable: %s"
-                                .formatted(e.toString()));
-                    } catch (IllegalAccessException | SecurityException e) {
-                        log.error("Id field cannot be accessed for object %s: %s"
-                                .formatted(entity.toString(), e.toString()));
-                    }
-                    return entity;
-                });
+    @NotNull
+    private T buildEntity(T entity, AtomicReference<Field> idField, Long savedId) {
+        String idFieldName = ofNullable(idField.get())
+                .map(Field::getName)
+                .orElse(StringUtils.EMPTY);
+        Field entityIdField;
+        try {
+            entityIdField = entity.getClass().getDeclaredField(idFieldName);
+            FieldUtils.writeField(entityIdField, entity, savedId, true);
 
+        } catch (NoSuchFieldException e) {
+            log.error("No field with name '%s' found for class %s"
+                    .formatted(idFieldName, entity.getClass()));
+        } catch (IllegalArgumentException e) {
+            log.error("Id field is null or value is not assignable: %s"
+                    .formatted(e.toString()));
+        } catch (IllegalAccessException | SecurityException e) {
+            log.error("Id field cannot be accessed for object %s: %s"
+                    .formatted(entity.toString(), e.toString()));
+        }
+        return entity;
+    }
+
+    @NotNull
+    private Mono<Long> saveEntityInterfaces(T entity, Long savedEntityId) {
+        Class<?>[] interfaces = entity.getClass().getInterfaces();
+        List<ContentClass> contentClasses = stream(interfaces)
+                .filter(item -> !Serializable.class.equals(item))
+                .map(interfaceItem -> new ContentClass(savedEntityId, interfaceItem.getTypeName()))
+                .collect(Collectors.toList());
+        return contentClassRepository.saveAll(contentClasses)
+                .doOnNext(savedInterface -> log.debug("Saved ContentClass id = %d, contentId = %d, interface = %s"
+                        .formatted(savedInterface.getId(), savedInterface.getContentId(), savedInterface.getClassName())))
+                .collectList()
+                .thenReturn(savedEntityId);
     }
 
     private Object processField(T entity, Node serializedEntity, Object fieldValue, AtomicReference<Field> idField, Field field) {
@@ -224,7 +282,7 @@ public abstract class EntityOperationServiceBase<T> implements EntityService<T> 
      * Check if field is Serializable and wrap it with proxy if not
      *
      * @param fieldValue incoming field value
-     * @return           java.io.Serializable version of field value
+     * @return java.io.Serializable version of field value
      */
     @Nullable
     private Object getSerializedValue(Object fieldValue) {
@@ -250,11 +308,11 @@ public abstract class EntityOperationServiceBase<T> implements EntityService<T> 
         return newFieldValue;
     }
 
-    private boolean noDefaultConstructor()  {
+    private boolean noDefaultConstructor(T entity) {
         try {
-            return typeClass.getDeclaredConstructor() == null;
+            return entity.getClass().getDeclaredConstructor() == null;
         } catch (NoSuchMethodException e) {
-            log.error("Exception while fetching the default constructor for type %s: "
+            log.error("Exception while fetching the default constructor for type %s: %s"
                     .formatted(typeClass.getTypeName(), e.toString()));
             return true;
         }
@@ -274,21 +332,38 @@ public abstract class EntityOperationServiceBase<T> implements EntityService<T> 
     }
 
     /**
-     * Converts content record to data transfer object
+     * Converts content record to data transfer object. In case of null {@link Content#getEntityType()} value
+     * {@link RuntimeException} will be thrown as object instantiation is not available.
      *
      * @param content content entity to be converted
      * @return converted data transfer object
      */
     protected Mono<T> convert(Content content) {
         final T entity;
+        String contentClassName = content.getEntityType();
+
+        if (contentClassName == null) {
+            var errorMessage = "Can not instantiate %s object from content record with id = %d as record has no class defined"
+                    .formatted(typeClass, content.getId());
+            log.error(errorMessage);
+            return Mono.error(new RuntimeException(errorMessage));
+        }
+
         try {
-            entity = typeClass.getDeclaredConstructor().newInstance();
+            Class<? extends T> entityClass = Class.forName(contentClassName).asSubclass(typeClass);
+            entity = entityClass.getDeclaredConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             log.error("Failed to instantiate entity by default constructor: %s".formatted(e.toString()));
             return Mono.error(e);
+        } catch (ClassNotFoundException e) {
+            log.error("Class %s not found".formatted(contentClassName));
+            return  Mono.error(e);
+        } catch (ClassCastException e) {
+            log.error("Class %s is not a subclass of %s".formatted(contentClassName, typeClass));
+            return  Mono.error(e);
         }
 
-        for (Field field : typeClass.getDeclaredFields()) {
+        for (Field field : entity.getClass().getDeclaredFields()) {
             if (field.isAnnotationPresent(ContentId.class)) {
                 // set new object id from Content node
                 setId(entity, content.getId(), field);
@@ -379,7 +454,20 @@ public abstract class EntityOperationServiceBase<T> implements EntityService<T> 
         }
     }
 
-    private Class getGenericParameterClass(Class<?> actualClass) {
-        return (Class) ((ParameterizedType) actualClass.getGenericSuperclass()).getActualTypeArguments()[0];
+    private Class<T> getGenericParameterClass(Class<?> actualClass) {
+        return (Class<T>) ((ParameterizedType) actualClass.getGenericSuperclass()).getActualTypeArguments()[0];
+    }
+
+    private Mono<Content> getContentById(Long id) {
+        if (typeClass.isInterface()) {
+            log.debug("%s is an interface type, looking for implementations".formatted(typeClass.getTypeName()));
+            return contentClassRepository.findAllByContentId(id)
+                    .map(ContentClass::getClassName)
+                    .flatMap(classNames -> dataSourceFacade.getContentByIdAndType(id, classNames))
+                    .collectList()
+                    .flatMap(items -> items.isEmpty() ? Mono.empty() : Mono.just(items.get(0)));
+        } else {
+            return dataSourceFacade.getContentByIdAndType(id, typeClass.getTypeName());
+        }
     }
 }

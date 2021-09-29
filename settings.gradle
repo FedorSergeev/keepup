@@ -1,4 +1,5 @@
 rootProject.name = 'cms'
 include 'core'
 include 'rest'
+include 'catalog'
 

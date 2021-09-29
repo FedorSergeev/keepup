@@ -41,6 +41,17 @@ public class DataSourceFacadeImpl implements DataSourceFacade {
         return contentDao.getContentByIdAndType(id, type);
     }
 
+    /**
+     * Looks for {@link Content} records witch have id as primary identifier or identifier of parent record.
+     *
+     * @param id record id or parent id, can be null though it makes no sense as no records will be found
+     * @return Stream publisher for found records
+     */
+    @Override
+    public Flux<Content> getContentByIdWithChildren(Long id)  {
+        return contentDao.getContentByIdWithChildren(id);
+    }
+
     @Override
     public Flux<Content> getContent() {
         return contentDao.getContent();

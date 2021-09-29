@@ -17,9 +17,20 @@ public interface ReactiveNodeEntityRepository extends ReactiveCrudRepository<Nod
     @Query("SELECT * from NODE_ENTITY as node WHERE node.parent_id IN (:ids)")
     Flux<NodeEntity> findByParentIds(@Param("ids") Iterable<Long> ids);
 
-    @Query("SELECT * from NODE_ENTITY as node WHERE node.parent_id IN (:ids) AND node.entity_type = :type")
+    @Query("SELECT * from NODE_ENTITY " +
+           "AS node WHERE node.parent_id IN (:ids) " +
+           "AND (node.entity_type = :type " +
+           "     OR node.id IN (SELECT content_id FROM ENTITY_CLASSES " +
+           "                    WHERE ENTITY_CLASSES.class_name = :type))")
     Flux<NodeEntity> findByParentIdsAndType(@Param("ids") Iterable<Long> ids, @Param("type") String type);
 
-    @Query("SELECT * from NODE_ENTITY as node WHERE node.id = :id AND node.entity_type = :type")
+    @Query("SELECT * from NODE_ENTITY " +
+            "AS node WHERE node.id IN (:ids) " +
+            "AND (node.entity_type = :type " +
+            "     OR node.id IN (SELECT content_id FROM ENTITY_CLASSES " +
+            "                 WHERE ENTITY_CLASSES.class_name = :type))")
     Mono<NodeEntity> findByIdAndType(@Param("id") Long id, @Param("type") String type);
+
+    @Query("SELECT * from NODE_ENTITY as node WHERE node.id = :id OR node.parent_id = :id")
+    Flux<NodeEntity> findByIdOrByParentId(@Param("id") Long id);
 }

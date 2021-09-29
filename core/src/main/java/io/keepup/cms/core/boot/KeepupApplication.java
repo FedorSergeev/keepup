@@ -10,7 +10,7 @@ import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories;
  * Launcher class
  */
 @SpringBootApplication(exclude= {DataSourceAutoConfiguration.class}, scanBasePackages = {"io.keepup"})
-@EnableR2dbcRepositories(basePackages = {"io.keepup.cms.core.datasource.sql.repository"})
+@EnableR2dbcRepositories(basePackages = {"io.keepup.cms.core.datasource.sql.repository", "io.keepup.plugins"})
 @EnableCaching
 public class KeepupApplication {
 
