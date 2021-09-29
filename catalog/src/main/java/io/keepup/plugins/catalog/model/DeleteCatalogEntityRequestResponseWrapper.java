@@ -27,13 +27,13 @@ public class DeleteCatalogEntityRequestResponseWrapper {
     }
 
     public static DeleteCatalogEntityRequestResponseWrapper success() {
-        DeleteCatalogEntityRequestResponseWrapper response = new DeleteCatalogEntityRequestResponseWrapper();
+        var response = new DeleteCatalogEntityRequestResponseWrapper();
         response.setSuccess(true);
         return response;
     }
 
     public static DeleteCatalogEntityRequestResponseWrapper error(String error) {
-        DeleteCatalogEntityRequestResponseWrapper response = new DeleteCatalogEntityRequestResponseWrapper();
+        var response = new DeleteCatalogEntityRequestResponseWrapper();
         response.setSuccess(false);
         response.setError(error);
         return response;

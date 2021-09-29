@@ -186,7 +186,7 @@ public abstract class EntityOperationServiceBase<T> implements EntityService<T> 
             return empty();
         }
         if (parentId == null) {
-            String errorMessage = "No parent identifier specified for catalog entity";
+            var errorMessage = "No parent identifier specified for catalog entity";
             log.error(errorMessage);
             return error(new EntityValidationException(errorMessage));
         }

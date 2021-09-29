@@ -28,18 +28,22 @@ public class KeepupResponseListWrapper<T> extends AbstractResponseWrapper {
         this.entities = entities;
     }
 
+    @Override
     public boolean isSuccess() {
         return success;
     }
 
+    @Override
     public void setSuccess(boolean success) {
         this.success = success;
     }
 
+    @Override
     public String getError() {
         return error;
     }
 
+    @Override
     public void setError(String error) {
         this.error = error;
     }
