@@ -1,3 +1,7 @@
+plugins {
+    id "se.bjurr.gitchangelog.git-changelog-gradle-plugin" version "1.71.4"
+}
+
 allprojects {
     apply plugin: 'java'
     apply plugin: 'maven-publish'
@@ -19,6 +23,7 @@ group 'io.keepup.cms'
 version '2.0-SNAPSHOT'
 
 dependencies {
+    compileClasspath "se.bjurr.gitchangelog:git-changelog-gradle-plugin:1.71.4"
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
 }
@@ -45,6 +50,30 @@ task codeCoverageReport(type: JacocoReport) {
         html.enabled false
         csv.enabled false
     }
+}
+
+task generateGitChangelogInlineTemplate(type: se.bjurr.gitchangelog.plugin.gradle.GitChangelogTask) {
+    fromRepo = file(".");
+    file = new File("CHANGELOG.md");
+    templateContent = """
+# Chagelog
+Changelog
+{{#tags}}
+## {{name}}
+ {{#issues}}
+  {{#hasLink}}
+### {{name}} [{{issue}}]({{link}}) {{title}}
+  {{/hasLink}}
+  {{^hasLink}}
+### {{name}}
+  {{/hasLink}}
+  {{#commits}}
+[{{hash}}](https://github.com/FedorSergeev/keepup/commit/{{hash}}) {{authorName}} *{{commitTime}}*
+{{{message}}}
+  {{/commits}}
+ {{/issues}}
+{{/tags}}
+ """;
 }
 
 codeCoverageReport.dependsOn {

@@ -375,7 +375,7 @@ class CatalogControllerTest {
         ResponseEntity<DeleteCatalogEntityRequestResponseWrapper> result = testCatalogController.delete(savedEntity.getId()).block();
 
         assertNotNull(result);
-        assertTrue(HttpStatus.INTERNAL_SERVER_ERROR.equals(result.getStatusCode()));
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
         assertNotNull(result.getBody().getError());
         assertEquals(exceptionMessage, result.getBody().getError());
     }
