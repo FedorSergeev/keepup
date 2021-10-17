@@ -16,10 +16,24 @@ targetCompatibility = 15
 bootJar.enabled = false
 jar.enabled = true
 
+apply plugin: 'maven-publish'
+
 publishing {
     publications {
         maven(MavenPublication) {
-            from components.java
+            artifact("build/libs/rest-$version" + "-plain.jar") {
+                extension "jar"
+            }
+        }
+    }
+    repositories {
+        maven {
+            name "nexus"
+            url "http://nexus.trans-it.pro/nexus/content/repositories/transit-snapshot/"
+            credentials {
+                username project.repoUser
+                password project.repoPassword
+            }
         }
     }
 }
