@@ -84,6 +84,18 @@ public class TestEntity implements Serializable {
 
 Please note that entities are being converted taking into account that if there is no such field or if the field has another type then the field in the entity will be null but the whole entity is not filtered. You can add additional filter to the reactive chain if you want to add some nullability checks or other predicates.
 
+### Tuning the server
+
+KeepUP library is based on Spring Boot framework and starts using embedded Netty server. Yet the number of threads that simultaneously process user requests can be limited by an environment variable KEEPUP_SERVER_RESOURCES_WORKER_COUNT. By default, if the variable is not specified, the number of worker threads is limited to 16. You can also change this limit by specifying the key 'keepup.server.resources.worker_count' in application.yml.
+
+```YAML
+  server:
+    resources:
+      worker_count: 32
+```
+
+This record will increase the number of worker threads to 32. Please mind the usability of multithreading depending on the number of CPU cores in your environment.
+
 ## Catalog Module
 
 This module is responsible for two possible scenarios for using the CMS:

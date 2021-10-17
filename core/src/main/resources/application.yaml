@@ -8,3 +8,6 @@ logging:
 keepup:
   paths:
     static1: /app/static
+  server:
+    resources:
+      worker_count: ${KEEPUP_SERVER_RESOURCES_WORKER_COUNT:#{16}}
