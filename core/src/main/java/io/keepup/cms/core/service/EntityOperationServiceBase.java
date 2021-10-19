@@ -17,10 +17,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.proxy.Callback;
 import org.springframework.cglib.proxy.Enhancer;
 import org.springframework.cglib.proxy.MethodInterceptor;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import javax.transaction.Transactional;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -162,7 +162,7 @@ public abstract class EntityOperationServiceBase<T> implements EntityService<T> 
      * @param ownerId user's identifier
      * @return copy of saved instance
      */
-    @Transactional
+    @Transactional("connectionFactoryTransactionManager")
     public Mono<T> save(T entity, long ownerId) {
         if (entityParentIds == null || entityParentIds.isEmpty()) {
             log.error("Cannot save entity %s under null parent id".formatted(typeClass.getTypeName()));

@@ -28,7 +28,7 @@ public abstract class AbstractRestController<T> {
 
     private static final String NULL = "NULL";
     private final Log log = LogFactory.getLog(getClass());
-    private final EntityOperationServiceBase<T> operationService;
+    protected final EntityOperationServiceBase<T> operationService;
 
     protected AbstractRestController(EntityOperationServiceBase<T> operationService) {
         this.operationService = operationService;
