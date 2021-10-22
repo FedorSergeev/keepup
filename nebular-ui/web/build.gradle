@@ -1,0 +1,26 @@
+buildscript {
+  repositories {
+    gradlePluginPortal()
+  }
+
+  dependencies {
+    classpath "com.github.node-gradle:gradle-node-plugin:3.1.1"
+  }
+}
+
+apply plugin: 'com.github.node-gradle.node'
+
+node {
+  version = "12.18.3"
+  download = true
+}
+
+task installExpress(type: NpmTask) {
+  args = ['run', 'build:prod']
+}
+
+
+task copyFrontendToKeepupModule(type: Copy) {
+  from 'dist'
+  into '../src/main/resources/META-INF/server'
+}

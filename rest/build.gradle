@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'maven-publish'
+    id 'maven'
     id 'org.springframework.boot' version '2.5.2'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'jacoco'
@@ -19,8 +20,23 @@ jar.enabled = true
 publishing {
     publications {
         maven(MavenPublication) {
-            from components.java
+            groupId 'io.keepup.cms'
+            artifactId 'rest'
+            version '2.0-SNAPSHOT'
+
+            artifact 'build/libs/rest-2.0-SNAPSHOT-plain.jar'
         }
+    }
+    repositories {
+        maven {
+            name "nexus"
+            url "http://192.168.10.30:8081/nexus/content/repositories/transit-snapshot/"
+            credentials {
+                username "admin"
+                password "admin123"
+            }
+        }
+
     }
 }
 
