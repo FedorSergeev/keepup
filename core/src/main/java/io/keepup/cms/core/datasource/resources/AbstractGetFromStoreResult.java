@@ -1,7 +1,5 @@
 package io.keepup.cms.core.datasource.resources;
 
-import org.apache.commons.logging.Log;
-
 import java.lang.reflect.InvocationTargetException;
 
 import static org.apache.commons.logging.LogFactory.getLog;
@@ -37,16 +35,16 @@ public abstract class AbstractGetFromStoreResult {
     }
 
     public static <T extends AbstractGetFromStoreResult> T error(String message, Class<T> type) {
-        final Log staticLogger = getLog("GetFromSoreResult");
+        final var staticLogger = getLog("GetFromSoreResult");
         try {
-            final T result = type.getConstructor().newInstance();
+            final var result = type.getConstructor().newInstance();
             result.setSuccess(false);
             result.setMessage(message);
             return result;
         } catch (NoSuchMethodException e) {
-            staticLogger.error("Type " + type.getName() + " has no default constructors");
+            staticLogger.error("Type %s has no default constructors".formatted(type.getName()));
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException ex) {
-            staticLogger.error("Failed to instantiate type " + type.getName() + ": " + ex.toString());
+            staticLogger.error("Failed to instantiate type %s: %s".formatted(type.getName(), ex.toString()));
         }
         return null;
     }

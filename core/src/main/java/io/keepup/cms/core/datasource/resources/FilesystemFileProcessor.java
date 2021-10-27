@@ -2,7 +2,6 @@ package io.keepup.cms.core.datasource.resources;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
@@ -78,13 +77,13 @@ public class FilesystemFileProcessor implements StorageAccessor<String> {
 
         for (String path : relativePaths) {
             String normalizedPath = path.toLowerCase();
-            File baseHtmlDirectory = new File(staticPath.concat(normalizedPath));
+            var baseHtmlDirectory = new File(staticPath.concat(normalizedPath));
             File[] directoryListing = baseHtmlDirectory.listFiles((dir, name) -> name.toLowerCase().endsWith(".".concat(type)));
             ofNullable(directoryListing)
                     .ifPresent(files -> Arrays.stream(files)
                                               .forEach((file -> resultFiles.add(new StoredFileData(file, normalizedPath)))));
         }
-        GetTreeFromStoreResult result = new GetTreeFromStoreResult();
+        var result = new GetTreeFromStoreResult();
         result.setSuccess(true);
         result.setFiles(resultFiles);
         return result;
@@ -99,12 +98,12 @@ public class FilesystemFileProcessor implements StorageAccessor<String> {
      */
     @Override
     public GetFileFromStoreResult getByName(String name, String relativePath) {
-        final File directory = new File(rootPath.concat(relativePath));
+        final var directory = new File(rootPath.concat(relativePath));
         if (directory.exists() && directory.isDirectory()) {
-            final File resultFile = new File(directory.getAbsolutePath().concat(SLASH).concat(name));
+            final var resultFile = new File(directory.getAbsolutePath().concat(SLASH).concat(name));
             if (resultFile.exists() && !resultFile.isDirectory()) {
-                final StoredFileData fileData = new StoredFileData(resultFile, relativePath);
-                final GetFileFromStoreResult result = new GetFileFromStoreResult();
+                final var fileData = new StoredFileData(resultFile, relativePath);
+                final var result = new GetFileFromStoreResult();
                 result.setFile(fileData);
                 result.setSuccess(true);
                 return result;

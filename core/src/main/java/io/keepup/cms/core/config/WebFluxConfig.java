@@ -55,9 +55,9 @@ public class WebFluxConfig implements WebFluxConfigurer {
     @Bean
     public ReactiveWebServerFactory reactiveWebServerFactory() {
         log.debug("Setting number of worker threads to %d".formatted(workerCount));
-        NettyReactiveWebServerFactory factory = new NettyReactiveWebServerFactory();
+        var factory = new NettyReactiveWebServerFactory();
 
-        ReactorResourceFactory resourceFactory = new ReactorResourceFactory();
+        var resourceFactory = new ReactorResourceFactory();
         resourceFactory.setLoopResources(LoopResources.create("http", workerCount, true));
         factory.setResourceFactory(resourceFactory);
 

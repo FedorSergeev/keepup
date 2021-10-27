@@ -6,8 +6,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.apache.commons.lang3.StringUtils.EMPTY;
-
 /**
  * @param <T>
  * @author Fedor Sergeev

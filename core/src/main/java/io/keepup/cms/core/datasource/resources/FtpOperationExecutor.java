@@ -36,7 +36,7 @@ public class FtpOperationExecutor<T> {
 
     public TransferOperationResult<T> doFtpOperation(File file, List<String> relativePaths, FtpOperation<T> operation) {
         TransferOperationResult<T> transferOperationResult;
-        FTPClient ftpClient = new FTPClient();
+        var ftpClient = new FTPClient();
         ftpClient.setRemoteVerificationEnabled(false);
         ftpClient.addProtocolCommandListener(new PrintCommandListener(new PrintWriter(new LogOutputStream(log))));
 

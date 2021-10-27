@@ -18,20 +18,20 @@ public class ValidationResult {
      * @return validation result object
      */
     public static ValidationResult build(boolean success, String message) {
-        ValidationResult validationResult = new ValidationResult();
+        var validationResult = new ValidationResult();
         validationResult.success = success;
         validationResult.message = message;
         return validationResult;
     }
 
     public static ValidationResult success() {
-        ValidationResult validationResult = new ValidationResult();
+        var validationResult = new ValidationResult();
         validationResult.success = true;
         return validationResult;
     }
 
     public static ValidationResult error(String message) {
-        ValidationResult validationResult = new ValidationResult();
+        var validationResult = new ValidationResult();
         validationResult.success = false;
         validationResult.message = message;
         return validationResult;

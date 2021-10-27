@@ -1,6 +1,7 @@
 package io.keepup.cms.core.datasource.resources;
 
 import org.apache.commons.logging.Log;
+
 import java.io.OutputStream;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -51,8 +52,8 @@ public class LogOutputStream extends OutputStream {
      *
      * @param byteValue value to write
      */
-    public void write (int byteValue) {
-        byte[] bytes = new byte[1];
+    public void write(int byteValue) {
+        var bytes = new byte[1];
         bytes[0] = (byte) (byteValue & 0xff);
         mem = mem + new String(bytes);
 
