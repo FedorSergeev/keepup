@@ -12,6 +12,7 @@ import java.io.Serializable;
  * @since 2.0
  */
 @Entity
+@org.springframework.data.relational.core.mapping.Table
 @Table(name = "user_roles", indexes = {
         @Index(name = "IDX_USER_ROLES_ID", columnList = "id"),
         @Index(name = "IDX_USER_ROLES", columnList = "user_id")})

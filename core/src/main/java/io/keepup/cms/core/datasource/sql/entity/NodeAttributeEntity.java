@@ -22,6 +22,7 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
  * @author Fedor Sergeev
  */
 @Entity
+@org.springframework.data.relational.core.mapping.Table
 @Table(name = "node_attributes", indexes = {
         @Index(name = "IDX_ATTRIBUTE_ID", columnList = "id"),
         @Index(name = "IDX_CONTENT_ID", columnList = "content_id")})

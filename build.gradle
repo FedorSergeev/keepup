@@ -56,7 +56,7 @@ task generateGitChangelogInlineTemplate(type: se.bjurr.gitchangelog.plugin.gradl
     fromRepo = file(".");
     file = new File("CHANGELOG.md");
     templateContent = """
-# Chagelog
+# Changelog
 Changelog
 {{#tags}}
 ## {{name}}

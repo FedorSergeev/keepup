@@ -2,6 +2,9 @@ spring:
   profiles.active: dev,h2,security
   main:
     allow-bean-definition-overriding: true
+  liquibase:
+    enabled: true
+    change-log: "classpath:db/changelog/db.changelog-master.yaml"
 logging:
   level:
     root: INFO

@@ -14,6 +14,7 @@ import java.io.Serializable;
  * @author Fedor Sergeev
  */
 @Entity
+@org.springframework.data.relational.core.mapping.Table
 @Table(name="node_entity", indexes = {
         @Index(name = "IDX_ID", columnList = "id"),
         @Index(name = "IDX_PARENT_ID", columnList = "parent_id"),

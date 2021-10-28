@@ -11,6 +11,7 @@ import javax.persistence.*;
  * @since 2.0
  */
 @Entity
+@org.springframework.data.relational.core.mapping.Table
 @Table(name="entity_classes", indexes = {
         @Index(name = "IDX_CONTENT_CLASS_ID", columnList = "id"),
         @Index(name = "IDX_FILE_CONTENT_ID", columnList = "content_id")})

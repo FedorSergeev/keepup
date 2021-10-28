@@ -15,6 +15,7 @@ import java.time.LocalDate;
 @Table(name = "users", indexes = {
         @Index(name = "IDX_USER_ID", columnList = "id"),
         @Index(name = "IDX_USER_ROLE", columnList = "user_role")})
+@org.springframework.data.relational.core.mapping.Table
 public class UserEntity implements Serializable {
 
     @Id

@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static io.keepup.cms.core.cache.CacheNames.CONTENT_CACHE_NAME;
 import static io.keepup.cms.core.datasource.sql.EntityUtils.convertToLocalDateViaInstant;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -38,7 +39,6 @@ import static reactor.core.publisher.Mono.empty;
 @Service
 public class SqlContentDao implements ContentDao {
 
-    public static final String CONTENT_CACHE_NAME = "content";
     public static final String PARENT_ID_PARAMETER = "parentId";
 
     private final Log log = LogFactory.getLog(getClass());

@@ -11,7 +11,7 @@ import java.io.Serializable;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static io.keepup.cms.core.datasource.dao.sql.SqlContentDao.CONTENT_CACHE_NAME;
+import static io.keepup.cms.core.cache.CacheNames.CONTENT_CACHE_NAME;
 import static java.util.Optional.ofNullable;
 
 /**
