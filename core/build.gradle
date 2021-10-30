@@ -32,6 +32,7 @@ dependencies {
     compile 'org.springframework.boot:spring-boot-starter-jdbc'
     compile 'org.springframework.boot:spring-boot-starter-webflux'
     compile 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     compile 'org.liquibase:liquibase-core'
     compile 'io.fastjson:boon:0.34'
     compile 'org.springframework.boot:spring-boot-starter'
@@ -40,9 +41,7 @@ dependencies {
     compile 'javax.persistence:javax.persistence-api:2.2'
     compile 'commons-net:commons-net:3.8.0'
 
-
     implementation 'org.jetbrains:annotations:22.0.0'
-
     implementation 'javax.servlet:javax.servlet-api:4.0.1'
     runtimeOnly 'com.h2database:h2:1.4.200'
 
@@ -52,7 +51,17 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testImplementation 'io.projectreactor:reactor-test'
     testImplementation 'org.mockftpserver:MockFtpServer:2.8.0'
+    testImplementation 'it.ozimov:embedded-redis:0.7.3'
+    testImplementation 'com.github.fppt:jedis-mock:0.1.22'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+}
+
+configurations {
+    all {
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+        exclude group: 'ch.qos.logback', module: 'logback-classic'
+        exclude group: 'org.apache.logging.log4j', module: 'log4j-to-slf4j'
+    }
 }
 
 test {

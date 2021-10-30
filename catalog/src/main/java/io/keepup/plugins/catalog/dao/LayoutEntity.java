@@ -16,6 +16,7 @@ import java.io.Serializable;
  * @since 2.0
  */
 @Entity
+@org.springframework.data.relational.core.mapping.Table
 @Table(name="layouts", indexes = {@Index(name = "IDX_LAYOUT_ID", columnList = "id")})
 public class LayoutEntity implements Serializable {
     @Serial

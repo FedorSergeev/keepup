@@ -1,0 +1,5 @@
+spring:
+  redis:
+    port: ${KEEPUP_REDIS_PORT:#{6379}},
+    database: 0,
+    host: ${KEEPUP_REDIS_HOST:#{localhost}}

@@ -14,6 +14,7 @@ import static java.util.Optional.ofNullable;
  * @author Fedor Sergeev
  */
 @Entity
+@org.springframework.data.relational.core.mapping.Table
 @Table(name="files", indexes = {
         @Index(name = "IDX_FILE_ID", columnList = "id"),
         @Index(name = "IDX_FILE_CONTENT_ID", columnList = "contentid")})

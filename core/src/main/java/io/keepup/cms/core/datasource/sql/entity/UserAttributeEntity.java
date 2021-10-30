@@ -20,6 +20,7 @@ import static io.keepup.cms.core.datasource.sql.EntityUtils.convertToLocalDateVi
  * @since 1.8
  */
 @Entity
+@org.springframework.data.relational.core.mapping.Table
 @Table(name = "user_attributes", indexes = {
         @Index(name = "IDX_USER_ATTRIBUTE_ID", columnList = "id"),
         @Index(name = "IDX__ATTRIBUTE_OWNER_USER_ID", columnList = "userid")})

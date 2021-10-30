@@ -23,6 +23,7 @@ Yet there are only two profiles as there is no possibility to use the source as 
 
 Dev - profile for local application launch with local cache.
 H2 - profile with already connected in-memory H2 database working in PostgreSQL mode
+Redis - used to connect to Redis as an external cache storage.
 
 ## 1.2 Security
 
@@ -95,6 +96,22 @@ KeepUP library is based on Spring Boot framework and starts using embedded Netty
 ```
 
 This record will increase the number of worker threads to 32. Please mind the usability of multithreading depending on the number of CPU cores in your environment.
+
+### Caching
+
+As KeepUP uses a tree-like data structure, it can slow down your application when using a relational database as the data source. 
+Therefore, it is especially important to use data caching. Since version 2.0.0, KeepUP supports simple caching based on 
+the ConcurrentHashMap collection as well as a distributed external Redis cache. To use the latter, it is enough to specify 
+in the application settings (for example, the application.yaml file), the values for the host and port of the Redis server.
+
+```YAML
+spring:
+  redis:
+    port: 6379,
+    host: localhost
+```
+
+The default host value is localhost, and the default value for port is 6379. 
 
 ## Catalog Module
 
