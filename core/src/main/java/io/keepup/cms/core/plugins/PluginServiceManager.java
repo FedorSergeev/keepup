@@ -32,7 +32,7 @@ public class PluginServiceManager implements BeanPostProcessor, ApplicationListe
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) {
         if (bean == null || beanName == null) {
-            log.error("Attempt to pass emty bean or bean name to plugin service processor");
+            log.error("Attempt to pass empty bean or bean name to plugin service processor");
             return bean;
         }
         Class<?> beanClass = bean.getClass();
@@ -62,24 +62,22 @@ public class PluginServiceManager implements BeanPostProcessor, ApplicationListe
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
         log.debug("Application is ready to start, beginning plugins deployment");
-        plugins.entrySet()
+        plugins.values()
                 .stream()
-                .filter(entry -> entry.getValue()
+                .filter(keepupExtension -> keepupExtension
                         .getClass()
                         .isAnnotationPresent(Deploy.class))
-                .map(Map.Entry::getValue)
                 .filter(KeepupExtension::isEnabled)
                 .map(PluginServiceManager::applyDeployService)
                 .forEach(BasicDeployService::deploy);
         log.debug("Plugins deployment finished");
 
         log.debug("Beginning plugins initialization");
-        plugins.entrySet()
+        plugins.values()
                 .stream()
-                .filter(entry -> entry.getValue()
+                .filter(keepupExtension -> keepupExtension
                         .getClass()
                         .isAnnotationPresent(Plugin.class))
-                .map(Map.Entry::getValue)
                 .filter(KeepupExtension::isEnabled)
                 .map(PluginServiceManager::applyPluginService)
                 .sorted(comparingInt(KeepupExtension::getInitOrder))

@@ -6,6 +6,7 @@ import io.keepup.cms.core.datasource.resources.StaticContentDeliveryService;
 import io.keepup.cms.core.datasource.resources.StorageType;
 import io.keepup.cms.core.persistence.Content;
 import io.keepup.cms.core.persistence.Node;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -92,8 +93,22 @@ public abstract class AbstractKeepupDeployBean implements PluginService, BasicDe
     public void deploy() {
         logger.info("Deploying plugin '%s' data".formatted(pluginName));
         String decodedPath = getDecodedPath();
-        final var dataFile = new File(decodedPath);
-        if (!dataFile.isDirectory() && dataFile.exists()) {
+        var dataFile = new File(decodedPath);
+
+        if (!dataFile.isDirectory()) {
+            if (!dataFile.exists() && decodedPath.endsWith(".jar")) {
+                logger.debug("Attempting to load jar library form application runtime jar");
+                // try to copy jar file from outer jar (application)
+                try {
+                    decodedPath = decodedPath.substring(decodedPath.indexOf(".jar/lib") + 4);
+                    dataFile = new File("tmp");
+                    logger.info("Data file for jar processing: " + dataFile.getAbsolutePath());
+                    FileUtils.copyInputStreamToFile(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("BOOT-INF" + decodedPath)), dataFile);
+                } catch (IOException e) {
+                    logger.error("Failed to fetch plugin from application jar: %s".formatted(e.toString()));
+                }
+            }
+            logger.info("File: %s exists: %s".formatted(dataFile.getAbsolutePath(), Boolean.toString(dataFile.exists())));
             try (var jarDataFile = new JarFile(dataFile)) {
                 logger.info("Unpacking from jar library, location: %s, setting up users dump directory %s".formatted(
                         decodedPath,
@@ -183,10 +198,15 @@ public abstract class AbstractKeepupDeployBean implements PluginService, BasicDe
     private String getDecodedPath() {
         String decodedPath = null;
         String path = getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
+        // need to check if application runs inside of jar or in the filesystem
+        if (new File(path).isDirectory()) {
+            logger.debug("Path %s is a directory".formatted(path));
+            return path;
+        }
         try {
             decodedPath = URLDecoder.decode(path, UTF_8.toString());
-            decodedPath = decodedPath.replace("file:", EMPTY);
             decodedPath = decodedPath.replace("!/BOOT-INF/classes!", EMPTY);
+            decodedPath = decodedPath.replace("!/BOOT-INF", EMPTY);
             if (decodedPath.endsWith(".class")) {
                 decodedPath = decodedPath.substring(0, decodedPath.lastIndexOf("classes") + 7);
             }
