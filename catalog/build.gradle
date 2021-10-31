@@ -19,8 +19,8 @@ publishing {
             name "nexus"
             url "http://192.168.10.30:8081/nexus/content/repositories/transit-snapshot/"
             credentials {
-                username "admin"
-                password "admin123"
+                username ""
+                password ""
             }
         }
 
