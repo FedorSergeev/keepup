@@ -9,7 +9,7 @@ import java.util.List;
  *
  * @param <T> entity type
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 public class KeepupResponseListWrapper<T> extends AbstractResponseWrapper {
     private List<T> entities;

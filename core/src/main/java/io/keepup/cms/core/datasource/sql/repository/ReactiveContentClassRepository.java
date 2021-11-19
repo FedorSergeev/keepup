@@ -11,7 +11,7 @@ import reactor.core.publisher.Flux;
  * Used for cases when we save {@link io.keepup.cms.core.persistence.Content} item as interface type
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 public interface ReactiveContentClassRepository extends ReactiveCrudRepository<ContentClass, Long> {
     @Query("SELECT * FROM ENTITY_CLASSES " +

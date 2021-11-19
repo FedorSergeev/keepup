@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CatalogEntityListWrapper<T extends CatalogEntity> {
-
+    private List<T> parents;
     private List<T> entities;
     private List<Layout> layouts;
     private boolean success;
@@ -32,6 +32,14 @@ public class CatalogEntityListWrapper<T extends CatalogEntity> {
 
     public void setError(String error) {
         this.error = error;
+    }
+
+    public List<T> getParents() {
+        return parents;
+    }
+
+    public void setParents(List<T> parents) {
+        this.parents = parents;
     }
 
     public List<T> getEntities() {

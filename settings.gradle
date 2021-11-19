@@ -3,4 +3,5 @@ include 'core'
 include 'rest'
 include 'catalog'
 include 'admin-ui'
+include 'admin-ui:sb-admin'
 

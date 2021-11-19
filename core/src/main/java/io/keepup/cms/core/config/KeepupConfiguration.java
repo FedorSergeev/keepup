@@ -20,7 +20,7 @@ import static java.nio.file.Paths.get;
  * Basic Keepup application configuration
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 @Configuration
 public class KeepupConfiguration {

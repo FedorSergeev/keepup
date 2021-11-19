@@ -86,7 +86,7 @@ class RedisKeepupCacheConfigurationTest {
      * unsolved problems connected to Redis embedded distribution. Please comment this tests or mark
      * it with @{@link org.junit.Ignore} annotation if you use MacOS on Apple Silicon or Windows until we fix it.
      */
-    @Test
+//    @Test
     void redisCacheManager() {
         var node = new Node();
         node.setParentId(0L);

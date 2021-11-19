@@ -8,7 +8,7 @@ import reactor.core.publisher.Mono;
  * objects linked by {@link CatalogEntity#getLayoutName()} value.
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 public class CatalogEntityWrapper<T extends CatalogEntity> extends CatalogEntityBaseWrapper<T> {
     private boolean success;

@@ -18,7 +18,7 @@ import static io.keepup.plugins.catalog.model.CatalogEntityWrapper.success;
  * Component responsible for work with entities and layout views
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 @Service
 @ConditionalOnProperty(prefix = "keepup.plugins.catalog", name = "enabled", havingValue = "true")
@@ -35,9 +35,9 @@ public class CatalogService extends EntityOperationServiceBase<CatalogEntity> {
      * Looks for entities specified by id and parentId and also for {@link Layout} objects
      * linked to them.
      *
-     * @param id        entities identifier or parent identifier
-     * @param children flag marking to look for entities by parent id
-     * @return         publisher for sequence of catalog wrappers
+     * @param id             entities identifier or parent identifier
+     * @param children       flag marking to look for entities by parent id
+     * @return               publisher for sequence of catalog wrappers
      */
     public Flux<CatalogEntityWrapper<CatalogEntity>> getCatalogEntitiesWithLayouts(final Long id, boolean children) {
         if (id == null) {
@@ -69,6 +69,7 @@ public class CatalogService extends EntityOperationServiceBase<CatalogEntity> {
                 .flatMap(this::convert);
     }
 
+    // todo javadoc
     public Flux<CatalogEntityWrapper<CatalogEntity>> getAllWithLayouts() {
         return getAll()
                 .flatMap(catalogEntity -> success(catalogEntity, layoutService.getByName(catalogEntity.getLayoutName())));

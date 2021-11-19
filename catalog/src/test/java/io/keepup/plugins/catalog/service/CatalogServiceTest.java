@@ -163,7 +163,8 @@ class CatalogServiceTest {
                 .flatMap(catalogEntity ->
                 {
                     log.info("Catalog entity saved with id = %d".formatted(catalogEntity.getId()));
-                    return catalogService.getCatalogEntitiesWithLayouts(catalogEntity.getId(), false).collectList();
+                    return catalogService.getCatalogEntitiesWithLayouts(catalogEntity.getId(), false)
+                            .collectList();
                 })
                 .block();
 

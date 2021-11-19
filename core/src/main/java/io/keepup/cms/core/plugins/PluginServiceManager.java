@@ -19,7 +19,7 @@ import static java.util.Optional.ofNullable;
  * Processor for beans annotated with KeepUP annotations.
  *
  * @author Fedor Sergeev
- * @version 2.0
+ * @version 2.0.0
  * @since 1.4
  */
 @Component
@@ -32,13 +32,13 @@ public class PluginServiceManager implements BeanPostProcessor, ApplicationListe
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) {
         if (bean == null || beanName == null) {
-            log.error("Attempt to pass emty bean or bean name to plugin service processor");
+            log.error("Attempt to pass empty bean or bean name to plugin service processor");
             return bean;
         }
         Class<?> beanClass = bean.getClass();
         if ((beanClass.isAnnotationPresent(Plugin.class) && bean instanceof PluginService)
          || (beanClass.isAnnotationPresent(Deploy.class) && bean instanceof BasicDeployService)) {
-            log.info(String.format("Keepup managed component %s found", beanClass.getName()));
+            log.info("Keepup managed component %s found".formatted(beanClass.getName()));
             KeepupExtension extension = (KeepupExtension)bean;
             if (plugins.putIfAbsent(ofNullable(extension.getName()).orElse("unknown"), extension) != null) {
                 log.debug("Plugin with name %s already exists in Keepup configuration".formatted(extension.getName()));
@@ -62,24 +62,22 @@ public class PluginServiceManager implements BeanPostProcessor, ApplicationListe
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
         log.debug("Application is ready to start, beginning plugins deployment");
-        plugins.entrySet()
+        plugins.values()
                 .stream()
-                .filter(entry -> entry.getValue()
+                .filter(keepupExtension -> keepupExtension
                         .getClass()
                         .isAnnotationPresent(Deploy.class))
-                .map(Map.Entry::getValue)
                 .filter(KeepupExtension::isEnabled)
                 .map(PluginServiceManager::applyDeployService)
                 .forEach(BasicDeployService::deploy);
         log.debug("Plugins deployment finished");
 
         log.debug("Beginning plugins initialization");
-        plugins.entrySet()
+        plugins.values()
                 .stream()
-                .filter(entry -> entry.getValue()
+                .filter(keepupExtension -> keepupExtension
                         .getClass()
                         .isAnnotationPresent(Plugin.class))
-                .map(Map.Entry::getValue)
                 .filter(KeepupExtension::isEnabled)
                 .map(PluginServiceManager::applyPluginService)
                 .sorted(comparingInt(KeepupExtension::getInitOrder))

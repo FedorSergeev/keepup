@@ -1,5 +1,6 @@
 package io.keepup.cms.core.plugins;
 
+import io.keepup.cms.core.JarHelper;
 import io.keepup.cms.core.annotation.Deploy;
 import io.keepup.cms.core.boot.KeepupApplication;
 import io.keepup.cms.core.cache.CacheAdapter;
@@ -47,8 +48,6 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import static java.lang.String.format;
-
 @RunWith(SpringRunner.class)
 @ActiveProfiles({"dev", "h2"})
 @TestPropertySource(properties = {
@@ -74,7 +73,8 @@ import static java.lang.String.format;
         ApplicationConfig.class,
         TestAbstractKeepupDeployBeanImpl.class,
         StaticContentDeliveryService.class,
-        FtpFileProcessor.class
+        FtpFileProcessor.class,
+        JarHelper.class
 })
 @DataR2dbcTest
 class AbstractKeepupDeployBeanTest {
@@ -103,6 +103,9 @@ class AbstractKeepupDeployBeanTest {
 
     @Test
     void deployFromJar() throws URISyntaxException {
+        var jarHelper = new JarHelper();
+        jarHelper.setApplicationConfig(applicationConfig);
+        jarHelper.setContentDeliveryService(mockStaticContentDeliveryService);
         List<KeepupPluginConfiguration> configurations = null;
         Throwable throwable = null;
         URLClassLoader urlClassLoader = null;
@@ -124,17 +127,14 @@ class AbstractKeepupDeployBeanTest {
                     if (currentClass.isAnnotationPresent(Deploy.class)) {
                         AbstractKeepupDeployBean bean = (AbstractKeepupDeployBean)currentClass.getConstructor(null).newInstance(null);
                         bean.setApplicationConfig(applicationConfig);
-                        bean.setContentDeliveryService(mockStaticContentDeliveryService);
+                        bean.setJarHelper(jarHelper);
                         int initOrder = bean.getInitOrder();
-                        log.debug("Plugin %s init order = %d".formatted(bean.getName(), initOrder));
                         bean.setInitOrder(25);
-                        log.debug("Plugin %s init order changed to %d".formatted(bean.getName(), initOrder));
                         configurations = ((List)bean.getConfigurations());
                         bean.deploy();
                     }
                 }
             }
-            log.info(format("Plugin configuration for %s set up successfully", pluginName));
         } catch (Exception ex) {
             log.error("Failed to process jar file: %s".formatted(ex.toString()));
             throwable = ex;

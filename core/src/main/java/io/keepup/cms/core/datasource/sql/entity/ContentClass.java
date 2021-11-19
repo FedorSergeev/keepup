@@ -8,7 +8,7 @@ import javax.persistence.*;
  * Link between {@link NodeEntity} and Java classes representing business entity stored in database
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 @Entity
 @org.springframework.data.relational.core.mapping.Table

@@ -7,7 +7,7 @@ import java.time.LocalDate;
  * Aggregates file attributes without creating the file
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 public class FileWrapper {
     private long id;

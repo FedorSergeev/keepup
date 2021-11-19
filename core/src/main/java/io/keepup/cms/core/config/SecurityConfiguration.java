@@ -32,7 +32,7 @@ import static org.apache.commons.lang3.ArrayUtils.addAll;
  * list of active profiles.
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 @ConditionalOnProperty(prefix = "keepup.security", name = "enabled", havingValue = "true")
 @Configuration

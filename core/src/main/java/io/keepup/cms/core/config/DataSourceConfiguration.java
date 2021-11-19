@@ -13,7 +13,7 @@ import javax.sql.DataSource;
 /**
  * Contains the set of beans for data source management
  *
- * @since 2.0
+ * @since 2.0.0
  * @author Fedor Sergeev
  */
 @Configuration(proxyBeanMethods = false)

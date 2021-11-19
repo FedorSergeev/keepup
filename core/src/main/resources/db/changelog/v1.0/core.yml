@@ -449,7 +449,7 @@ databaseChangeLog:
             tableName: layout_attributes
 
   - changeSet:
-      id: 1601462504025-10
+      id: 1601462504025-13
       author: Fedor Sergeev
       changes:
         - createTable:
@@ -463,6 +463,9 @@ databaseChangeLog:
                   type: BIGSERIAL
               - column:
                   name: html
+                  type: VARCHAR(255)
+              - column:
+                  name: breadcrumb_name
                   type: VARCHAR(255)
               - column:
                   constraints:

@@ -4,7 +4,7 @@ package io.keepup.cms.rest.controller;
  * Basic response wrapper for REST requests
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 public class AbstractResponseWrapper {
     private boolean success;

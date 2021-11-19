@@ -23,7 +23,7 @@ import static java.lang.String.format;
  * Implementation of data access objects for files and relation databases
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 @Service
 public class SqlFileDao implements FileDao {

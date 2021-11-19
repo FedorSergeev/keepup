@@ -10,7 +10,7 @@ import reactor.core.publisher.Mono;
  * DAO for files stored in the database
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 public interface ReactiveFileRepository extends ReactiveCrudRepository<FileEntity, Long> {
 

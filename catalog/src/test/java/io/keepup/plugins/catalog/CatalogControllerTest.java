@@ -37,6 +37,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -49,6 +50,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.server.WebSession;
 import reactor.core.publisher.Mono;
 
 import java.util.Collections;
@@ -110,6 +112,8 @@ class CatalogControllerTest {
     private ObjectMapper mapper;
     @Autowired
     private WebTestClient client;
+    @MockBean
+    private WebSession webSession;
 
     @Mock
     private CatalogService mockCatalogService;
@@ -372,7 +376,7 @@ class CatalogControllerTest {
         CatalogController testCatalogController = new CatalogController(mockCatalogService, layoutService, mapper);
         CatalogEntity savedEntity = catalogService.save(new TestCatalogEntity(), 0L).block();
 
-        ResponseEntity<DeleteCatalogEntityRequestResponseWrapper> result = testCatalogController.delete(savedEntity.getId()).block();
+        ResponseEntity<DeleteCatalogEntityRequestResponseWrapper> result = testCatalogController.delete(savedEntity.getId(), webSession).block();
 
         assertNotNull(result);
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());

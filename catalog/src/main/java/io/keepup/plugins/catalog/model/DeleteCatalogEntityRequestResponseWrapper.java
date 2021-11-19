@@ -4,7 +4,7 @@ package io.keepup.plugins.catalog.model;
  * Wrapper for response to delete {@link CatalogEntity} by id web request
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 public class DeleteCatalogEntityRequestResponseWrapper {
     private boolean success;
