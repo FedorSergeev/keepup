@@ -1,5 +1,11 @@
 spring:
-  profiles.active: dev,h2,security
+  profiles:
+    active: ${KEEPUP_SPRING_PROFILES_ACTIVE:dev,h2,security}
+  datasource:
+  pool:
+    initial-size: ${KEEPUP_SPRING_POOL_INITIAL_SIZE:3}
+    max-size: ${KEEPUP_SPRING_POOL_MAX_SIZE:10}
+    max-idle-time: ${KEEPUP_SPRING_MAX_IDLE_TIME:30m}
   main:
     allow-bean-definition-overriding: true
   liquibase:
@@ -10,7 +16,7 @@ logging:
     root: INFO
 keepup:
   paths:
-    static1: /app/static
+    static: /app/static
   server:
     resources:
       worker_count: ${KEEPUP_SERVER_RESOURCES_WORKER_COUNT:#{16}}

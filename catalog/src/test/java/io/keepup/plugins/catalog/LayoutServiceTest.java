@@ -36,6 +36,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import reactor.core.publisher.Mono;
 
+import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -185,6 +186,21 @@ class LayoutServiceTest {
                 .block();
 
         assertNull(deletedLayout);
+    }
+
+    @Test
+    void getByNullName() {
+        assertNull(layoutService.getByName(null).block());
+    }
+
+    @Test
+    void getByNullNames() {
+        var result = layoutService.getByNames(null).collectList().block();
+        var resultByEmptyNames = layoutService.getByNames(Collections.emptyList()).collectList().block();
+        assertNotNull(result);
+        assertNotNull(resultByEmptyNames);
+        assertTrue(result.isEmpty());
+        assertTrue(resultByEmptyNames.isEmpty());
     }
 
     private LayoutEntity wrongEntity() {

@@ -4,6 +4,29 @@ plugins {
     id 'jacoco'
 }
 
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId 'io.keepup.cms'
+            artifactId 'catalog'
+            version '2.0-SNAPSHOT'
+
+            artifact 'build/libs/catalog-plain.jar'
+        }
+    }
+    repositories {
+        maven {
+            name "nexus"
+            url "http://192.168.10.30:8081/nexus/content/repositories/transit-snapshot/"
+            credentials {
+                username ""
+                password ""
+            }
+        }
+
+    }
+}
+
 repositories {
     mavenCentral()
     mavenLocal()

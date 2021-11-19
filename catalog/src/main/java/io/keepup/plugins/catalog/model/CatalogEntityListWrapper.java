@@ -1,19 +1,21 @@
 package io.keepup.plugins.catalog.model;
 
+import org.jetbrains.annotations.NotNull;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class CatalogEntityListWrapper<T extends CatalogEntity> {
 
     private List<T> entities;
+    private List<Layout> layouts;
     private boolean success;
     private String error;
 
     public CatalogEntityListWrapper() {
         entities = new ArrayList<>();
+        layouts = new ArrayList<>();
     }
 
     public boolean isSuccess() {
@@ -40,6 +42,14 @@ public class CatalogEntityListWrapper<T extends CatalogEntity> {
         this.entities = entities;
     }
 
+    public List<Layout> getLayouts() {
+        return layouts;
+    }
+
+    public void setLayouts(List<Layout> layouts) {
+        this.layouts = layouts;
+    }
+
     public static Mono<CatalogEntityListWrapper<CatalogEntity>> error(String message) {
         var response = new CatalogEntityListWrapper<>();
         response.setSuccess(false);
@@ -48,10 +58,19 @@ public class CatalogEntityListWrapper<T extends CatalogEntity> {
     }
 
     public static Mono<CatalogEntityListWrapper<CatalogEntity>> success(List<CatalogEntity> catalogEntities) {
-            final var response = new CatalogEntityListWrapper<>();
-            response.setSuccess(true);
-            response.getEntities().addAll(catalogEntities.stream()
-                    .collect(Collectors.toList()));
-            return Mono.just(response);
+        final var response = new CatalogEntityListWrapper<>();
+        response.setSuccess(true);
+        response.getEntities().addAll(catalogEntities);
+        return Mono.just(response);
+    }
+
+    public static Mono<CatalogEntityListWrapper<CatalogEntity>> success(List<CatalogEntity> catalogEntities, List<Layout> layouts) {
+        return success(catalogEntities).map(wrapper -> withLayouts(layouts, wrapper));
+    }
+
+    @NotNull
+    private static CatalogEntityListWrapper<CatalogEntity> withLayouts(List<Layout> layouts, CatalogEntityListWrapper<CatalogEntity> wrapper) {
+        wrapper.setLayouts(layouts);
+        return wrapper;
     }
 }
