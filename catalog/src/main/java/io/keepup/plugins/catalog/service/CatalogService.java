@@ -35,7 +35,7 @@ public class CatalogService extends EntityOperationServiceBase<CatalogEntity> {
      * Looks for entities specified by id and parentId and also for {@link Layout} objects
      * linked to them.
      *
-     * @param id        entities identifier or parent identifier
+     * @param id       entities identifier or parent identifier
      * @param children flag marking to look for entities by parent id
      * @return         publisher for sequence of catalog wrappers
      */

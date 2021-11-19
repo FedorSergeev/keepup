@@ -68,7 +68,7 @@ public class SecurityConfiguration {
     private String logoutUrl;
 
     /**
-     * CSRF protectyion toggle
+     * CSRF protection toggle
      */
     @Value("${keepup.security.csrf-enabled:true}")
     private boolean csrfEnabled;

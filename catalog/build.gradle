@@ -11,7 +11,7 @@ publishing {
             artifactId 'catalog'
             version '2.0-SNAPSHOT'
 
-            artifact 'build/libs/catalog-2.0-SNAPSHOT-plain.jar'
+            artifact 'build/libs/catalog-plain.jar'
         }
     }
     repositories {

@@ -8,12 +8,16 @@ import io.keepup.plugins.catalog.model.*;
 import io.keepup.plugins.catalog.service.CatalogService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+
+import java.util.HashSet;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -29,6 +33,7 @@ import static reactor.core.publisher.Mono.just;
  */
 @RestController
 @RequestMapping("/catalog")
+@ConditionalOnProperty(prefix = "keepup.plugins.catalog", name = "enabled", havingValue = "true")
 public class CatalogController {
 
     private final Log log = LogFactory.getLog(getClass());
@@ -58,12 +63,15 @@ public class CatalogController {
                                                                              @RequestParam(value = "children",
                                                                                            required = false,
                                                                                            defaultValue = "false") final boolean children) {
-        log.info("Received request to get entity id = %d  with%s children".formatted(id, getWithoutChildrenSuffix(children)));
+        log.info("Received request to get entity id = %d  with %s children".formatted(id, getWithoutChildrenSuffix(children)));
+        final var layoutNames = new HashSet<String>();
         return catalogService.getCatalogEntitiesWithLayouts(id, children)
                 .filter(CatalogEntityWrapper::isSuccess)
                 .map(CatalogEntityBaseWrapper::getEntity)
+                .doOnNext(entity -> layoutNames.add(entity.getLayoutName()))
                 .collectList()
                 .flatMap(CatalogEntityListWrapper::success)
+                .flatMap(wrapper -> getCatalogEntityListWrapperWithLayouts(layoutNames, wrapper))
                 .map(ResponseEntity::ok)
                 .onErrorResume(error -> CatalogEntityListWrapper.error(error.getMessage())
                         .doOnNext(this::tryLogResponse)
@@ -78,11 +86,14 @@ public class CatalogController {
     @GetMapping
     public Mono<ResponseEntity<CatalogEntityListWrapper<CatalogEntity>>> getAll() {
         log.info("Received request to read all values");
+        final var layoutNames = new HashSet<String>();
         return catalogService.getAllWithLayouts()
                 .filter(CatalogEntityWrapper::isSuccess)
                 .map(CatalogEntityBaseWrapper::getEntity)
+                .doOnNext(entity -> layoutNames.add(entity.getLayoutName()))
                 .collectList()
                 .flatMap(CatalogEntityListWrapper::success)
+                .flatMap(wrapper -> getCatalogEntityListWrapperWithLayouts(layoutNames, wrapper))
                 .doOnNext(this::tryLogResponse)
                 .map(ResponseEntity::ok);
     }
@@ -145,6 +156,19 @@ public class CatalogController {
 
     private static Mono<? extends CatalogEntityWrapper<CatalogEntity>> applyError(Throwable throwable) {
         return CatalogEntityWrapper.error(throwable.getMessage());
+    }
+
+    @NotNull
+    private Mono<CatalogEntityListWrapper<CatalogEntity>> getCatalogEntityListWrapperWithLayouts(HashSet<String> layoutNames, CatalogEntityListWrapper<CatalogEntity> wrapper) {
+        if (layoutNames.isEmpty()) {
+            return Mono.just(wrapper);
+        }
+        return layoutService.getByNames(layoutNames)
+                .collectList()
+                .map(layouts -> {
+                    wrapper.setLayouts(layouts);
+                    return wrapper;
+                });
     }
     // endregion
 }
