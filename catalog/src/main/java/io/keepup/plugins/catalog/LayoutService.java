@@ -5,16 +5,18 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.keepup.plugins.catalog.dao.LayoutEntity;
 import io.keepup.plugins.catalog.dao.LayoutEntityRepository;
-import io.keepup.plugins.catalog.model.LayoutApiAttribute;
 import io.keepup.plugins.catalog.model.Layout;
+import io.keepup.plugins.catalog.model.LayoutApiAttribute;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.StreamSupport;
 
 import static java.util.Optional.ofNullable;
 import static reactor.core.publisher.Mono.empty;
@@ -25,6 +27,7 @@ import static reactor.core.publisher.Mono.empty;
 @Service
 @ConditionalOnProperty(prefix = "keepup.plugins.catalog", name = "enabled", havingValue = "true")
 public class LayoutService {
+    private static final String FOUND_LAYOUT_LOG = "Found layout id = %d name = %s";
     private final Log log = LogFactory.getLog(getClass());
     private final LayoutEntityRepository layoutEntityRepository;
     private final ObjectMapper objectMapper;
@@ -69,26 +72,50 @@ public class LayoutService {
      * @return   publisher for found {@link Layout} object
      */
     public Mono<Layout> get(Long id) {
-        log.debug("Looking for Layout entity with id = %d".formatted(id));
+        log.info("Looking for Layout entity with id = %d".formatted(id));
         return layoutEntityRepository.findById(id)
-                .doOnNext(entity -> log.debug("Found layout id = %d name = %s"
-                        .formatted(entity.getId(), entity.getName())))
+                .doOnNext(entity -> log.debug(FOUND_LAYOUT_LOG.formatted(entity.getId(), entity.getName())))
                 .switchIfEmpty(empty())
                 .onErrorResume(this::logErrorAndReturnMono)
                 .map(this::buildLayoutApiDto);
     }
 
     /**
-     * Finds {@link Layout} by it's name witch must be unique
+     * Finds {@link Layout} by it's name which must be unique
      *
      * @param name {@link Layout} name
      * @return     publisher for found {@link Layout} object
      */
     public Mono<Layout> getByName(String name) {
+        if (name == null) {
+            log.debug("Empty name parameter");
+            return Mono.empty();
+        }
         log.debug("Looking for Layout entity with name = %s".formatted(name));
         return layoutEntityRepository.findByName(name)
-                .doOnNext(entity -> log.debug("Found layout id = %d name = %s"
-                        .formatted(entity.getId(), entity.getName())))
+                .doOnNext(entity -> log.debug(FOUND_LAYOUT_LOG.formatted(entity.getId(), entity.getName())))
+                .switchIfEmpty(empty())
+                .onErrorResume(this::logErrorAndReturnMono)
+                .map(this::buildLayoutApiDto);
+    }
+
+    /**
+     * Finds {@link Layout} entities according to their names. Will return empty Flux if names is null or empty
+     *
+     * @param names {@link Layout} names
+     * @return      publisher for found {@link Layout} objects
+     */
+    public Flux<Layout> getByNames(Iterable<String> names) {
+        if (names == null
+         || StreamSupport.stream(names.spliterator(), false).count() == 0) {
+            log.debug("No names given for fetching the Layout entities");
+            return Flux.empty();
+        }
+        var stringBuilder = new StringBuilder();
+        names.forEach(name -> stringBuilder.append(name).append(" "));
+        log.debug("Looking for Layout entities with names in [ %s]".formatted(stringBuilder.toString()));
+        return layoutEntityRepository.findByNames(names)
+                .doOnNext(entity -> log.debug(FOUND_LAYOUT_LOG.formatted(entity.getId(), entity.getName())))
                 .switchIfEmpty(empty())
                 .onErrorResume(this::logErrorAndReturnMono)
                 .map(this::buildLayoutApiDto);
@@ -133,7 +160,6 @@ public class LayoutService {
             log.error("Failed to fetch layout %s attributes from data transfer object: %s"
                     .formatted(resultLayout.getName(), e.toString()));
         }
-
         return resultLayout;
     }
 }

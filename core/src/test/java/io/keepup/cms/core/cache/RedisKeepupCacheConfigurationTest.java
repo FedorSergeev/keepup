@@ -9,12 +9,12 @@ import io.keepup.cms.core.datasource.dao.DataSourceFacadeImpl;
 import io.keepup.cms.core.datasource.dao.sql.SqlContentDao;
 import io.keepup.cms.core.datasource.dao.sql.SqlFileDao;
 import io.keepup.cms.core.datasource.dao.sql.SqlUserDao;
-import io.keepup.cms.core.datasource.sql.H2ConsoleService;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveNodeAttributeEntityRepository;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveNodeEntityRepository;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveUserEntityRepository;
 import io.keepup.cms.core.persistence.Content;
 import io.keepup.cms.core.persistence.Node;
+import org.junit.Ignore;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,7 +45,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
         ReactiveNodeAttributeEntityRepository.class,
         ReactiveUserEntityRepository.class,
         DataSourceConfiguration.class,
-        H2ConsoleService.class,
         R2dbcConfiguration.class,
         SqlContentDao.class,
         SqlFileDao.class,

@@ -7,7 +7,7 @@ import reactor.core.publisher.Mono;
  * Wrapper for entities implementing {@link CatalogEntity} interface and their {@link Layout}
  * objects linked by {@link CatalogEntity#getLayoutName()} value.
  *
- * @author fedor Sergeev
+ * @author Fedor Sergeev
  * @since 2.0
  */
 public class CatalogEntityWrapper<T extends CatalogEntity> extends CatalogEntityBaseWrapper<T> {

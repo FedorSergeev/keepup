@@ -126,14 +126,13 @@ class SecurityConfigurationTest {
                         .body(BodyInserters.fromFormData("username", savedUser.getUsername())
                                 .with("password", "test"))
                         .exchange()
-                        .expectHeader().value("Set-Cookie", cookie -> cookieRef.set(cookie)
+                        .expectHeader().value("Set-Cookie", cookieRef::set
                 )).block();
         return cookieRef;
     }
 
     private String getSessionCookieValue(AtomicReference<String> cookieRef) {
-        return Arrays.asList(cookieRef.get().split(";"))
-                .stream()
+        return Arrays.stream(cookieRef.get().split(";"))
                 .filter(cookie -> cookie.startsWith(SESSION))
                 .findFirst()
                 .orElse("")
