@@ -18,7 +18,7 @@ import reactor.netty.resources.LoopResources;
  * Reactive web application configuration
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 @Configuration
 public class WebFluxConfig implements WebFluxConfigurer {

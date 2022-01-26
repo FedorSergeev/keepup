@@ -139,3 +139,17 @@ Object fields managed by KeepUP can be described by a set of metadata responsibl
 The plugin is disabled by default, but you can activate it by adding the following parameter to the application configuration (for example, the application.properties file):
 
 keepup.plugins.catalog.enabled = true
+
+## Administrative panel UI module
+
+Mostly this plugin is used for testing the CMS capabilities. There is a number of features demonstrated:
+
+### ability to use separate SPA with modules on the frontend side
+### role model
+### layout player
+
+You can enable the plugin by setting the parameter:
+
+```YAML
+keepup.plugins.adminui.enabled: true
+```

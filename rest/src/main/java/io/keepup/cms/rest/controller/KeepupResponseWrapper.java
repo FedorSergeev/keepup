@@ -6,7 +6,7 @@ package io.keepup.cms.rest.controller;
  *
  * @param <T> entity type
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 public class KeepupResponseWrapper<T> extends AbstractResponseWrapper {
     private T entity;

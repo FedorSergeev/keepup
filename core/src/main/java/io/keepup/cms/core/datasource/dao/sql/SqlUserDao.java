@@ -35,7 +35,7 @@ import static java.util.stream.Collectors.toList;
  * Implementation of data access objects for {@link io.keepup.cms.core.persistence.User} and relation databases
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 @Service
 public class SqlUserDao implements UserDao {

@@ -6,7 +6,7 @@ import java.io.Serializable;
  * Interface to be implemented in {@link PluginService} objects
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 public interface KeepupPluginConfiguration extends Serializable {
 

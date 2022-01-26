@@ -1,0 +1,74 @@
+plugins {
+    id 'maven-publish'
+    id 'org.springframework.boot' version '2.5.2'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'jacoco'
+}
+
+group 'io.keepup.plugins'
+version '2.0-SNAPSHOT'
+description = "admin-ui"
+
+sourceCompatibility = 15
+targetCompatibility = 15
+
+bootJar.enabled = false
+jar.enabled = true
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId 'io.keepup.plugins'
+            artifactId 'admin-ui'
+            version '2.0-SNAPSHOT'
+            artifact 'build/libs/admin-ui-2.0-SNAPSHOT-plain.jar'
+        }
+    }
+
+}
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+    implementation project(':core')
+    implementation project(':rest')
+    implementation project(':catalog')
+    implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'com.wordnik:swagger-annotations:1.5.3-M1'
+    implementation 'javax.persistence:javax.persistence-api:2.2'
+    compileOnly 'commons-io:commons-io:2.11.0'
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'org.mockito:mockito-core:3.12.4'
+    testImplementation 'io.r2dbc:r2dbc-h2:0.8.4.RELEASE'
+    testImplementation 'com.h2database:h2:1.4.200'
+    testImplementation 'org.mockftpserver:MockFtpServer:2.7.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testImplementation 'io.projectreactor:reactor-test'
+    testImplementation 'org.junit.platform:junit-platform-runner:1.7.2'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+}
+
+bootJar.enabled = false
+jar.enabled = true
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+task deleteFiles(type: Delete) {
+    delete 'src/main/resources/META-INF/server'
+}
+
+task copyFrontend(type: Copy) {
+    from 'sb-admin/build'
+    into 'src/main/resources/META-INF/server'
+}

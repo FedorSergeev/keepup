@@ -9,7 +9,7 @@ import reactor.core.publisher.Mono;
  * Data access object for application users
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 public interface UserDao {
     Mono<User> saveUser(User user);

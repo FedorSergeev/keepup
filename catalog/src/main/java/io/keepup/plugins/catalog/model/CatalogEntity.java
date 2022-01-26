@@ -8,7 +8,7 @@ import java.io.Serializable;
  * Extension of Serializable abstraction with additional method for fetching the model view.
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "type")
 public interface CatalogEntity extends Serializable {

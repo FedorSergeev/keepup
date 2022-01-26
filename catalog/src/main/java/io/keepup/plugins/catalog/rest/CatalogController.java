@@ -15,6 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.WebSession;
 import reactor.core.publisher.Mono;
 
 import java.util.HashSet;
@@ -29,13 +30,14 @@ import static reactor.core.publisher.Mono.just;
  * {@link io.keepup.plugins.catalog.model.Layout} objects
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 @RestController
 @RequestMapping("/catalog")
 @ConditionalOnProperty(prefix = "keepup.plugins.catalog", name = "enabled", havingValue = "true")
 public class CatalogController {
 
+    private static final String SESSION_ID_WITH_RESPONSE = "Session id: %s, Send response: %s";
     private final Log log = LogFactory.getLog(getClass());
     private final CatalogService catalogService;
     private final LayoutService layoutService;
@@ -62,9 +64,14 @@ public class CatalogController {
     public Mono<ResponseEntity<CatalogEntityListWrapper<CatalogEntity>>> get(@PathVariable("id") final Long id,
                                                                              @RequestParam(value = "children",
                                                                                            required = false,
-                                                                                           defaultValue = "false") final boolean children) {
-        log.info("Received request to get entity id = %d  with %s children".formatted(id, getWithoutChildrenSuffix(children)));
+                                                                                           defaultValue = "false") final boolean children,
+                                                                             @RequestParam(value = "parentOffsetId",
+                                                                                           required = false) Long offset,
+                                                                             WebSession webSession) {
+        log.info("Session id: %s, Received request to get entity id = %d  with %s children"
+                .formatted(webSession.getId(), id, getWithoutChildrenSuffix(children)));
         final var layoutNames = new HashSet<String>();
+
         return catalogService.getCatalogEntitiesWithLayouts(id, children)
                 .filter(CatalogEntityWrapper::isSuccess)
                 .map(CatalogEntityBaseWrapper::getEntity)
@@ -72,9 +79,10 @@ public class CatalogController {
                 .collectList()
                 .flatMap(CatalogEntityListWrapper::success)
                 .flatMap(wrapper -> getCatalogEntityListWrapperWithLayouts(layoutNames, wrapper))
+                .flatMap(Mono::just)
                 .map(ResponseEntity::ok)
                 .onErrorResume(error -> CatalogEntityListWrapper.error(error.getMessage())
-                        .doOnNext(this::tryLogResponse)
+                        .doOnNext(response -> tryLogResponse(response, webSession.getId()))
                         .map(ResponseEntity::ok));
     }
 
@@ -84,8 +92,8 @@ public class CatalogController {
      * @return Publisher for ResponseEntity wrapping catalog entities with layouts
      */
     @GetMapping
-    public Mono<ResponseEntity<CatalogEntityListWrapper<CatalogEntity>>> getAll() {
-        log.info("Received request to read all values");
+    public Mono<ResponseEntity<CatalogEntityListWrapper<CatalogEntity>>> getAll(WebSession webSession) {
+        log.info("Session id: %s, Received request to read all values".formatted(webSession.getId()));
         final var layoutNames = new HashSet<String>();
         return catalogService.getAllWithLayouts()
                 .filter(CatalogEntityWrapper::isSuccess)
@@ -94,8 +102,10 @@ public class CatalogController {
                 .collectList()
                 .flatMap(CatalogEntityListWrapper::success)
                 .flatMap(wrapper -> getCatalogEntityListWrapperWithLayouts(layoutNames, wrapper))
-                .doOnNext(this::tryLogResponse)
-                .map(ResponseEntity::ok);
+                .doOnNext(response -> tryLogResponse(response, webSession.getId()))
+                .map(ResponseEntity::ok)
+                .doOnError(response -> log.error("Session id: %s, Send error: %s"
+                        .formatted(webSession.getId(), response.toString())));
     }
 
     /**
@@ -108,8 +118,10 @@ public class CatalogController {
      */
     @PostMapping(value = {"/{parentId}", EMPTY}, consumes = APPLICATION_JSON_VALUE)
     public Mono<ResponseEntity<CatalogEntityWrapper<CatalogEntity>>> save(@PathVariable(name = "parentId", required = false) final Long parentId,
-                                                                          @RequestBody CatalogEntity catalogEntity) {
-        log.info("Received request to save catalog entity %s".formatted(catalogEntity.toString()));
+                                                                          @RequestBody CatalogEntity catalogEntity,
+                                                                          WebSession webSession) {
+        log.info("Session id: %s, Received request to save catalog entity %s"
+                .formatted(webSession.getId(), catalogEntity.toString()));
         if (parentId != null && parentId < 0) {
             var errorMessage = "Parent identifier cannot be negative";
             log.error(errorMessage);
@@ -125,7 +137,9 @@ public class CatalogController {
                 .flatMap(userId -> catalogService.save(catalogEntity, userId, parentId))
                 .flatMap(savedCatalogEntity -> CatalogEntityWrapper.success(savedCatalogEntity, layoutService.getByName(savedCatalogEntity.getLayoutName())))
                 .onErrorResume(CatalogController::applyError)
-                .map(ResponseEntity::ok);
+                .map(ResponseEntity::ok)
+                .doOnNext(response -> log.info(SESSION_ID_WITH_RESPONSE
+                        .formatted(webSession.getId(), response.toString())));
     }
 
     /**
@@ -134,11 +148,14 @@ public class CatalogController {
      * @return publisher witch produces information about delete operation result
      */
     @DeleteMapping("/{id}")
-    public Mono<ResponseEntity<DeleteCatalogEntityRequestResponseWrapper>> delete(@PathVariable("id") final Long id) {
+    public Mono<ResponseEntity<DeleteCatalogEntityRequestResponseWrapper>> delete(@PathVariable("id") final Long id,
+                                                                                  WebSession webSession) {
         return catalogService.delete(id)
                 .thenReturn(ResponseEntity.ok(DeleteCatalogEntityRequestResponseWrapper.success()))
                 .onErrorResume(error -> Mono.just(ResponseEntity.internalServerError()
-                        .body(DeleteCatalogEntityRequestResponseWrapper.error(error.getMessage()))));
+                        .body(DeleteCatalogEntityRequestResponseWrapper.error(error.getMessage()))))
+                .doOnNext(response -> log.info(SESSION_ID_WITH_RESPONSE
+                        .formatted(webSession.getId(), response.toString())));
     }
 
     // region private methods
@@ -146,9 +163,9 @@ public class CatalogController {
         return children ? EMPTY : "out";
     }
 
-    private void tryLogResponse(CatalogEntityListWrapper<CatalogEntity> response) {
+    private void tryLogResponse(CatalogEntityListWrapper<CatalogEntity> response, String sessionId) {
         try {
-            log.info("Send response: %s".formatted(mapper.writeValueAsString(response)));
+            log.info(SESSION_ID_WITH_RESPONSE.formatted(sessionId, mapper.writeValueAsString(response)));
         } catch (JsonProcessingException e) {
             log.error("Failed to convert response: %s".formatted(e.toString()));
         }

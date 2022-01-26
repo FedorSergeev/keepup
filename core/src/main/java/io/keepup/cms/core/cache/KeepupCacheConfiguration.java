@@ -31,7 +31,7 @@ import static org.springframework.data.redis.serializer.RedisSerializationContex
  * Contains configurations for different cache types.
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 @Configuration
 @EnableCaching

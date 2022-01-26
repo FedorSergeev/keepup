@@ -9,7 +9,7 @@ import java.io.Serializable;
  * Database entity connecting multiple roles and users
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 @Entity
 @org.springframework.data.relational.core.mapping.Table

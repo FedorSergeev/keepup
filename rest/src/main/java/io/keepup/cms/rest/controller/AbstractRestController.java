@@ -22,7 +22,7 @@ import static java.util.Optional.ofNullable;
  * extensions of {@link io.keepup.cms.core.service.EntityOperationServiceBase}
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 public abstract class AbstractRestController<T> {
 

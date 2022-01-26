@@ -13,7 +13,7 @@ import java.io.Serializable;
  * Persistent entity for viewing the entities
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 @Entity
 @org.springframework.data.relational.core.mapping.Table
@@ -36,6 +36,12 @@ public class LayoutEntity implements Serializable {
      */
     @Column(name = "html", nullable = false)
     private String html;
+
+    /**
+     * Name of the bread crumb element for this layout
+     */
+    @Column(name = "breadcrumb_name")
+    private String breadCrumbName;
 
     /**
      * JSON string with attributes
@@ -65,6 +71,14 @@ public class LayoutEntity implements Serializable {
 
     public void setHtml(String html) {
         this.html = html;
+    }
+
+    public String getBreadCrumbName() {
+        return breadCrumbName;
+    }
+
+    public void setBreadCrumbName(String breadCrumbName) {
+        this.breadCrumbName = breadCrumbName;
     }
 
     public String getAttributes() {

@@ -17,6 +17,7 @@ public class Layout {
     private Long id;
     private String name;
     private String html;
+    private String breadCrumbElementName;
     private List<LayoutApiAttribute> attributes;
 
     /**
@@ -68,6 +69,14 @@ public class Layout {
 
     public void setHtml(String html) {
         this.html = html;
+    }
+
+    public String getBreadCrumbElementName() {
+        return breadCrumbElementName;
+    }
+
+    public void setBreadCrumbElementName(String breadCrumbElementName) {
+        this.breadCrumbElementName = breadCrumbElementName;
     }
 
     public List<LayoutApiAttribute> getAttributes() {

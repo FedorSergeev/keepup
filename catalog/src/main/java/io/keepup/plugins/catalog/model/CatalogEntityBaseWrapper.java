@@ -4,8 +4,8 @@ package io.keepup.plugins.catalog.model;
  * Wrapper for entities implementing {@link CatalogEntity} interface and their {@link Layout}
  * objects linked by {@link CatalogEntity#getLayoutName()} value.
  *
- * @author fedor Sergeev
- * @since 2.0
+ * @author Fedor Sergeev
+ * @since 2.0.0
  */
 public class CatalogEntityBaseWrapper<T extends CatalogEntity> {
     private T entity;

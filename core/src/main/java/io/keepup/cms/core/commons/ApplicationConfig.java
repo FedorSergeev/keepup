@@ -16,7 +16,7 @@ import static java.nio.file.Paths.get;
  * Stores and processes properties
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 @Service
 public class ApplicationConfig {

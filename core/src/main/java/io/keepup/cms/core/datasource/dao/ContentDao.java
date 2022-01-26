@@ -12,7 +12,7 @@ import java.util.Map;
  * Data access object for {@link io.keepup.cms.core.persistence.Content} entities
  *
  * @author Fedor Sergeev
- * @since 2.0
+ * @since 2.0.0
  */
 public interface ContentDao {
     Mono<Content> getContent(Long id);

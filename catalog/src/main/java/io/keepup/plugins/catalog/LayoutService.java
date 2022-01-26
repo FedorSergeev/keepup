@@ -23,6 +23,9 @@ import static reactor.core.publisher.Mono.empty;
 
 /**
  * Business layer for work with {@link Layout}
+ *
+ * @author Fedor Sergeev
+ * @since 1.8
  */
 @Service
 @ConditionalOnProperty(prefix = "keepup.plugins.catalog", name = "enabled", havingValue = "true")
@@ -41,7 +44,7 @@ public class LayoutService {
      * Create or update an existing layout object
      *
      * @param layout object to update
-     * @return Publisher signaling when layout is saved
+     * @return       Publisher signaling when layout is saved
      */
     public Mono<Layout> save(Layout layout) {
         log.debug("Received request to save Layout entity with id = %d and name = %s"
@@ -51,6 +54,7 @@ public class LayoutService {
         layoutEntity.setId(layout.getId());
         layoutEntity.setName(layout.getName());
         layoutEntity.setHtml(layout.getHtml());
+        layoutEntity.setBreadCrumbName(layout.getBreadCrumbElementName());
 
         try {
             layoutAttributes = objectMapper.writeValueAsString(layout.getAttributes());
@@ -152,6 +156,7 @@ public class LayoutService {
         resultLayout.setId(entity.getId());
         resultLayout.setName(entity.getName());
         resultLayout.setHtml(entity.getHtml());
+        resultLayout.setBreadCrumbElementName(entity.getBreadCrumbName());
 
         try {
             List<LayoutApiAttribute> attributes = objectMapper.readValue(entity.getAttributes(), new TypeReference<>() {});
