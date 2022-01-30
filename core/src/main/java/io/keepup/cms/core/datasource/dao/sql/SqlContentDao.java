@@ -15,6 +15,7 @@ import io.keepup.cms.core.persistence.Node;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
@@ -380,6 +381,27 @@ public class SqlContentDao implements ContentDao {
             return Flux.empty();
         }
         return nodeEntityRepository.findByParentIds(Collections.singletonList(parentId))
+                .flatMap(getNodeEntityPublisherFunction());
+    }
+
+    /**
+     * Recursively fetches all {@link Content} records until the root or the specified offset record is found
+     *
+     * @param id     first record identifier, in case of null empty Flux will be returned
+     * @param offset depth of search, in case of null will be set to {@link Long#MAX_VALUE}
+     * @return       publisher for the sequence of records inheriting each other till the record with the specified
+     *               parent id (excluding this record itself)
+     */
+    @Override
+    public Flux<Content> getContentParents(@NotNull Long id, @Nullable Long offset) {
+        if (id == null) {
+            log.error("Null parameter id was passed to getContentParents method");
+            return Flux.empty();
+        }
+        if (offset == null) {
+            offset = Long.MAX_VALUE;
+        }
+        return nodeEntityRepository.findContentParents(id, offset)
                 .flatMap(getNodeEntityPublisherFunction());
     }
 

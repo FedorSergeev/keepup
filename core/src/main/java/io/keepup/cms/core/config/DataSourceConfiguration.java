@@ -38,9 +38,9 @@ public class DataSourceConfiguration {
      * @return component responsible for data source consistency check and update
      */
     @Bean
-    public SpringLiquibase liquibase() {
+    public SpringLiquibase liquibase(DataSource dataSource) {
         var liquibase = new SpringLiquibase();
-        liquibase.setDataSource(dataSource());
+        liquibase.setDataSource(dataSource);
         liquibase.setChangeLog(changeLog);
         liquibase.setShouldRun(liquibaseEnabled);
         return liquibase;

@@ -56,6 +56,12 @@ dependencies {
     testImplementation 'org.mockftpserver:MockFtpServer:2.8.0'
     testImplementation 'it.ozimov:embedded-redis:0.7.3'
     testImplementation 'com.github.fppt:jedis-mock:0.1.22'
+    testImplementation 'org.testcontainers:postgresql:1.16.3'
+    testImplementation 'org.testcontainers:junit-jupiter:1.16.3'
+    testImplementation 'org.testcontainers:r2dbc:1.16.3'
+    testImplementation 'org.postgresql:postgresql:42.3.1'
+    testImplementation 'io.r2dbc:r2dbc-postgresql:0.8.11.RELEASE'
+
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
 }
 
