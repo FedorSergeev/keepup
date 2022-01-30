@@ -11,7 +11,7 @@ class CatalogEntityListWrapperTest {
 
     @Test
     void error() {
-        var wrapper = CatalogEntityListWrapper.error(TEST_ERROR).block();
+        var wrapper = CatalogEntityListWrapper.error(TEST_ERROR);
         assertFalse(wrapper.isSuccess());
         assertEquals(TEST_ERROR, wrapper.getError());
     }

@@ -387,13 +387,14 @@ public class SqlContentDao implements ContentDao {
     /**
      * Recursively fetches all {@link Content} records until the root or the specified offset record is found
      *
-     * @param id     first record identifier, in case of null empty Flux will be returned
+     * @param id     first parent record identifier, in case of null empty Flux will be returned
      * @param offset depth of search, in case of null will be set to {@link Long#MAX_VALUE}
      * @return       publisher for the sequence of records inheriting each other till the record with the specified
      *               parent id (excluding this record itself)
      */
     @Override
     public Flux<Content> getContentParents(@NotNull Long id, @Nullable Long offset) {
+        // left this check for public API users who don't use any lint tools
         if (id == null) {
             log.error("Null parameter id was passed to getContentParents method");
             return Flux.empty();

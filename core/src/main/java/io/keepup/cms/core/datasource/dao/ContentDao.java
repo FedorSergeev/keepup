@@ -1,6 +1,8 @@
 package io.keepup.cms.core.datasource.dao;
 
 import io.keepup.cms.core.persistence.Content;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -32,11 +34,11 @@ public interface ContentDao {
      * Fetch a sequence of parents for the record specified by identifier. In current realization works only with
      * PostgreSQL database as data source.
      *
-     * @param id       child record identifier
+     * @param id       parent record identifier
      * @param offsetId number of parent records to get
      * @return         publisher for the parent records sequence
      */
-    Flux<Content> getContentParents(Long id, Long offsetId);
+    Flux<Content> getContentParents(@NotNull Long id, @Nullable Long offsetId);
     Mono<Long> createContent(Content content);
     Mono<Void> deleteContent(Long id);
 }

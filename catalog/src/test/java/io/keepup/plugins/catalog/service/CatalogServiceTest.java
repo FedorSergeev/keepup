@@ -15,7 +15,6 @@ import io.keepup.cms.core.datasource.sql.repository.ReactiveContentClassReposito
 import io.keepup.cms.core.datasource.sql.repository.ReactiveNodeAttributeEntityRepository;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveNodeEntityRepository;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveUserEntityRepository;
-import io.keepup.plugins.catalog.LayoutService;
 import io.keepup.plugins.catalog.model.CatalogEntity;
 import io.keepup.plugins.catalog.model.CatalogEntityWrapper;
 import io.keepup.plugins.catalog.model.Layout;

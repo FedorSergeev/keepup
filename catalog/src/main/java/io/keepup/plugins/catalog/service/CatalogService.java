@@ -4,7 +4,6 @@ import io.keepup.cms.core.datasource.dao.DataSourceFacade;
 import io.keepup.cms.core.persistence.Content;
 import io.keepup.cms.core.service.EntityOperationServiceBase;
 import io.keepup.cms.core.service.EntityService;
-import io.keepup.plugins.catalog.LayoutService;
 import io.keepup.plugins.catalog.model.CatalogEntity;
 import io.keepup.plugins.catalog.model.CatalogEntityWrapper;
 import io.keepup.plugins.catalog.model.Layout;
@@ -69,10 +68,33 @@ public class CatalogService extends EntityOperationServiceBase<CatalogEntity> {
                 .flatMap(this::convert);
     }
 
-    // todo javadoc
+    /**
+     * Fetch all entities with layouts
+     *
+     * @return all entities available for the user with their layout models
+     */
     public Flux<CatalogEntityWrapper<CatalogEntity>> getAllWithLayouts() {
         return getAll()
                 .flatMap(catalogEntity -> success(catalogEntity, layoutService.getByName(catalogEntity.getLayoutName())));
+    }
+
+    /**
+     * Fetch a sequence of parents for the record specified by identifier.
+     *
+     * @param parentId  parent record identifier, can not be null
+     * @param offset    number of parent records to get, will be set to {@link Long#MAX_VALUE} if null
+     * @return          publisher for the parent records sequence
+     */
+    public Flux<CatalogEntity> getContentParents(Long parentId, Long offset) {
+        if (parentId == null) {
+            return Flux.empty();
+        }
+        if (offset == null) {
+            offset = Long.MAX_VALUE;
+        }
+        return dataSourceFacade.getContentParents(parentId, offset)
+                .filter(this::isCatalogEntity)
+                .flatMap(this::convert);
     }
 
     private boolean isCatalogEntity(Content node)  {

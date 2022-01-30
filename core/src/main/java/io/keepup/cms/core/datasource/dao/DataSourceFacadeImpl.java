@@ -101,7 +101,8 @@ public class DataSourceFacadeImpl implements DataSourceFacade {
 
     /**
      * Fetch a sequence of parents for the record specified by identifier.
-     * @param id       child record identifier, can not be null
+     *
+     * @param id       parent record identifier, can not be null
      * @param offsetId number of parent records to get, will be set to {@link Long#MAX_VALUE} if null
      * @return         publisher for the parent records sequence
      */
