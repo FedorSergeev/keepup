@@ -58,11 +58,21 @@ public class CatalogEntityListWrapper<T extends CatalogEntity> {
         this.layouts = layouts;
     }
 
-    public static Mono<CatalogEntityListWrapper<CatalogEntity>> error(String message) {
+    @Override
+    public String toString() {
+        return "success = %s, error = %s, parents = [%s], entities = [%s], layouts = [%s]"
+                .formatted(success,
+                        error,
+                        getObjectListAsString(parents),
+                        getObjectListAsString(entities),
+                        getObjectListAsString(layouts));
+    }
+
+    public static CatalogEntityListWrapper<CatalogEntity> error(String message) {
         var response = new CatalogEntityListWrapper<>();
         response.setSuccess(false);
         response.setError(message);
-        return  Mono.just(response);
+        return  response;
     }
 
     public static Mono<CatalogEntityListWrapper<CatalogEntity>> success(List<CatalogEntity> catalogEntities) {
@@ -80,5 +90,19 @@ public class CatalogEntityListWrapper<T extends CatalogEntity> {
     private static CatalogEntityListWrapper<CatalogEntity> withLayouts(List<Layout> layouts, CatalogEntityListWrapper<CatalogEntity> wrapper) {
         wrapper.setLayouts(layouts);
         return wrapper;
+    }
+
+    private String getObjectListAsString(List<?> items) {
+        if (items == null) {
+            return "null";
+        }
+        var stringBuilder = new StringBuilder();
+        for (int index = 0; index < items.size(); index++) {
+            stringBuilder.append(items.get(index).toString());
+            if (index < items.size() - 1) {
+                stringBuilder.append(", ");
+            }
+        }
+        return stringBuilder.toString();
     }
 }

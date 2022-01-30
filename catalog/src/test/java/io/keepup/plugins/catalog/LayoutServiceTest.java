@@ -21,6 +21,7 @@ import io.keepup.plugins.catalog.dao.LayoutEntityRepository;
 import io.keepup.plugins.catalog.model.AttributeType;
 import io.keepup.plugins.catalog.model.Layout;
 import io.keepup.plugins.catalog.model.LayoutApiAttribute;
+import io.keepup.plugins.catalog.service.LayoutService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.jupiter.api.BeforeEach;

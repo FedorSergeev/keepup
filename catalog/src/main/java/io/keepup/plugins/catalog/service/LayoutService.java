@@ -1,4 +1,4 @@
-package io.keepup.plugins.catalog;
+package io.keepup.plugins.catalog.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;

@@ -27,17 +27,17 @@ import io.keepup.plugins.catalog.model.DeleteCatalogEntityRequestResponseWrapper
 import io.keepup.plugins.catalog.model.Layout;
 import io.keepup.plugins.catalog.rest.CatalogController;
 import io.keepup.plugins.catalog.service.CatalogService;
+import io.keepup.plugins.catalog.service.LayoutService;
 import io.keepup.plugins.catalog.service.TestCatalogEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentMatchers;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -51,6 +51,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.server.WebSession;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Collections;
@@ -63,6 +64,7 @@ import static io.keepup.cms.core.datasource.sql.EntityUtils.convertToLocalDateVi
 import static java.lang.Long.MAX_VALUE;
 import static java.util.UUID.randomUUID;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyLong;
 
 @AutoConfigureWebTestClient
 @WebFluxTest(CatalogController.class)
@@ -115,7 +117,7 @@ class CatalogControllerTest {
     @MockBean
     private WebSession webSession;
 
-    @Mock
+    @SpyBean
     private CatalogService mockCatalogService;
 
     @Test
@@ -210,6 +212,49 @@ class CatalogControllerTest {
     }
 
     @Test
+    void getItemAndParentWithLayouts() {
+        var contentId = 26L;
+        CatalogEntity entity = new CatalogEntity() {
+            @Override
+            public Long getId() {
+                return 25L;
+            }
+
+            @Override
+            public String getLayoutName() {
+                return "layout";
+            }
+        };
+        CatalogEntity childEntity = new CatalogEntity() {
+            @Override
+            public Long getId() {
+                return contentId;
+            }
+
+            @Override
+            public String getLayoutName() {
+                return "layout";
+            }
+        };
+        CatalogEntity[] catalogEntities = {entity, childEntity};
+        Mockito.when(mockCatalogService.getContentParents(anyLong(), anyLong()))
+                .thenReturn(Flux.just(catalogEntities));
+
+        client.get().uri("/catalog/%s?parents=true".formatted(contentId))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(JsonNode.class).consumeWith(response -> {
+            JsonNode responseBody = response.getResponseBody();
+            assertFalse(responseBody.findValues("parents").isEmpty());
+            assertEquals(2, responseBody.findValues("parents").get(0).size());
+            assertNotNull(responseBody.findValues("parents").get(0).get(0));
+            assertNotNull(responseBody.findValues("parents").get(0).get(0).get("id"));
+            assertNotNull(responseBody.findValues("parents").get(0).get(1));
+            assertNotNull(responseBody.findValues("parents").get(0).get(1).get("id"));
+        });
+    }
+
+    @Test
     void getAll() {
         layoutService.deleteAll().then(catalogService.getAll()
                 .map(entity -> catalogService.delete(entity.getId()))
@@ -228,6 +273,30 @@ class CatalogControllerTest {
             }
         });
         assertNotNull(catalogEntities);
+    }
+
+    @Test
+    void getAllWithError() {
+        Mockito.when(mockCatalogService.getAll())
+               .thenReturn(Flux.error(new RuntimeException("Testing error in CatalogController#getAll")));
+        client.get().uri("/catalog").exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody(JsonNode.class).consumeWith(response -> {
+            JsonNode responseBody = response.getResponseBody();
+
+        });
+    }
+
+    @Test
+    void getByIdWithError() {
+        Mockito.when(mockCatalogService.get(anyLong()))
+                .thenReturn(Mono.error(new RuntimeException("Testing error in CatalogController#get")));
+        client.get().uri("/catalog/2").exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody(JsonNode.class).consumeWith(response -> {
+            JsonNode responseBody = response.getResponseBody();
+
+        });
     }
 
     @Test
@@ -371,9 +440,9 @@ class CatalogControllerTest {
     void deleteWithError() {
         String exceptionMessage = "Test wrong exception";
         MockitoAnnotations.openMocks(this);
-        Mockito.when(mockCatalogService.delete(ArgumentMatchers.anyLong()))
+        Mockito.when(mockCatalogService.delete(anyLong()))
                 .thenReturn(Mono.error(new RuntimeException(exceptionMessage)));
-        CatalogController testCatalogController = new CatalogController(mockCatalogService, layoutService, mapper);
+        CatalogController testCatalogController = new CatalogController(mockCatalogService, layoutService);
         CatalogEntity savedEntity = catalogService.save(new TestCatalogEntity(), 0L).block();
 
         ResponseEntity<DeleteCatalogEntityRequestResponseWrapper> result = testCatalogController.delete(savedEntity.getId(), webSession).block();

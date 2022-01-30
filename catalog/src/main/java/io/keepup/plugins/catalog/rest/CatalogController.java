@@ -1,11 +1,9 @@
 package io.keepup.plugins.catalog.rest;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.keepup.cms.core.persistence.User;
-import io.keepup.plugins.catalog.LayoutService;
 import io.keepup.plugins.catalog.model.*;
 import io.keepup.plugins.catalog.service.CatalogService;
+import io.keepup.plugins.catalog.service.LayoutService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jetbrains.annotations.NotNull;
@@ -20,8 +18,11 @@ import reactor.core.publisher.Mono;
 
 import java.util.HashSet;
 
+import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.ResponseEntity.internalServerError;
+import static org.springframework.http.ResponseEntity.ok;
 import static reactor.core.publisher.Mono.just;
 
 /**
@@ -41,14 +42,11 @@ public class CatalogController {
     private final Log log = LogFactory.getLog(getClass());
     private final CatalogService catalogService;
     private final LayoutService layoutService;
-    private final ObjectMapper mapper;
 
     public CatalogController(CatalogService catalogService,
-                             LayoutService layoutService,
-                             ObjectMapper mapper) {
+                             LayoutService layoutService) {
         this.catalogService = catalogService;
         this.layoutService = layoutService;
-        this.mapper = mapper;
     }
 
     /**
@@ -57,19 +55,22 @@ public class CatalogController {
      *
      * @param id       entity primary identifier
      * @param children flag for getting children as well
-     * @return         publisher signaling when entities are fetched
+     * @return publisher signaling when entities are fetched
      * with {@link io.keepup.plugins.catalog.model.Layout} views
      */
     @GetMapping("/{id}")
     public Mono<ResponseEntity<CatalogEntityListWrapper<CatalogEntity>>> get(@PathVariable("id") final Long id,
                                                                              @RequestParam(value = "children",
-                                                                                           required = false,
-                                                                                           defaultValue = "false") final boolean children,
+                                                                                     required = false,
+                                                                                     defaultValue = "false") final boolean children,
+                                                                             @RequestParam(value = "parents",
+                                                                                     required = false,
+                                                                                     defaultValue = "false") final boolean parents,
                                                                              @RequestParam(value = "parentOffsetId",
-                                                                                           required = false) Long offset,
+                                                                                     required = false) Long offset,
                                                                              WebSession webSession) {
-        log.info("Session id: %s, Received request to get entity id = %d  with %s children"
-                .formatted(webSession.getId(), id, getWithoutChildrenSuffix(children)));
+        log.info("Session id: %s, Received request to get entity id = %d  with%s children and with%s parents"
+                .formatted(webSession.getId(), id, getWithoutChildrenSuffix(children), getWithoutChildrenSuffix(parents)));
         final var layoutNames = new HashSet<String>();
 
         return catalogService.getCatalogEntitiesWithLayouts(id, children)
@@ -79,11 +80,22 @@ public class CatalogController {
                 .collectList()
                 .flatMap(CatalogEntityListWrapper::success)
                 .flatMap(wrapper -> getCatalogEntityListWrapperWithLayouts(layoutNames, wrapper))
-                .flatMap(Mono::just)
-                .map(ResponseEntity::ok)
-                .onErrorResume(error -> CatalogEntityListWrapper.error(error.getMessage())
-                        .doOnNext(response -> tryLogResponse(response, webSession.getId()))
-                        .map(ResponseEntity::ok));
+                .flatMap(wrapper -> {
+                    if (parents) {
+                        return catalogService.getContentParents(id, ofNullable(offset).orElse(Long.MAX_VALUE))
+                                .collectList()
+                                .map(parentEntities -> {
+                                    wrapper.setParents(parentEntities);
+                                    return wrapper;
+                                });
+                    }
+                    return Mono.just(wrapper);
+                })
+                .doOnNext(response -> tryLogResponse(response, webSession.getId()))
+                .onErrorResume(errorResponse -> Mono.just(CatalogEntityListWrapper.error(errorResponse.getMessage())))
+                .map(responseEntity -> responseEntity.isSuccess()
+                            ? ok(responseEntity)
+                            : internalServerError().body(responseEntity));
     }
 
     /**
@@ -114,7 +126,7 @@ public class CatalogController {
      *
      * @param parentId      identifier of record witch will be current entity's parent node
      * @param catalogEntity entity to be saved or updated
-     * @return              Publisher for ResponseEntity wrapping the created catalog entity
+     * @return Publisher for ResponseEntity wrapping the created catalog entity
      */
     @PostMapping(value = {"/{parentId}", EMPTY}, consumes = APPLICATION_JSON_VALUE)
     public Mono<ResponseEntity<CatalogEntityWrapper<CatalogEntity>>> save(@PathVariable(name = "parentId", required = false) final Long parentId,
@@ -152,7 +164,7 @@ public class CatalogController {
                                                                                   WebSession webSession) {
         return catalogService.delete(id)
                 .thenReturn(ResponseEntity.ok(DeleteCatalogEntityRequestResponseWrapper.success()))
-                .onErrorResume(error -> Mono.just(ResponseEntity.internalServerError()
+                .onErrorResume(error -> Mono.just(internalServerError()
                         .body(DeleteCatalogEntityRequestResponseWrapper.error(error.getMessage()))))
                 .doOnNext(response -> log.info(SESSION_ID_WITH_RESPONSE
                         .formatted(webSession.getId(), response.toString())));
@@ -164,11 +176,7 @@ public class CatalogController {
     }
 
     private void tryLogResponse(CatalogEntityListWrapper<CatalogEntity> response, String sessionId) {
-        try {
-            log.info(SESSION_ID_WITH_RESPONSE.formatted(sessionId, mapper.writeValueAsString(response)));
-        } catch (JsonProcessingException e) {
-            log.error("Failed to convert response: %s".formatted(e.toString()));
-        }
+        log.info(SESSION_ID_WITH_RESPONSE.formatted(sessionId, response.toString()));
     }
 
     private static Mono<? extends CatalogEntityWrapper<CatalogEntity>> applyError(Throwable throwable) {
