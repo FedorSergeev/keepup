@@ -31,6 +31,7 @@ public interface DataSourceFacade {
     Flux<Content> getContentByParentIds(Iterable <Long> parentIds);
     Flux<Content> getContentByParentIdsAndType(Iterable <Long> parentIds, String type);
     Flux<Content> getContentByParentId(Long parentId);
+    Flux<Content> getContentParents(Long id, Long offsetId);
     Mono<Long> createContent(Content content);
     Mono<Void> deleteContent(Long id);
     // endregion

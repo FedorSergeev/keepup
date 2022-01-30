@@ -3,6 +3,8 @@ package io.keepup.cms.core.datasource.dao;
 import io.keepup.cms.core.persistence.Content;
 import io.keepup.cms.core.persistence.FileWrapper;
 import io.keepup.cms.core.persistence.User;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -95,6 +97,17 @@ public class DataSourceFacadeImpl implements DataSourceFacade {
     @Override
     public Flux<Content> getContentByParentId(Long parentId) {
         return contentDao.getContentByParentId(parentId);
+    }
+
+    /**
+     * Fetch a sequence of parents for the record specified by identifier.
+     * @param id       child record identifier, can not be null
+     * @param offsetId number of parent records to get, will be set to {@link Long#MAX_VALUE} if null
+     * @return         publisher for the parent records sequence
+     */
+    @Override
+    public Flux<Content> getContentParents(@NotNull Long id, @Nullable Long offsetId) {
+        return contentDao.getContentParents(id, offsetId);
     }
 
     @Override

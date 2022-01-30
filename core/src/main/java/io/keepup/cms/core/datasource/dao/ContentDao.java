@@ -27,6 +27,16 @@ public interface ContentDao {
     Flux<Content> getContentByParentIds(Iterable <Long> parentIds);
     Flux<Content> getContentByParentIdsAndType(Iterable <Long> parentIds, String type);
     Flux<Content> getContentByParentId(Long parentId);
+
+    /**
+     * Fetch a sequence of parents for the record specified by identifier. In current realization works only with
+     * PostgreSQL database as data source.
+     *
+     * @param id       child record identifier
+     * @param offsetId number of parent records to get
+     * @return         publisher for the parent records sequence
+     */
+    Flux<Content> getContentParents(Long id, Long offsetId);
     Mono<Long> createContent(Content content);
     Mono<Void> deleteContent(Long id);
 }
