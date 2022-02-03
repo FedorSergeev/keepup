@@ -70,6 +70,10 @@ public interface ReactiveNodeEntityRepository extends ReactiveCrudRepository<Nod
             "      JOIN r" +
             "          ON node_entity.id = r.parent_id AND r.depth < :offset" +
             ")" +
-            "SELECT * FROM r;")
+            "SELECT id, parent_id, owner_id, entity_type, " +
+            "       owner_read_privilege, owner_write_privilege, owner_create_children_privilege, owner_execute_privilege, " +
+            "       role_read_privilege, role_write_privilege, role_create_children_privilege, role_execute_privilege, " +
+            "       other_read_privilege, other_write_privilege, other_create_children_privilege, other_execute_privilege " +
+            "FROM r;")
     Flux<NodeEntity> findContentParents(@Param("id") Long id, @Param("offset") Long offset);
 }

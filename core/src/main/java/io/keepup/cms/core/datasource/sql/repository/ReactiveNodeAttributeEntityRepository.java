@@ -32,9 +32,9 @@ public interface ReactiveNodeAttributeEntityRepository extends ReactiveCrudRepos
      * @return all node attributes for the specified by condition {@link Content} nodes
      */
     @Query("SELECT * " +
-           "FROM node_attributes AS nodeAttribute " +
+           "FROM node_attribute AS nodeAttribute " +
            "WHERE nodeAttribute.content_id " +
-           "IN (SELECT content_id FROM node_attributes " +
+           "IN (SELECT content_id FROM node_attribute " +
            "    AS attribute  " +
            "    WHERE attribute.content_id " +
            "    IN (SELECT id FROM node_entity " +
@@ -52,9 +52,9 @@ public interface ReactiveNodeAttributeEntityRepository extends ReactiveCrudRepos
      * @return all node attributes for the specified by condition {@link Content} nodes
      */
     @Query("SELECT * " +
-            "FROM node_attributes AS nodeAttribute " +
+            "FROM node_attribute AS nodeAttribute " +
             "WHERE nodeAttribute.content_id " +
-            "IN (SELECT content_id FROM node_attributes " +
+            "IN (SELECT content_id FROM node_attribute " +
             "    AS attribute  " +
             "    WHERE attribute.content_id " +
             "    IN (SELECT id FROM node_entity " +

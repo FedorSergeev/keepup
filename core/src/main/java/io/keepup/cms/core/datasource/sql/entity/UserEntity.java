@@ -44,7 +44,7 @@ public class UserEntity implements Serializable {
 
     /**
      * Any information, e.g. JSON to map some specific users objects without additional requests
-     * to user_attributes table
+     * to user_attribute table
      */
     @Column(name = "additional_info")
     private String additionalInfo;

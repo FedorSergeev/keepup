@@ -263,7 +263,6 @@ public class SqlContentDao implements ContentDao {
             return empty();
         }
         log.debug("Update content attribute: contentId = %d, attributeName = %s".formatted(contentId, attributeName));
-
         return nodeAttributeEntityRepository.findByContentIdAndAttributeKey(contentId, attributeName)
                 .flatMap(nodeAttributeEntity -> saveContentAttribute(attributeName, attributeValue, nodeAttributeEntity));
     }

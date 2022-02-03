@@ -9,9 +9,6 @@ group 'io.keepup.plugins'
 version '2.0-SNAPSHOT'
 description = "admin-ui"
 
-sourceCompatibility = 15
-targetCompatibility = 15
-
 bootJar.enabled = false
 jar.enabled = true
 
@@ -33,9 +30,9 @@ repositories {
 }
 
 dependencies {
-    implementation project(':core')
-    implementation project(':rest')
-    implementation project(':catalog')
+    implementation project(path: ':core', configuration: 'default')
+    implementation project(path: ':rest', configuration: 'default')
+    implementation project(path: ':catalog', configuration: 'default')
     implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'com.wordnik:swagger-annotations:1.5.3-M1'

@@ -59,7 +59,7 @@ jobs:
     - uses: actions/setup-java@v2
       with:
         distribution: 'adopt' # See 'Supported distributions' for available options
-        java-version: '15'
+        java-version: '17'
     - run: chmod +x gradlew
     - run: ./gradlew --info :admin-ui:deleteFiles :admin-ui:sb-admin:npmInstall :admin-ui:sb-admin:runBuild :admin-ui:copyFrontend build
 

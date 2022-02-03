@@ -23,8 +23,7 @@ public interface ReactiveRoleByUserEntityRepository extends ReactiveCrudReposito
      * @param usersRoles - user roles, should not be null
      * @return all records with user ids witch contain one of the specified role
      */
-    @Query("SELECT * FROM user_roles " +
-
+    @Query("SELECT id, user_id, role FROM user_roles " +
            "WHERE user_roles.user_id IN " +
            " (SELECT user_id FROM user_roles " +
            "  WHERE user_roles.role IN (:roles))")
@@ -36,7 +35,7 @@ public interface ReactiveRoleByUserEntityRepository extends ReactiveCrudReposito
      * @param userIds identifiers of users to look their roles for
      * @return Flux publishing the found links
      */
-    @Query("SELECT * FROM user_roles " +
+    @Query("SELECT id, user_id, role FROM user_roles " +
             "AS user_role " +
             "WHERE user_role.user_id IN (:userIds)")
     Flux<RoleByUserIdEntity> findAllByUserIds(@Param("userIds") Iterable<Long> userIds);

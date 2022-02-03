@@ -1,6 +1,7 @@
 package io.keepup.cms.core.datasource.sql.entity;
 
-import org.apache.commons.logging.LogFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.logging.Log;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.Basic;
@@ -10,6 +11,7 @@ import javax.persistence.MappedSuperclass;
 import java.io.*;
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * Not compatible with older KeepUP versions as some column names were changed due to
@@ -53,6 +55,11 @@ public abstract class AbstractEntityAttribute implements Serializable {
      */
     @Column(name = "modification_time", nullable = false)
     private LocalDate modificationTime;
+
+    /**
+     * Object mapper for entity serialization and deserializetion
+     */
+    protected static ObjectMapper mapper = new ObjectMapper();
 
     public String getAttributeKey() {
         return attributeKey;
@@ -106,7 +113,7 @@ public abstract class AbstractEntityAttribute implements Serializable {
             result = bos.toByteArray();
             bos.close();
         } catch (IOException ex) {
-            LogFactory.getLog(getClass()).error(String.format("Unable to convert attribute value to byte array: %s", ex.getMessage()));
+            logError("Unable to convert attribute value to byte array: %s".formatted(ex.getMessage()));
             result = new byte[0];
         }
         return result;
@@ -115,5 +122,22 @@ public abstract class AbstractEntityAttribute implements Serializable {
     protected void setDefaultValue() {
         attributeValue = new byte[0];
         javaClass = "java.lang.Byte[]";
+    }
+
+    /**
+     * Return logger object
+     *
+     * @return logger implementation instance
+     */
+    protected Log getLog() {
+        return null;
+    }
+
+    /**
+     * Log error message if needed
+     * @param message message to be logged at error level
+     */
+    private void logError(String message) {
+        Optional.ofNullable(getLog()).ifPresent(log -> log.error(message));
     }
 }

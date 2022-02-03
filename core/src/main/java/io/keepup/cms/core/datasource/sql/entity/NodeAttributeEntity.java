@@ -1,6 +1,7 @@
 package io.keepup.cms.core.datasource.sql.entity;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.data.annotation.Id;
 
@@ -23,13 +24,14 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
  */
 @Entity
 @org.springframework.data.relational.core.mapping.Table
-@Table(name = "node_attributes", indexes = {
+@Table(name = "node_attribute", indexes = {
         @Index(name = "IDX_ATTRIBUTE_ID", columnList = "id"),
         @Index(name = "IDX_CONTENT_ID", columnList = "content_id")})
 public class NodeAttributeEntity extends AbstractEntityAttribute {
 
     @Serial
     private static final long serialVersionUID = 507224019294570770L;
+    private static final Log log = LogFactory.getLog(NodeAttributeEntity.class);
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "content_attribute_seq_generator")
@@ -43,19 +45,19 @@ public class NodeAttributeEntity extends AbstractEntityAttribute {
     }
 
     public NodeAttributeEntity(Long contentId, String key, Serializable value) {
-        final var log = LogFactory.getLog(getClass());
+
         this.contentId = contentId;
         setAttributeKey(key);
         setCreationTime(convertToLocalDateViaInstant(new Date()));
         setModificationTime(convertToLocalDateViaInstant(new Date()));
         if (value == null) {
-            log.warn(format("[NODE#%d] Attribute '%s' is null", contentId, key));
+            getLog().warn("[NODE#%d] Attribute '%s' is null".formatted(contentId, key));
         } else {
             try {
-                setAttributeValue(new ObjectMapper().writeValueAsBytes(value));
+                setAttributeValue(mapper.writeValueAsBytes(value));
                 setJavaClass(value.getClass().toString().substring(6));
             } catch (IOException ex) {
-                log.error(format("Unable to convert attribute value o byte array: %s", ex.getMessage()));
+                getLog().error("Unable to convert attribute value o byte array: %s".formatted(ex.getMessage()));
                 setDefaultValue();
             }
         }
@@ -98,9 +100,9 @@ public class NodeAttributeEntity extends AbstractEntityAttribute {
         }
         return "id= ".concat(strId)
                 .concat(" contentId=").concat(ofNullable(contentId).map(NodeAttributeEntity::apply).orElse(EMPTY))
-                .concat(" attributeKey=").concat(getAttributeKey())
-                .concat(" attributeValue=").concat(stringAttributeValue)
-                .concat(" creationTime=").concat(getCreationTime().toString())
+                .concat(" attributeKey=").concat(ofNullable(getAttributeKey()).orElse("null"))
+                .concat(" attributeValue=").concat(ofNullable(stringAttributeValue).orElse("null"))
+                .concat(" creationTime=").concat(ofNullable(getCreationTime()).map(LocalDate::toString).orElse("null"))
                 .concat(" modificationTime=").concat(ofNullable(getModificationTime()).map(LocalDate::toString).orElse("null"));
     }
 
@@ -113,4 +115,8 @@ public class NodeAttributeEntity extends AbstractEntityAttribute {
         return Long.toString(cId);
     }
 
+    @Override
+    protected Log getLog() {
+        return log;
+    }
 }
