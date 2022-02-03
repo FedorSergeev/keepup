@@ -10,9 +10,6 @@ group 'io.keepup.cms'
 version '2.0-SNAPSHOT'
 description = "keepup-rest"
 
-sourceCompatibility = 15
-targetCompatibility = 15
-
 bootJar.enabled = false
 jar.enabled = true
 
@@ -30,7 +27,7 @@ repositories {
 }
 
 dependencies {
-    implementation project(':core')
+    implementation project(path: ':core', configuration: 'default')
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'org.springframework.boot:spring-boot-starter-security'

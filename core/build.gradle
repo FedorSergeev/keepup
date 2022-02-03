@@ -7,9 +7,6 @@ group 'io.keepup.cms'
 version '2.0-SNAPSHOT'
 description = "keepup-core"
 
-sourceCompatibility = 15
-targetCompatibility = 15
-
 publishing {
     publications {
         maven(MavenPublication) {
@@ -28,21 +25,21 @@ repositories {
 
 dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind'
-    compile 'org.apache.commons:commons-lang3:3.12.0'
-    compile 'commons-io:commons-io:2.11.0'
-    compile 'org.hibernate:hibernate-core:5.5.3.Final'
-    compile 'org.springframework.boot:spring-boot-starter-actuator'
-    compile 'org.springframework.boot:spring-boot-starter-jdbc'
-    compile 'org.springframework.boot:spring-boot-starter-webflux'
-    compile 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
+    implementation 'commons-io:commons-io:2.11.0'
+    implementation 'org.hibernate:hibernate-core:5.5.3.Final'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    compile 'org.liquibase:liquibase-core'
-    compile 'io.fastjson:boon:0.34'
-    compile 'org.springframework.boot:spring-boot-starter'
-    compile 'org.springframework.boot:spring-boot-starter-data-r2dbc'
-    compile 'io.r2dbc:r2dbc-h2:0.8.1.RELEASE'
-    compile 'javax.persistence:javax.persistence-api:2.2'
-    compile 'commons-net:commons-net:3.8.0'
+    implementation 'org.liquibase:liquibase-core'
+    implementation 'io.fastjson:boon:0.34'
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
+    implementation 'io.r2dbc:r2dbc-h2:0.8.1.RELEASE'
+    implementation 'javax.persistence:javax.persistence-api:2.2'
+    implementation 'commons-net:commons-net:3.8.0'
 
     implementation 'org.jetbrains:annotations:22.0.0'
     implementation 'javax.servlet:javax.servlet-api:4.0.1'

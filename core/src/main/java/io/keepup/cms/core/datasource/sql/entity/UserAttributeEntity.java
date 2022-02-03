@@ -1,13 +1,12 @@
 package io.keepup.cms.core.datasource.sql.entity;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.Transient;
 
 import javax.persistence.*;
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Date;
 
 import static io.keepup.cms.core.datasource.sql.EntityUtils.convertToLocalDateViaInstant;
@@ -21,13 +20,13 @@ import static io.keepup.cms.core.datasource.sql.EntityUtils.convertToLocalDateVi
  */
 @Entity
 @org.springframework.data.relational.core.mapping.Table
-@Table(name = "user_attributes", indexes = {
+@Table(name = "user_attribute", indexes = {
         @Index(name = "IDX_USER_ATTRIBUTE_ID", columnList = "id"),
         @Index(name = "IDX__ATTRIBUTE_OWNER_USER_ID", columnList = "userid")})
 public class UserAttributeEntity extends AbstractEntityAttribute {
-
-    @Transient
-    private final Log log = LogFactory.getLog(getClass());
+    @Serial
+    private static final long serialVersionUID = 1L;
+    private static final Log log = LogFactory.getLog(UserAttributeEntity.class);
 
     /**
      * Primary key, identifier
@@ -80,16 +79,21 @@ public class UserAttributeEntity extends AbstractEntityAttribute {
         }
         setModificationTime(convertToLocalDateViaInstant(new Date()));
         if (value == null) {
-            log.warn("[USER#%d] Attribute '%s' is null".formatted(userId, key));
+            getLog().warn("[USER#%d] Attribute '%s' is null".formatted(userId, key));
         } else {
             try {
-                setAttributeValue(new ObjectMapper().writeValueAsBytes(value));
+                setAttributeValue(mapper.writeValueAsBytes(value));
                 setJavaClass(value.getClass().toString().substring(6));
             } catch (IOException ex) {
-                log.error("Unable to convert attribute value o byte array: %s"
+                getLog().error("Unable to convert attribute value o byte array: %s"
                         .formatted(ex.getMessage()));
                 setDefaultValue();
             }
         }
+    }
+
+    @Override
+    protected Log getLog() {
+        return log;
     }
 }
