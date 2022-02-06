@@ -1,0 +1,10 @@
+# prepare database before migration
+databaseChangeLog:
+  - preConditions:
+      - onFail: WARN
+  - changeSet:
+      id: 15353499950490-3
+      author: Fedor Sergeev
+      changes:
+        - sql:
+            sql: CREATE SCHEMA IF NOT EXISTS KEEPUP;

@@ -15,7 +15,7 @@ import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories;
 @EnableR2dbcRepositories
 public class R2dbcConfiguration extends AbstractR2dbcConfiguration {
 
-    @Value("${spring.datasource.url:r2dbc:h2:mem:default;DB_CLOSE_DELAY=-1;}")
+    @Value("${spring.datasource.url:r2dbc:h2:mem:default;DB_CLOSE_DELAY=-1;SCHEMA=KEEPUP;}")
     private String url;
     @Value("${spring.datasource.username:sa}")
     private String username;

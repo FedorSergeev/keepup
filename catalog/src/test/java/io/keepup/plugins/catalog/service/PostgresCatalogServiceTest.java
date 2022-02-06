@@ -76,7 +76,7 @@ class PostgresCatalogServiceTest {
         registry.add("spring.datasource.password", () -> "test");
         registry.add("spring.r2dbc.username", () -> "test");
         registry.add("spring.r2dbc.password", () -> "test");
-        registry.add("spring.r2dbc.url", () -> "r2dbc:postgresql://localhost:%d/keepup-db?currentSchema=public&TC_DAEMON=true&TC_IMAGE_TAG=11.1".formatted(postgres.getFirstMappedPort()));
+        registry.add("spring.r2dbc.url", () -> "r2dbc:postgresql://localhost:%d/keepup-db?currentSchema=keepup&TC_DAEMON=true&TC_IMAGE_TAG=11.1".formatted(postgres.getFirstMappedPort()));
     }
 
     @Autowired
