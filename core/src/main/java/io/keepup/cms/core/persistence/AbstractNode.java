@@ -109,8 +109,7 @@ public abstract class AbstractNode<T> implements BasicEntity<T> {
      * Removes attribute with the specified key.
      *
      * @param key attribute name
-     * @return the previous value associated with <tt>_key</tt>, or
-     * <tt>null</tt> if there was no mapping for <tt>_key</tt>.
+     * @return the previous value associated with key, or null if there was no mapping for key.
      */
     @Override
     public T removeAttribute(String key) {

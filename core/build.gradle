@@ -3,20 +3,85 @@ plugins {
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
 }
 
-group 'io.keepup.cms'
-version '2.0-SNAPSHOT'
-description = "keepup-core"
+group 'ru.keepupproject'
+version '2.0.0-alpha'
+description = 'keepup-core'
+
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
+bootJar.enabled = false
+jar.enabled = true
 
 publishing {
+    repositories {
+        maven {
+            name = 'sonatypeStaging'
+            credentials {
+                username project.properties["mavenCentralUsername"].toString()
+                password project.properties["mavenCentralPassword"].toString()
+            }
+            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+        }
+
+        maven {
+            name = 'sonatypeReleases'
+            credentials {
+                username project.properties["mavenCentralUsername"].toString()
+                password project.properties["mavenCentralPassword"].toString()
+            }
+            url = uri("https://s01.oss.sonatype.org/content/repositories/releases/")
+        }
+
+    }
+
+
     publications {
-        maven(MavenPublication) {
-            groupId 'io.keepup.cms.core'
+        core(MavenPublication) {
+            groupId 'ru.keepupproject'
             artifactId 'keepup-core'
-            version '2.0-SNAPSHOT'
-            artifact 'build/libs/core-2.0-SNAPSHOT.jar'
+            version '2.0.0-alpha'
+            // todo afterEvaluate
+            artifact 'build/libs/core-2.0.0-alpha-plain.jar'
+            from components.java
+            pom {
+                name = 'KeepUP Core'
+                description = 'Main module of KeepUP library for building CMS applications'
+                url = 'https://keepupproject.ru'
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'fedorsergeev'
+                        name = 'Fedor Sergeev'
+                        email = 'fksergeev@gmail.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/FedorSergeev/keepup.git'
+                    developerConnection = 'scm:git:https://github.com/FedorSergeev/keepup.git'
+                    url = 'https://github.com/FedorSergeev/keepup.git'
+                }
+            }
+        }
+    }
+    signing {
+        sign publishing.publications.core
+    }
+
+    javadoc {
+        if (JavaVersion.current().isJava12Compatible()) {
+            options.addBooleanOption('html5', true)
         }
     }
 }
+
 
 repositories {
     mavenCentral()
@@ -73,24 +138,4 @@ configurations {
 test {
     useJUnitPlatform()
     classpath = project.sourceSets.test.runtimeClasspath + files("${projectDir}/src/test/resources/mock-keepup-app.jar")
-
-}
-task writeNewPom {
-    doLast {
-        pom {
-            project {
-                groupId 'io.keepup.cms'
-                artifactId 'core'
-                version '2.0-SNAPSHOT'
-                inceptionYear '2021'
-                licenses {
-                    license {
-                        name 'MIT License'
-                        url 'http://www.opensource.org/licenses/mit-license.php'
-                        distribution 'repo'
-                    }
-                }
-            }
-        }.writeTo("pom.xml")
-    }
 }

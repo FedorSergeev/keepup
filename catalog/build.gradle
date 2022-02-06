@@ -4,29 +4,6 @@ plugins {
     id 'jacoco'
 }
 
-publishing {
-    publications {
-        maven(MavenPublication) {
-            groupId 'io.keepup.cms'
-            artifactId 'catalog'
-            version '2.0-SNAPSHOT'
-
-            artifact 'build/libs/catalog-plain.jar'
-        }
-    }
-    repositories {
-        maven {
-            name "nexus"
-            url "http://192.168.10.30:8081/nexus/content/repositories/transit-snapshot/"
-            credentials {
-                username ""
-                password ""
-            }
-        }
-
-    }
-}
-
 repositories {
     mavenCentral()
     mavenLocal()
@@ -57,8 +34,83 @@ dependencies {
     testImplementation 'org.postgresql:postgresql:42.2.10'
 
 }
+
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
+group 'ru.keepupproject'
+version '2.0.0-alpha'
 bootJar.enabled = false
 jar.enabled = true
+
+publishing {
+    repositories {
+        maven {
+            name = 'sonatypeStaging'
+            credentials {
+                username project.properties["mavenCentralUsername"].toString()
+                password project.properties["mavenCentralPassword"].toString()
+            }
+            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+        }
+
+        maven {
+            name = 'sonatypeReleases'
+            credentials {
+                username project.properties["mavenCentralUsername"].toString()
+                password project.properties["mavenCentralPassword"].toString()
+            }
+            url = uri("https://s01.oss.sonatype.org/content/repositories/releases/")
+        }
+
+    }
+
+
+    publications {
+        catalog(MavenPublication) {
+            groupId 'ru.keepupproject'
+            artifactId 'keepup-catalog'
+            version '2.0.0-alpha'
+            // todo afterEvaluate
+            artifact 'build/libs/catalog-2.0.0-alpha-plain.jar'
+            from components.java
+            pom {
+                name = 'KeepUP Catalog'
+                description = 'Catalog module provides API for fast data tree management in KeepUP based applications'
+                url = 'https://keepupproject.ru'
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'fedorsergeev'
+                        name = 'Fedor Sergeev'
+                        email = 'fksergeev@gmail.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/FedorSergeev/keepup.git'
+                    developerConnection = 'scm:git:https://github.com/FedorSergeev/keepup.git'
+                    url = 'https://github.com/FedorSergeev/keepup.git'
+                }
+            }
+        }
+    }
+    signing {
+        sign publishing.publications.catalog
+    }
+
+    javadoc {
+        if (JavaVersion.current().isJava12Compatible()) {
+            options.addBooleanOption('html5', true)
+        }
+    }
+}
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'

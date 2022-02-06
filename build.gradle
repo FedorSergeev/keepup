@@ -8,6 +8,7 @@ allprojects {
     apply plugin: 'java'
     apply plugin: 'maven-publish'
     apply plugin: 'jacoco'
+    apply plugin: 'signing'
 
     sourceCompatibility = 17
     targetCompatibility = 17
@@ -18,8 +19,18 @@ allprojects {
     }
 }
 
-group 'io.keepup.cms'
-version '2.0-SNAPSHOT'
+group 'ru.keepupproject.plugins'
+version '2.0.0-alpha'
+
+subprojects {
+    java {
+        withJavadocJar()
+        withSourcesJar()
+    }
+
+    group 'ru.keepupproject'
+    version '2.0.0-alpha'
+}
 
 dependencies {
     compileClasspath "se.bjurr.gitchangelog:git-changelog-gradle-plugin:1.71.4"
