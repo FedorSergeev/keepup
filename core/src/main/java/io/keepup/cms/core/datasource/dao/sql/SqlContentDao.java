@@ -408,7 +408,7 @@ public class SqlContentDao implements ContentDao {
     // endregion
 
     @NotNull
-    private Function<NodeEntity, Publisher<? extends Content>> getNodeEntityPublisherFunction() {
+    protected Function<NodeEntity, Publisher<Content>> getNodeEntityPublisherFunction() {
         return nodeEntity -> nodeAttributeEntityRepository.findAllByContentId(nodeEntity.getId())
                 .collectList()
                 .map(nodeAttributeEntities -> buildNode(nodeEntity, nodeAttributeEntities))
@@ -497,6 +497,18 @@ public class SqlContentDao implements ContentDao {
         return null;
     }
 
+    Log getLog() {
+        return log;
+    }
+
+    ReactiveNodeEntityRepository getNodeEntityRepository() {
+        return nodeEntityRepository;
+    }
+
+    ReactiveNodeAttributeEntityRepository getNodeAttributeEntityRepository() {
+        return nodeAttributeEntityRepository;
+    }
+
     Content buildNode(NodeEntity nodeEntity, List<NodeAttributeEntity> attributeEntities) {
         // as we call this method from reactive chain there is no success result with null NodeEntity
         final Content content = new Node(nodeEntity.getId());
@@ -560,10 +572,7 @@ public class SqlContentDao implements ContentDao {
      * @param parameterName parameter object name in context
      * @return variable name in case it is null
      */
-    private String getNullParameterName(Object parameter, String parameterName) {
-        if (parameterName == null) {
-            return "null";
-        }
+    private String getNullParameterName(Object parameter, @NotNull String parameterName) {
         return parameter == null
                 ? parameterName
                 : EMPTY;

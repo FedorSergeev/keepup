@@ -31,16 +31,13 @@ public interface ReactiveNodeAttributeEntityRepository extends ReactiveCrudRepos
      * @param attributeNames number of attribute names
      * @return all node attributes for the specified by condition {@link Content} nodes
      */
-    @Query("SELECT * " +
+    @Query("SELECT id, content_id, attribute_key, attribute_value,  java_class " +
            "FROM node_attribute AS nodeAttribute " +
            "WHERE nodeAttribute.content_id " +
            "IN (SELECT content_id FROM node_attribute " +
-           "    AS attribute  " +
-           "    WHERE attribute.content_id " +
-           "    IN (SELECT id FROM node_entity " +
-           "        AS node " +
-           "        WHERE node.parent_id = :contentParentId) " +
-           "    AND attribute.attribute_key in (:attributeNames))")
+           "   inner join node_entity on (node_attribute.content_id = node_entity.id " +
+           "   and node_entity.parent_id = :contentParentId" +
+           "   and node_attribute.attribute_key in (:attributeNames)))")
     Flux<NodeAttributeEntity> findAllByContentParentIdWithAttributeNames(@Param("contentParentId") Long parentId,
                                                                          @Param("attributeNames") List<String> attributeNames);
 
@@ -51,7 +48,7 @@ public interface ReactiveNodeAttributeEntityRepository extends ReactiveCrudRepos
      * @param attributeValue attribute field value
      * @return all node attributes for the specified by condition {@link Content} nodes
      */
-    @Query("SELECT * " +
+    @Query("SELECT id, content_id, attribute_key, attribute_value,  java_class " +
             "FROM node_attribute AS nodeAttribute " +
             "WHERE nodeAttribute.content_id " +
             "IN (SELECT content_id FROM node_attribute " +

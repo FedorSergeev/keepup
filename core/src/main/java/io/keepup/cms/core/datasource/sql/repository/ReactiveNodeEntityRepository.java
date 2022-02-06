@@ -54,6 +54,13 @@ public interface ReactiveNodeEntityRepository extends ReactiveCrudRepository<Nod
             "FROM node_entity as node WHERE node.id = :id OR node.parent_id = :id")
     Flux<NodeEntity> findByIdOrByParentId(@Param("id") Long id);
 
+    /**
+     * Fetches the sequence of parent records. Use this method only for PostgreSQL as a database.
+     *
+     * @param id     record identifier
+     * @param offset number of parent records to fetch
+     * @return       Flux that publishes found entity parents
+     */
     @Query("WITH RECURSIVE r AS (" +
             "   SELECT id, parent_id, owner_id, entity_type, " +
             "   owner_read_privilege, owner_write_privilege, owner_create_children_privilege, owner_execute_privilege," +

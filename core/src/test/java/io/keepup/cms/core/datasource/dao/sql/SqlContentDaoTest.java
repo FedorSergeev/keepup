@@ -6,6 +6,7 @@ import io.keepup.cms.core.cache.CacheAdapter;
 import io.keepup.cms.core.datasource.sql.entity.NodeAttributeEntity;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveNodeAttributeEntityRepository;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveNodeEntityRepository;
+import io.keepup.cms.core.persistence.Content;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,8 +18,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cache.CacheManager;
 import reactor.core.publisher.Mono;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Additional unit tests
@@ -38,6 +40,10 @@ class SqlContentDaoTest {
     CacheManager manager;
     @Mock
     CacheAdapter adapter;
+
+    private static void assertEmpty(List<Content> result) {
+        assertTrue(result.isEmpty());
+    }
 
     @BeforeEach
     void setUp() {
@@ -63,6 +69,22 @@ class SqlContentDaoTest {
                     assertNotNull(result);
                     assertEquals("value", result);
                 })
+                .block();
+    }
+
+    @Test
+    void getContentByParentIdAndAttributeValueWithNullParentId() {
+        sqlContentDao.getContentByParentIdAndAttributeValue(null, "key", "value")
+                .collectList()
+                .doOnNext(result -> assertTrue(result.isEmpty()))
+                .block();
+    }
+
+    @Test
+    void getContentByParentIdAndAttributeValueWithNullAttributeKey() {
+        sqlContentDao.getContentByParentIdAndAttributeValue(0L, null, "value")
+                .collectList()
+                .doOnNext(SqlContentDaoTest::assertEmpty)
                 .block();
     }
 }
