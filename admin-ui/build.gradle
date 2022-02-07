@@ -5,24 +5,11 @@ plugins {
     id 'jacoco'
 }
 
-group 'io.keepup.plugins'
-version '2.0-SNAPSHOT'
 description = "admin-ui"
-
+group 'ru.keepupproject'
+version '2.0.0-alpha'
 bootJar.enabled = false
 jar.enabled = true
-
-publishing {
-    publications {
-        maven(MavenPublication) {
-            groupId 'io.keepup.plugins'
-            artifactId 'admin-ui'
-            version '2.0-SNAPSHOT'
-            artifact 'build/libs/admin-ui-2.0-SNAPSHOT-plain.jar'
-        }
-    }
-
-}
 
 repositories {
     mavenCentral()
@@ -52,6 +39,73 @@ dependencies {
 
 bootJar.enabled = false
 jar.enabled = true
+
+publishing {
+
+    repositories {
+        maven {
+            name = 'sonatypeStaging'
+            credentials {
+                username project.properties["mavenCentralUsername"].toString()
+                password project.properties["mavenCentralPassword"].toString()
+            }
+            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+        }
+
+        maven {
+            name = 'sonatypeReleases'
+            credentials {
+                username project.properties["mavenCentralUsername"].toString()
+                password project.properties["mavenCentralPassword"].toString()
+            }
+            url = uri("https://s01.oss.sonatype.org/content/repositories/releases/")
+        }
+    }
+
+    publications {
+
+        adminui(MavenPublication) {
+            groupId 'ru.keepupproject'
+            artifactId 'keepup-admin-ui'
+            version '2.0.0-alpha'
+            // todo afterEvaluate
+            artifact 'build/libs/admin-ui-2.0.0-alpha-plain.jar'
+            from components.java
+            pom {
+                name = 'KeepUP Catalog'
+                description = 'Web administrative panel module'
+                url = 'https://keepupproject.ru'
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'fedorsergeev'
+                        name = 'Fedor Sergeev'
+                        email = 'fksergeev@gmail.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/FedorSergeev/keepup.git'
+                    developerConnection = 'scm:git:https://github.com/FedorSergeev/keepup.git'
+                    url = 'https://github.com/FedorSergeev/keepup.git'
+                }
+            }
+        }
+    }
+    signing {
+        sign publishing.publications.adminui
+    }
+
+    javadoc {
+        if (JavaVersion.current().isJava12Compatible()) {
+            options.addBooleanOption('html5', true)
+        }
+    }
+}
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'

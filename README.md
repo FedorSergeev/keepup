@@ -11,6 +11,10 @@
 * scalable
 * provides entities extension without data source stand-in
 
+### Prerequisites
+
+Please use Java 17 and Gradle 7.3.3+ for project build.
+
 ## Modules
 
 ## 1. Core

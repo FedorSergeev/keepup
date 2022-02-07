@@ -65,7 +65,10 @@ public class WebFluxConfig implements WebFluxConfigurer {
     }
 
     /**
-     * @inheritDoc
+     * Configure the HTTP message readers and writers for reading from the request body and for writing to the response body in annotated controllers and functional endpoints.
+     * By default, all built-in readers and writers are configured as long as the corresponding 3rd party libraries such Jackson JSON, JAXB2, and others are present on the classpath.
+
+     * @param configurer the configurer to customize readers and writers
      */
     @Override
     public void configureHttpMessageCodecs(ServerCodecConfigurer configurer) {

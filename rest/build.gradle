@@ -6,17 +6,76 @@ plugins {
     id 'jacoco'
 }
 
-group 'io.keepup.cms'
-version '2.0-SNAPSHOT'
+group 'ru.keepupproject.plugins'
+version '2.0.0-alpha'
 description = "keepup-rest"
 
 bootJar.enabled = false
 jar.enabled = true
 
 publishing {
+
+    repositories {
+        maven {
+            name = 'sonatypeStaging'
+            credentials {
+                username project.properties["mavenCentralUsername"].toString()
+                password project.properties["mavenCentralPassword"].toString()
+            }
+            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+        }
+
+        maven {
+            name = 'sonatypeReleases'
+            credentials {
+                username project.properties["mavenCentralUsername"].toString()
+                password project.properties["mavenCentralPassword"].toString()
+            }
+            url = uri("https://s01.oss.sonatype.org/content/repositories/releases/")
+        }
+    }
+
     publications {
-        maven(MavenPublication) {
+
+        rest(MavenPublication) {
+            groupId 'ru.keepupproject'
+            artifactId 'keepup-rest'
+            version '2.0.0-alpha'
+            // todo afterEvaluate
+            artifact 'build/libs/rest-2.0.0-alpha-plain.jar'
             from components.java
+            pom {
+                name = 'KeepUP REST'
+                description = 'REST API for working with Content records and Users'
+                url = 'https://keepupproject.ru'
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'fedorsergeev'
+                        name = 'Fedor Sergeev'
+                        email = 'fksergeev@gmail.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/FedorSergeev/keepup.git'
+                    developerConnection = 'scm:git:https://github.com/FedorSergeev/keepup.git'
+                    url = 'https://github.com/FedorSergeev/keepup.git'
+                }
+            }
+        }
+    }
+    signing {
+        sign publishing.publications.rest
+    }
+
+    javadoc {
+        if (JavaVersion.current().isJava12Compatible()) {
+            options.addBooleanOption('html5', true)
         }
     }
 }
