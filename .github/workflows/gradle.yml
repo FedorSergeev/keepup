@@ -28,6 +28,8 @@ jobs:
       run: ./gradlew generateGitChangelogInlineTemplate
     - name: JaCoCo
       run: ./gradlew codeCoverageReport
+    - name: SonarQube scan on sonarqube.keepupproject.ru
+      run: ./gradlew sonarqube  -Dsonar.projectKey=keepup -Dsonar.host.url=http://sonarqube.keepupproject.ru  -Dsonar.login=${{ secrets.SONAR_SECRET }}
     - name: Coverage
       uses: codecov/codecov-action@v1
       with:

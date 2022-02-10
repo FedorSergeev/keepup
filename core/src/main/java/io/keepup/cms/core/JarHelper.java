@@ -21,6 +21,7 @@ import java.util.function.Consumer;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import static io.keepup.cms.core.datasource.resources.StorageType.FILESYSTEM;
 import static io.keepup.cms.core.datasource.resources.StorageType.FTP;
 import static java.io.File.separator;
 import static java.lang.String.format;
@@ -120,16 +121,16 @@ public class JarHelper {
             var file = enumEntries.nextElement();
             if (file.getName().startsWith("META-INF/")) {
                 ResourceFileToCopy copyCondition = getCopyCondition(file);
-                var copy = copyCondition.isCopy();
-                var resourceFile = copyCondition.getResourceFile();
+                var copy = copyCondition.copy();
+                var resourceFile = copyCondition.resourceFile();
                 if (needToExtractFile(copy, resourceFile)) {
 
                     if (file.isDirectory()) {
-                        ofNullable(directoryProcessors.get(copyCondition.getStorageType()))
+                        ofNullable(directoryProcessors.get(copyCondition.storageType()))
                                 .ifPresent(processor -> processor.accept(copyCondition));
                         continue;
                     }
-                    copyFileToSystem(jarFile, resourceFile, file, copyCondition.getStorageType());
+                    copyFileToSystem(jarFile, resourceFile, file, copyCondition.storageType());
                 }
             }
         }
@@ -147,7 +148,7 @@ public class JarHelper {
             while (is.available() > 0) {
                 fos.write(is.read());
             }
-            if (FTP.equals(storageType)) {
+            if (!FILESYSTEM.equals(storageType)) {
                 contentDeliveryService.store(resourceFile, getRelativePath(resourceFile));
             }
         } catch (FileNotFoundException ex) {
@@ -159,7 +160,7 @@ public class JarHelper {
                 logger.error(e.toString());
             }
         }
-        if (FTP.equals(storageType) && resourceFile.exists()) {
+        if (!FILESYSTEM.equals(storageType) && resourceFile.exists()) {
             final boolean deleteResult = Files.deleteIfExists(resourceFile.toPath());
             if (!deleteResult) {
                 logger.warn("Could not delete file %s".formatted(resourceFile.getAbsolutePath()));
@@ -171,20 +172,20 @@ public class JarHelper {
         var storageType = StorageType.valueOf(applicationConfig.getStorageType());
         File resourceFile;
         var serverFiles = "META-INF/server";
-        if (file.getName().startsWith(serverFiles)) {
-
-            if (file.getName().startsWith("META-INF/server/")) {
-                resourceFile = new File("%s/resources%s%s".formatted(applicationConfig.getDocumentRoot(), separator, file.getName().replace(serverFiles, EMPTY)));
+        String filename = file.getName();
+        if (filename.startsWith(serverFiles)) {
+            if (filename.startsWith("META-INF/server/")) {
+                resourceFile = new File("%s/resources%s%s".formatted(applicationConfig.getDocumentRoot(), separator, filename.replace(serverFiles, EMPTY)));
                 deleteResourceFileIfExists(resourceFile);
                 return new ResourceFileToCopy(resourceFile, true, storageType);
             } else {
                 return new ResourceFileToCopy(null, false, storageType);
             }
-        } else if (file.getName().startsWith("META-INF/frontend")) {
-            resourceFile = new File("%s%s%s".formatted(applicationConfig.getStaticPath(), separator, file.getName().replace("META-INF/frontend", EMPTY)));
+        } else if (filename.startsWith("META-INF/frontend")) {
+            resourceFile = new File("%s%s%s".formatted(applicationConfig.getStaticPath(), separator, filename.replace("META-INF/frontend", EMPTY)));
             return new ResourceFileToCopy(resourceFile, true, FTP);
-        } else if (file.getName().startsWith("META-INF/dump")) {
-            resourceFile = new File("%s%s%s".formatted(applicationConfig.getDump(), separator, file.getName().replace("META-INF/dump", EMPTY)));
+        } else if (filename.startsWith("META-INF/dump")) {
+            resourceFile = new File("%s%s%s".formatted(applicationConfig.getDump(), separator, filename.replace("META-INF/dump", EMPTY)));
             return new ResourceFileToCopy(resourceFile, true, storageType);
         } else {
             return new ResourceFileToCopy(null, false, storageType);
@@ -194,7 +195,7 @@ public class JarHelper {
     private void deleteResourceFileIfExists(File resourceFile) throws IOException {
 
         if (applicationConfig.isRewrite() && resourceFile.exists() && !resourceFile.isDirectory()) {
-            logger.info(format("Removing file %s from server root", resourceFile.getPath()));
+            logger.info("Removing file %s from server root".formatted(resourceFile.getPath()));
             Files.delete(resourceFile.toPath());
         }
     }
@@ -203,10 +204,15 @@ public class JarHelper {
         return resourceFile != null && (applicationConfig.isRewrite() || !resourceFile.exists()) && copy;
     }
 
+    private String getRelativePath(File resourceFile) {
+        final int startIndex = applicationConfig.getStaticPath().length() - 1;
+        return resourceFile.getAbsolutePath().substring(startIndex, resourceFile.getAbsolutePath().indexOf(resourceFile.getName()));
+    }
+
     private class CreateFilesystemDirectory implements Consumer<ResourceFileToCopy> {
         @Override
         public void accept(ResourceFileToCopy resourceFileToCopy) {
-            ofNullable(resourceFileToCopy.getResourceFile()).ifPresent(this::doAccept);
+            ofNullable(resourceFileToCopy.resourceFile()).ifPresent(this::doAccept);
         }
 
         private void doAccept(File file) {
@@ -217,32 +223,6 @@ public class JarHelper {
         }
     }
 
-    private static class ResourceFileToCopy {
-        private final File resourceFile;
-        private final StorageType storageType;
-        private final boolean copy;
-
-        public ResourceFileToCopy(File resourceFile, boolean copy, StorageType storageType) {
-            this.resourceFile = resourceFile;
-            this.copy = copy;
-            this.storageType = storageType;
-        }
-
-        public File getResourceFile() {
-            return resourceFile;
-        }
-
-        public boolean isCopy() {
-            return copy;
-        }
-
-        public StorageType getStorageType() {
-            return storageType;
-        }
-    }
-
-    private String getRelativePath(File resourceFile) {
-        final int startIndex = applicationConfig.getStaticPath().length() - 1;
-        return resourceFile.getAbsolutePath().substring(startIndex, resourceFile.getAbsolutePath().indexOf(resourceFile.getName()));
-    }
+    private record ResourceFileToCopy(File resourceFile, boolean copy,
+                                      StorageType storageType) {}
 }

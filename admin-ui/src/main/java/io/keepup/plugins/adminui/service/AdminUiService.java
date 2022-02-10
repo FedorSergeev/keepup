@@ -39,12 +39,20 @@ public class AdminUiService extends AbstractKeepupDeployBean {
 
     private String apiCatalogPage;
 
+    /**
+     * Default constructor, sets the name of component
+     */
     public AdminUiService() {
         super("AdminUi");
     }
 
+    /**
+     * Instantiates the router component for fetching the static content like images or javascript and css files.
+     *
+     * @return static content router component
+     */
     @Bean
-    public RouterFunction<ServerResponse> imgRouter() {
+    public RouterFunction<ServerResponse> resourceRouter() {
         logger.debug("Setting URI for administrative dashboard with value = %s".formatted(dashboardUri));
         return RouterFunctions.resources(dashboardUri,
                 new FileSystemResource("%s/resources".formatted(applicationConfig.getDocumentRoot())));
@@ -66,6 +74,11 @@ public class AdminUiService extends AbstractKeepupDeployBean {
         }
     }
 
+    /**
+     * Get the static content for catalog module main page
+     *
+     * @return HTML content of catalog page insode of administrative panel
+     */
     public Mono<String> getApiCatalogPage() {
         return ofNullable(apiCatalogPage)
                 .map(Mono::just)

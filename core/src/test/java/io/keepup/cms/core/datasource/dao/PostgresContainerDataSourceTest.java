@@ -110,10 +110,7 @@ class PostgresContainerDataSourceTest {
 
     @Test
     void getContentParentsWithNullId() {
-        List<Content> parentRecords = dataSourceFacade.getContentParents(null, Long.MAX_VALUE).collectList()
-                .block();
-        assertNotNull(parentRecords);
-        assertTrue(parentRecords.isEmpty());
+        assertThrows(NullPointerException.class, () -> dataSourceFacade.getContentParents(null, Long.MAX_VALUE));
     }
 
     @Test

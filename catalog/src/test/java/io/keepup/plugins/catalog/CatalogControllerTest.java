@@ -29,6 +29,7 @@ import io.keepup.plugins.catalog.rest.CatalogController;
 import io.keepup.plugins.catalog.service.CatalogService;
 import io.keepup.plugins.catalog.service.LayoutService;
 import io.keepup.plugins.catalog.service.TestCatalogEntity;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -119,6 +120,11 @@ class CatalogControllerTest {
 
     @SpyBean
     private CatalogService mockCatalogService;
+
+    @BeforeEach
+    void setUp() {
+        mapper.registerSubtypes(TestCatalogEntity.class);
+    }
 
     @Test
     void getEmptyResult() {

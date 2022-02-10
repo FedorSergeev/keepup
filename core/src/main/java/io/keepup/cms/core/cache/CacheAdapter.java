@@ -36,7 +36,7 @@ public class CacheAdapter {
             log.error("Content identifier is null");
             return Optional.empty();
         }
-        return Optional.ofNullable(cacheManager.getCache(CONTENT_CACHE_NAME))
+        return ofNullable(cacheManager.getCache(CONTENT_CACHE_NAME))
                 .map(cache -> cache.get(id, Content.class));
     }
 

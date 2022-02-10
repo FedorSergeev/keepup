@@ -82,6 +82,16 @@ publishing {
     }
 }
 
+sonarqube {
+    properties {
+        property "sonar.projectKey", "FedorSergeev_keepup"
+        property "sonar.organization", "fedorsergeev"
+        property "sonar.host.url", "https://sonarcloud.io"
+        property "sonar.sources", "src/main/java"
+        property "sonar.tests", "src/test/java"
+        property "sonar.coverage.jacoco.xmlReportPaths", "../build/reports/jacoco.xml"
+    }
+}
 
 repositories {
     mavenCentral()
@@ -138,4 +148,9 @@ configurations {
 test {
     useJUnitPlatform()
     classpath = project.sourceSets.test.runtimeClasspath + files("${projectDir}/src/test/resources/mock-keepup-app.jar")
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
 }

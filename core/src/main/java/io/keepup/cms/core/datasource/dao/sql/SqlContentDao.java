@@ -393,11 +393,7 @@ public class SqlContentDao implements ContentDao {
      */
     @Override
     public Flux<Content> getContentParents(@NotNull Long id, @Nullable Long offset) {
-        // left this check for public API users who don't use any lint tools
-        if (id == null) {
-            log.error("Null parameter id was passed to getContentParents method");
-            return Flux.empty();
-        }
+        Objects.requireNonNull(id, "Null parameter id was passed to getContentParents method");
         if (offset == null) {
             offset = Long.MAX_VALUE;
         }

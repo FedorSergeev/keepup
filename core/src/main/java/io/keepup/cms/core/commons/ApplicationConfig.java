@@ -72,10 +72,6 @@ public class ApplicationConfig {
         return documentRoot;
     }
 
-    public String getAppData() {
-        return appData;
-    }
-
     public String getStaticPath() {
         return staticPath;
     }
@@ -101,13 +97,14 @@ public class ApplicationConfig {
     private String tryCreateDirectory(String path, String directoryType) {
         if (path.isBlank()) {
             path = "%s/%s".formatted(Paths.get(".").toAbsolutePath().normalize().toString(), "dump");
-            try {
-                Files.createDirectories(Paths.get(path));
-                log.debug("Directory '%s' created: %s".formatted(directoryType, path));
-            } catch (IOException e) {
-                log.error("Failed to create %s directory %s: %s".formatted(directoryType, path, e.toString()));
-            }
         }
-        return path;
+        try {
+            Files.createDirectories(Paths.get(path));
+            log.debug("Directory '%s' created: %s".formatted(directoryType, path));
+        } catch (IOException e) {
+            log.error("Failed to create %s directory %s: %s".formatted(directoryType, path, e.toString()));
+        }
+
+        return "%s/".formatted(path);
     }
 }
