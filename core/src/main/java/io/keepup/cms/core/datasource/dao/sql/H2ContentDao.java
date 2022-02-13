@@ -13,6 +13,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
+import java.util.Objects;
+
 /**
  * Service for working with {@link io.keepup.cms.core.persistence.Content} records using H2 database
  * as data source. Can be used for demonstration properties, e.g. if you want to run the app without
@@ -42,11 +44,8 @@ public class H2ContentDao extends SqlContentDao {
      */
     @Override
     public Flux<Content> getContentParents(@NotNull Long id, @Nullable Long offset) {
-        // left this check for public API users who don't use any lint tools
-        if (id == null) {
-            getLog().error("Null parameter id was passed to getContentParents method");
-            return Flux.empty();
-        }
+        Objects.requireNonNull(id, "Null parameter id was passed to getContentParents method");
+
         int capacity = offset == null || offset > Integer.MAX_VALUE
             ? Integer.MAX_VALUE
             : offset.intValue();

@@ -3,6 +3,9 @@
 ![ci](https://github.com/FedorSergeev/keepup/actions/workflows/gradle.yml/badge.svg?branch=develop)
 ![codecov.io](https://codecov.io/gh/FedorSergeev/keepup/coverage.svg?branch=develop)
 ![codeql](https://github.com/FedorSergeev/keepup/actions/workflows/codeql-analysis.yml/badge.svg?branch=develop)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=FedorSergeev_keepup&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=FedorSergeev_keepup)
+[![Quality Gate Status](http://sonarqube.keepupproject.ru/api/project_badges/measure?project=keepup&metric=alert_status&token=95c03b7964d7537dbcbd359b82370e209a2ea3b2)](http://sonarqube.keepupproject.ru/dashboard?id=keepup)
+
 
 ### Main benefits:
 

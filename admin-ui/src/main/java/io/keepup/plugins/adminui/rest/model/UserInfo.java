@@ -56,8 +56,7 @@ public class UserInfo {
      * @return mocked object
      */
     public static UserInfo empty() {
-        var adminModule = new AdminModule();
-        adminModule.setClassName("UserPanel");
+        var adminModule = new AdminModule("UserPanel");
         var userInfo = new UserInfo();
         userInfo.setName("Anonymous");
         userInfo.setPicture("images/faces/user-tie-solid.svg");

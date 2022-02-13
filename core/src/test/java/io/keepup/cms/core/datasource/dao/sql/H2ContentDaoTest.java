@@ -20,6 +20,11 @@ import org.springframework.boot.test.autoconfigure.data.r2dbc.DataR2dbcTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import reactor.core.Exceptions;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -70,11 +75,16 @@ class H2ContentDaoTest {
                 .then(h2ContentDao.createContent(createRecord(0L, Pair.of("key", "firstParent"))))
                 .flatMap(grandParent -> h2ContentDao.createContent(createRecord(grandParent, Pair.of("key", "secondParent"))))
                 .flatMap(parent -> h2ContentDao.createContent(createRecord(parent, Pair.of("key", "child"))))
-                .then(h2ContentDao.getContentParents(null, 2L).collectList())
-                .doOnNext(parents -> {
-                    assertNotNull(parents);
-                    assertTrue(parents.isEmpty());
+                .map(id -> {
+                    try {
+                        return h2ContentDao.getContentParents(null, 2L);
+                    } catch (Throwable e) {
+                        throw Exceptions.propagate(e);
+                    }
                 })
+                .doOnError(error ->
+                    assertEquals(NullPointerException.class, error.getClass()))
+                .onErrorReturn(Flux.error(new RuntimeException("error")))
                 .block();
     }
 

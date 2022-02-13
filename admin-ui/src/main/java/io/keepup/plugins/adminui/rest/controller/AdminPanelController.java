@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.WebSession;
 import reactor.core.publisher.Mono;
 
+import static java.util.Optional.ofNullable;
+
 /**
  * Controller with the set of REST endpoints serving administrative UI panel based on
  * different frontend solutions
@@ -27,6 +29,12 @@ public class AdminPanelController {
 
     private final Log log = LogFactory.getLog(getClass());
 
+    /**
+     * Fetch information about user
+     *
+     * @param session server session attributes
+     * @return        information about currently logged in user or stub if user is not authenticated.
+     */
     @GetMapping("/userinfo")
     public Mono<ResponseEntity<UserInfo>> getUserInfo(WebSession session) {
         log.info("Session id: %s, User information requested".formatted(session.getId()));
@@ -39,7 +47,8 @@ public class AdminPanelController {
                 .switchIfEmpty(Mono.just(ResponseEntity.ok(UserInfo.empty())))
                 .doOnNext(response -> log.info("Session id: %s, Sending response with status %s: %s"
                         .formatted(session.getId(),
-                                   response.getStatusCode().toString(), response.getBody().toString())));
+                                   response.getStatusCode().toString(),
+                                   ofNullable(response.getBody()).map(UserInfo::toString).orElse("null}"))));
     }
 
     private Mono<User> getUser(Object principal) {
