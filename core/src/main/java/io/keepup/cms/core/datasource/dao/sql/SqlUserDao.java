@@ -73,14 +73,14 @@ public class SqlUserDao implements UserDao {
                 .flatMap(saved -> {
                     userDto.setId(saved.getId());
                     return userAttributeEntityRepository.saveAll(getAttributeEntities(saved.getId(), userDto.getAttributes()))
-                            .collect(toList());
+                            .collectList();
                 })
                 .flatMap(userAttributeEntities -> {
                     userDto.setAttributes(getAttributes(userAttributeEntities));
-                    return roleByUserEntityRepository.saveAll(getRoles(userDto.getId(), userDto.getAuthorities())).collect(toList());
+                    return roleByUserEntityRepository.saveAll(getRoles(userDto.getId(), userDto.getAuthorities())).collectList();
                 })
                 .map(roles -> {
-                    userDto.setAuthorities(getGrantedAuthorities(roles.stream().map(RoleByUserIdEntity::getRole).collect(Collectors.toList())));
+                    userDto.setAuthorities(getGrantedAuthorities(roles.stream().map(RoleByUserIdEntity::getRole).toList()));
                     return userDto;
                 }))
                 .orElseGet(Mono::empty);
@@ -93,7 +93,7 @@ public class SqlUserDao implements UserDao {
             roleByUserIdEntity.setUserId(userId);
             roleByUserIdEntity.setRole(authority.getAuthority());
             return roleByUserIdEntity;
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     /**
@@ -105,7 +105,7 @@ public class SqlUserDao implements UserDao {
     @Override
     public Mono<User> getUser(long userId) {
         return userEntityRepository.findById(userId)
-                .flatMap(userEntity -> userAttributeEntityRepository.findAllByUserId(userId).collect(toList())
+                .flatMap(userEntity -> userAttributeEntityRepository.findAllByUserId(userId).collectList()
                         .map(userAttributeEntities -> buildUser(userEntity, userAttributeEntities)))
                 .flatMap(this::mapUserRoles);
     }
@@ -122,12 +122,14 @@ public class SqlUserDao implements UserDao {
                 .map(userRoles -> roleByUserEntityRepository.findAllWhoHasRoles(userRoles)
                         .collect(Collectors.groupingBy(RoleByUserIdEntity::getUserId, toList()))
                         .flatMapMany(userRoleEntities -> userEntityRepository.findAllById(userRoleEntities.keySet())
-                                .flatMap(userEntity -> userAttributeEntityRepository.findAllByUserId(userEntity.getId()).collect(toList())
+                                .flatMap(userEntity -> userAttributeEntityRepository.findAllByUserId(userEntity.getId())
+                                        .collectList()
                                         .map(userAttributeEntities -> buildUser(userEntity, getUserRoles(userRoleEntities.get(userEntity.getId())), userAttributeEntities)))))
                 .orElse(roleByUserEntityRepository.findAll()
                         .collect(Collectors.groupingBy(RoleByUserIdEntity::getUserId, toList()))
                         .flatMapMany(userRoleEntities -> userEntityRepository.findAllById(userRoleEntities.keySet())
-                                .flatMap(userEntity -> userAttributeEntityRepository.findAllByUserId(userEntity.getId()).collect(toList())
+                                .flatMap(userEntity -> userAttributeEntityRepository.findAllByUserId(userEntity.getId())
+                                        .collectList()
                                         .map(userAttributeEntities -> buildUser(userEntity, getUserRoles(userRoleEntities.get(userEntity.getId())), userAttributeEntities)))));
     }
 
@@ -152,7 +154,7 @@ public class SqlUserDao implements UserDao {
     @Override
     public Mono<UserDetails> getByName(String username) {
         return userEntityRepository.findByUsername(username)
-                .flatMap(userEntity -> userAttributeEntityRepository.findAllByUserId(userEntity.getId()).collect(toList())
+                .flatMap(userEntity -> userAttributeEntityRepository.findAllByUserId(userEntity.getId()).collectList()
                         .map(userAttributeEntities -> buildUser(userEntity, userAttributeEntities)))
                 .flatMap(this::mapUserRoles);
     }
@@ -170,7 +172,7 @@ public class SqlUserDao implements UserDao {
         return ofNullable(roleEntities)
                 .map(roles -> roles.stream()
                         .map(RoleByUserIdEntity::getRole)
-                        .collect(toList()))
+                        .toList())
                 .orElse(emptyList());
     }
 
@@ -246,7 +248,7 @@ public class SqlUserDao implements UserDao {
         return attributes.entrySet()
                 .stream()
                 .map(entry -> new UserAttributeEntity(userId, entry.getKey(), entry.getValue()))
-                .collect(toList());
+                .toList();
     }
 
     @NotNull

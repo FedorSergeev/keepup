@@ -21,7 +21,7 @@ allprojects {
 }
 
 group 'ru.keepupproject.plugins'
-version '2.0.0-alpha'
+version '2.0.0-beta-1'
 
 subprojects {
     java {
@@ -30,7 +30,7 @@ subprojects {
     }
 
     group 'ru.keepupproject'
-    version '2.0.0-alpha'
+    version '2.0.0-beta-1'
 }
 
 dependencies {

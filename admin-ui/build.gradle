@@ -7,7 +7,7 @@ plugins {
 
 description = "admin-ui"
 group 'ru.keepupproject'
-version '2.0.0-alpha'
+version '2.0.0-beta-1'
 bootJar.enabled = false
 jar.enabled = true
 
@@ -28,7 +28,7 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:3.12.4'
     testImplementation 'io.r2dbc:r2dbc-h2:0.8.4.RELEASE'
-    testImplementation 'com.h2database:h2:1.4.200'
+    testRuntimeOnly 'com.h2database:h2:1.4.200'
     testImplementation 'org.mockftpserver:MockFtpServer:2.7.1'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testImplementation 'io.projectreactor:reactor-test'
@@ -67,12 +67,12 @@ publishing {
         adminui(MavenPublication) {
             groupId 'ru.keepupproject'
             artifactId 'keepup-admin-ui'
-            version '2.0.0-alpha'
+            version '2.0.0-beta-1'
             // todo afterEvaluate
-            artifact 'build/libs/admin-ui-2.0.0-alpha-plain.jar'
+            artifact 'build/libs/admin-ui-2.0.0-beta-1-plain.jar'
             from components.java
             pom {
-                name = 'KeepUP Catalog'
+                name = 'KeepUP Admin UI'
                 description = 'Web administrative panel module'
                 url = 'https://keepupproject.ru'
                 licenses {
