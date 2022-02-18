@@ -1,6 +1,5 @@
 package io.keepup.cms.core.datasource.sql.entity;
 
-import org.hibernate.annotations.Type;
 import org.springframework.data.annotation.Id;
 
 import javax.persistence.*;
@@ -32,7 +31,6 @@ public class FileEntity {
 
     @Column(name = "content", nullable = false)
     @Lob
-    @Type(type = "org.hibernate.type.BinaryType")
     public byte[] content;
 
     @Column(name = "creation_time", nullable = false)

@@ -7,7 +7,7 @@ plugins {
 }
 
 group 'ru.keepupproject.plugins'
-version '2.0.0-alpha'
+version '2.0.0-beta-1'
 description = "keepup-rest"
 
 bootJar.enabled = false
@@ -40,9 +40,9 @@ publishing {
         rest(MavenPublication) {
             groupId 'ru.keepupproject'
             artifactId 'keepup-rest'
-            version '2.0.0-alpha'
+            version '2.0.0-beta-1'
             // todo afterEvaluate
-            artifact 'build/libs/rest-2.0.0-alpha-plain.jar'
+            artifact 'build/libs/rest-2.0.0-beta-1-plain.jar'
             from components.java
             pom {
                 name = 'KeepUP REST'

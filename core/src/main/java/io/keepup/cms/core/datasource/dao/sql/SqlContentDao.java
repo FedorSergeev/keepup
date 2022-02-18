@@ -29,11 +29,12 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static io.keepup.cms.core.cache.CacheNames.CONTENT_CACHE_NAME;
 import static io.keepup.cms.core.datasource.sql.EntityUtils.convertToLocalDateViaInstant;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static reactor.core.publisher.Mono.empty;
 
@@ -86,7 +87,7 @@ public class SqlContentDao implements ContentDao {
 
         final List<NodeAttributeEntity> attributeEntities = new ArrayList<>();
         return nodeAttributeEntityRepository.findAllByContentId(id)
-                .collect(Collectors.toList())
+                .collect(toList())
                 .flatMap(attributes -> {
                     attributeEntities.addAll(attributes);
                     return nodeEntityRepository.findById(id);
@@ -135,7 +136,7 @@ public class SqlContentDao implements ContentDao {
         return nodeEntityRepository.findByIdOrByParentId(id)
                 .flatMap(node ->
                         nodeAttributeEntityRepository.findAllByContentId(node.getId())
-                                .collect(Collectors.toList())
+                                .collect(toList())
                                 .map(nodeAttributeEntities -> buildNode(node, nodeAttributeEntities)))
                 .doOnNext(cacheAdapter::updateContent);
     }
@@ -150,7 +151,7 @@ public class SqlContentDao implements ContentDao {
         return nodeEntityRepository.findAll()
                 .flatMap(node ->
                         nodeAttributeEntityRepository.findAllByContentId(node.getId())
-                                .collect(Collectors.toList())
+                                .collect(toList())
                                 .map(nodeAttributeEntities -> buildNode(node, nodeAttributeEntities)))
                 .doOnNext(cacheAdapter::updateContent);
     }
@@ -197,13 +198,13 @@ public class SqlContentDao implements ContentDao {
                         newAttributes.remove(attributeKey);
                     }
                 })
-                .collect(Collectors.toList())
+                .collect(toList())
                 .map(attributes -> {
                     newAttributes.forEach((key, value) -> nodeAttributeEntities.add(new NodeAttributeEntity(id, key, value)));
                     return nodeAttributeEntities;
                 })
                 .then(nodeAttributeEntityRepository.saveAll(nodeAttributeEntities)
-                        .collect(Collectors.toList()))
+                        .collect(toList()))
                 .map(savedElements -> {
                     savedElements.forEach(element -> result.put(element.getAttributeKey(), getContentAttribute(element)));
                     return result;
@@ -288,7 +289,7 @@ public class SqlContentDao implements ContentDao {
         }
 
         return nodeAttributeEntityRepository.findAllByContentParentIdWithAttributeNames(parentId, attributeNames)
-                .collect(Collectors.groupingBy(NodeAttributeEntity::getContentId, Collectors.toList()))
+                .collect(groupingBy(NodeAttributeEntity::getContentId, toList()))
                 .flatMapMany(attributesByContentId -> nodeEntityRepository.findByIds(attributesByContentId.keySet())
                                                                           .map(entity -> buildNode(entity, attributesByContentId.get(entity.getId()))))
                 .map(cacheAdapter::updateContent);
@@ -318,7 +319,7 @@ public class SqlContentDao implements ContentDao {
             return Flux.empty();
         }
         return nodeAttributeEntityRepository.findAllByParentIdAndAttributeNameAndContentId(parentId, attributeName, EntityUtils.toByteArray(attributeValue))
-                .collect(Collectors.groupingBy(NodeAttributeEntity::getContentId, Collectors.toList()))
+                .collect(groupingBy(NodeAttributeEntity::getContentId, toList()))
                 .flatMapMany(attributesByContentId -> {
                     if (attributesByContentId.isEmpty()) {
                         return Flux.empty();
@@ -455,9 +456,10 @@ public class SqlContentDao implements ContentDao {
     private Mono<Long> getNodeAttributeEntityFlux(Content content, AtomicReference<Long> contentId, NodeEntity saved) {
         contentId.set(saved.getId());
         Map<String, Serializable> contentAttributes = content.getAttributes();
-        List<NodeAttributeEntity> nodeAttributes = contentAttributes.entrySet().stream()
+        List<NodeAttributeEntity> nodeAttributes = contentAttributes.entrySet()
+                .stream()
                 .map(entry -> new NodeAttributeEntity(saved.getId(), entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList());
+                .toList();
         return nodeAttributeEntityRepository.saveAll(nodeAttributes)
                 .then(Mono.just(saved.getId()));
     }

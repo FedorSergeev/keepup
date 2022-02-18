@@ -1,10 +1,10 @@
 plugins {
-    id 'org.springframework.boot' version '2.5.2'
+    id 'org.springframework.boot' version '2.6.3'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
 }
 
 group 'ru.keepupproject'
-version '2.0.0-alpha'
+version '2.0.0-beta-1'
 description = 'keepup-core'
 
 java {
@@ -42,9 +42,9 @@ publishing {
         core(MavenPublication) {
             groupId 'ru.keepupproject'
             artifactId 'keepup-core'
-            version '2.0.0-alpha'
+            version '2.0.0-beta-1'
             // todo afterEvaluate
-            artifact 'build/libs/core-2.0.0-alpha-plain.jar'
+            artifact 'build/libs/core-2.0.0-beta-1-plain.jar'
             from components.java
             pom {
                 name = 'KeepUP Core'
@@ -102,7 +102,7 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'org.apache.commons:commons-lang3:3.12.0'
     implementation 'commons-io:commons-io:2.11.0'
-    implementation 'org.hibernate:hibernate-core:5.5.3.Final'
+    implementation 'org.hibernate:hibernate-core:6.0.0.CR1'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
@@ -118,7 +118,6 @@ dependencies {
 
     implementation 'org.jetbrains:annotations:22.0.0'
     implementation 'javax.servlet:javax.servlet-api:4.0.1'
-    runtimeOnly 'com.h2database:h2:1.4.200'
 
     testImplementation 'org.junit.platform:junit-platform-runner:1.7.2'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -135,6 +134,7 @@ dependencies {
     testImplementation 'io.r2dbc:r2dbc-postgresql:0.8.11.RELEASE'
 
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+    testRuntimeOnly 'com.h2database:h2:1.4.200'
 }
 
 configurations {

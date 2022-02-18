@@ -34,7 +34,7 @@ public abstract class AbstractEntityAttribute implements Serializable {
      */
     @Column(name = "attribute_value")
     @Lob
-    @Type(type = "org.hibernate.type.BinaryType")
+//    @Type(type = "org.hibernate.type.BinaryType")
     private byte[] attributeValue;
 
     /**
