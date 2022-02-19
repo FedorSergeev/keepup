@@ -25,11 +25,19 @@ public class Node extends AbstractNode<Serializable> implements Content, Seriali
     private static final String OWNER_ID = "ownerId";
     private static final String PRIVILEGES_KEY = "privileges";
     private static final String ENTITY_TYPE = "entityType";
-
+    /**
+     * ID of entity owner
+     */
     @JsonProperty(OWNER_ID)
     protected Long ownerId;
+    /**
+     * Entity privileges
+     */
     @JsonProperty(PRIVILEGES_KEY)
     protected ContentPrivileges privileges;
+    /**
+     * Type of entity
+     */
     @JsonProperty(ENTITY_TYPE)
     protected String entityType;
 

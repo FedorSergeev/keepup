@@ -26,11 +26,11 @@ public class ApplicationConfig {
     @Value("${keepup.cms.resources.storage_type:0}")
     private int storageType;
     @Value("${keepup.cms.resources.ftp.user:}")
-    private String username;
+    private String ftpUsername;
     @Value("${keepup.cms.resources.ftp.password:}")
-    private String password;
+    private String ftpPassword;
     @Value("${keepup.cms.resources.ftp.server:}")
-    private String server;
+    private String ftpServer;
     @Value("${keepup.cms.resources.ftp.port:0}")
     private int port;
     @Value("${keepup.paths.dump:}")
@@ -44,38 +44,87 @@ public class ApplicationConfig {
     @Value("${keepup.plugins.rewrite:false}")
     private boolean rewrite;
 
+    /**
+     * Get the storage type set for the application static content.
+     *
+     * @return storage type as value of {@link io.keepup.cms.core.datasource.resources.StorageType}
+     * @see io.keepup.cms.core.datasource.resources.StorageType
+     */
     public int getStorageType() {
         return storageType;
     }
 
-    public String getUsername() {
-        return username;
+    /**
+     * Get FTP login for user to access remote host for static files storage.
+     *
+     * @return FTP login for user to access remote host for static files storage
+     */
+    public String getFtpUsername() {
+        return ftpUsername;
     }
 
-    public String getPassword() {
-        return password;
+    /**
+     * Get password for FTP server
+     *
+     * @return FTP server password
+     */
+    public String getFtpPassword() {
+        return ftpPassword;
     }
 
-    public String getServer() {
-        return server;
+    /**
+     * Get FTP server host
+     *
+     * @return FTP server host
+     */
+    public String getFtpServer() {
+        return ftpServer;
     }
 
+    /**
+     * Get FTP server port
+     *
+     * @return FTP server port
+     */
     public int getPort() {
         return port;
     }
 
+    /**
+     * Get path to dump directory
+     *
+     * @return path to dump directory
+     */
     public String getDump() {
         return dump;
     }
 
+    /**
+     * Get path to application document root. This folder id used by the web context to serve static files.
+     *
+     * @return path to application document root as String
+     */
     public String getDocumentRoot() {
         return documentRoot;
     }
 
+    /**
+     * Get path to folder where static content should be placed. Used by to serve static files which should
+     * not be accessible from web context.
+     *
+     * @return path to folder where static content is stored as String
+     */
     public String getStaticPath() {
         return staticPath;
     }
 
+    /**
+     * Check if static content files are to be replaced by newer versions when they are extracted from Jar
+     * resources.
+     *
+     * @return true if static content is to be overwritten when a new copy of the file with the same name
+     *         and path is being extracted from inner Jar file.
+     */
     public boolean isRewrite() {
         return rewrite;
     }

@@ -14,19 +14,43 @@ import java.util.List;
 
 /**
  * DAO for {@link io.keepup.cms.core.datasource.sql.entity.NodeAttributeEntity} objects
+ *
+ * @author Fedor Sergeev
+ * @since 2.0.0
  */
 @Repository
 public interface ReactiveNodeAttributeEntityRepository extends ReactiveCrudRepository<NodeAttributeEntity, Long> {
 
+    /**
+     * Find all attributes by {@link io.keepup.cms.core.datasource.sql.entity.NodeEntity} primary identifier.
+     *
+     * @param contentId content record identifier
+     * @return          Publisher emitting found records which match the condition
+     */
     Flux<NodeAttributeEntity> findAllByContentId(Long contentId);
 
+    /**
+     * Find all {@link NodeAttributeEntity} objects by {@link io.keepup.cms.core.datasource.sql.entity.NodeEntity} ID
+     * and attribute key.
+     *
+     * @param contentId    {@link io.keepup.cms.core.datasource.sql.entity.NodeEntity} primary identifier
+     * @param attributeKey name of attribute to be found
+     * @return             reactor.core.publisher.Mono emitting the found attribute entity
+     */
     Mono<NodeAttributeEntity> findByContentIdAndAttributeKey(Long contentId, String attributeKey);
 
+    /**
+     * Delete attribute entity specified by the ID.
+     *
+     * @param id attribute primary identifier
+     * @return   Publisher emitting Void when operation is done
+     */
     @Modifying
     Mono<Void> deleteByContentId(Long id);
 
     /**
-     * Finds ALL node attributes for the records witch contain the specified attribute names
+     * Finds ALL node attributes for the records witch contain the specified attribute names.
+     *
      * @param parentId {@link Content} parent id
      * @param attributeNames number of attribute names
      * @return all node attributes for the specified by condition {@link Content} nodes
@@ -42,7 +66,8 @@ public interface ReactiveNodeAttributeEntityRepository extends ReactiveCrudRepos
                                                                          @Param("attributeNames") List<String> attributeNames);
 
     /**
-     * Finds ALL node attributes for the records witch contain the specified attribute name and value
+     * Finds ALL node attributes for the records witch contain the specified attribute name and value.
+     *
      * @param parentId {@link Content} parent id
      * @param attributeName attribute field name
      * @param attributeValue attribute field value

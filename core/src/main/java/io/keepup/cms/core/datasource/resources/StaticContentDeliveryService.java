@@ -25,6 +25,12 @@ public class StaticContentDeliveryService implements IContentDeliveryService {
     private int storageType;
     private String staticPath;
 
+    /**
+     * Constructor with injection of beans managed by IoC container.
+     *
+     * @param storageAccessor   component for accessing the static content storage
+     * @param applicationConfig application configuration component
+     */
     @Autowired
     public StaticContentDeliveryService(StorageAccessor<String> storageAccessor, ApplicationConfig applicationConfig) {
         storageType = applicationConfig.getStorageType();

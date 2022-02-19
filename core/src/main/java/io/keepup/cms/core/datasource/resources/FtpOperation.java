@@ -3,12 +3,15 @@ package io.keepup.cms.core.datasource.resources;
 import org.apache.commons.net.ftp.FTPClient;
 
 /**
- * File transfer operation contract
+ * File transfer operation contract.
+ *
+ * @author Fedor Sergeev
+ * @since 1.8
  */
 @FunctionalInterface
 public interface FtpOperation<T> {
     /**
-     * Do some operation via FTP
+     * Do some operation via FTP.
      *
      * @param ftpClient  FTP client object
      * @param parameters operation parameters, eg file and it's path

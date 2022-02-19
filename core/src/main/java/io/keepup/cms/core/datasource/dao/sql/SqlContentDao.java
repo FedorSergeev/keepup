@@ -38,10 +38,16 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static reactor.core.publisher.Mono.empty;
 
+/**
+ * {@link Content} data access object implementation for relative databases.
+ *
+ * @author Fedor Sergeev
+ * @since 2.0.0
+ */
 @Service
 public class SqlContentDao implements ContentDao {
 
-    public static final String PARENT_ID_PARAMETER = "parentId";
+    private static final String PARENT_ID_PARAMETER = "parentId";
 
     private final Log log = LogFactory.getLog(getClass());
     private final ReactiveNodeEntityRepository nodeEntityRepository;
@@ -51,6 +57,15 @@ public class SqlContentDao implements ContentDao {
     private final CacheManager cacheManager;
     private final CacheAdapter cacheAdapter;
 
+    /**
+     * Instantiates the component with injection of other beans managed by IoC container.
+     *
+     * @param reactiveNodeEntityRepository          {@link NodeEntity} data access object
+     * @param reactiveNodeAttributeEntityRepository {@link NodeAttributeEntity} data access object
+     * @param objectMapper                          JSON serializer and deserializer component
+     * @param manager                               cache manager
+     * @param adapter                               cache adapter
+     */
     @Autowired
     public SqlContentDao(ReactiveNodeEntityRepository reactiveNodeEntityRepository,
                                ReactiveNodeAttributeEntityRepository reactiveNodeAttributeEntityRepository,
@@ -158,10 +173,7 @@ public class SqlContentDao implements ContentDao {
 
 
     /**
-     * Save the new {@link Content} record to database
-     *
-     * @param content local record instance
-     * @return created record identifier
+     * {@inheritDoc}
      */
     @Override
     public Mono<Long> createContent(final Content content) {
@@ -175,15 +187,7 @@ public class SqlContentDao implements ContentDao {
     }
 
     /**
-     * First takes persistent attributes and intersects it with new ones, then adds
-     * new elements from argument map and save all elements, finally collects saved elements
-     * to the result map of {@link Content} attributes.
-     * <p>
-     * Yet the logic is a little bit complicated while we should use KISS...
-     *
-     * @param id            record identifier
-     * @param newAttributes list of attributes to be added or updated
-     * @return result saved map of record attributes
+     * {@inheritDoc}
      */
     @Transactional
     public Mono<Map<String, Serializable>> updateContent(Long id, Map<String, Serializable> newAttributes) {
@@ -219,10 +223,7 @@ public class SqlContentDao implements ContentDao {
     }
 
     /**
-     * Remove record from database with all its attributes
-     *
-     * @param id record identifier
-     * @return actually nothing but you can synchronize further actions
+     * {@inheritDoc}
      */
     @Override
     public Mono<Void> deleteContent(Long id) {
@@ -232,11 +233,7 @@ public class SqlContentDao implements ContentDao {
     }
 
     /**
-     * Finds the {@link Content} attribute
-     *
-     * @param contentId record identifier
-     * @param attributeName name of attribute to be fetched
-     * @return publisher for requested attribute
+     * {@inheritDoc}
      */
     @Override
     public Mono<Serializable> getContentAttribute(Long contentId, String attributeName) {
@@ -250,12 +247,7 @@ public class SqlContentDao implements ContentDao {
     }
 
     /**
-     * Put the new value for the {@link Content} record field according to it's name.
-     *
-     * @param contentId {@link Content} record attribute
-     * @param attributeName name of the field to be updated
-     * @param attributeValue value to update the field
-     * @return Publisher for the updated attribute value
+     * {@inheritDoc}
      */
     @Override
     public Mono<Serializable> updateContentAttribute(final Long contentId, final String attributeName, final Serializable attributeValue) {
@@ -269,16 +261,7 @@ public class SqlContentDao implements ContentDao {
     }
 
     /**
-     * Fetches reactive set of {@link Content} records with the same parent identifier and the same specified set of
-     * attributes. These records can have also some additional fields, but the criteria is to have the number of
-     * concrete fields.
-     *
-     * Please beware that the result of operation will be cached but we cannot look up for all the records in cache
-     * as there can be new records in the data source witch were not put in cache.
-     *
-     * @param parentId parent record identifier
-     * @param attributeNames list of record field names
-     * @return Flux with records meeting the criterion
+     * {@inheritDoc}
      */
     @Override
     public Flux<Content> getContentByParentIdAndByAttributeNames(Long parentId, List<String> attributeNames) {
@@ -296,18 +279,7 @@ public class SqlContentDao implements ContentDao {
     }
 
     /**
-     * Finds all {@link Content} records witch have the specified by name and value attribute.
-     *
-     * Note that this operation is very expensive as we check attribute values equality byte per byte on
-     * database side so we do not recommend to use him in really high-load workflows.
-     *
-     * Please beware that the result of operation will be cached but we cannot look up for all the records in cache
-     * as there can be new records in the data source witch were not put in cache.
-     *
-     * @param parentId parent record identifier
-     * @param attributeName record field name
-     * @param attributeValue record field value
-     * @return reactive sequence of {@link Content} records meeting the specified condition
+     * {@inheritDoc}
      */
     @Override
     public Flux<Content> getContentByParentIdAndAttributeValue(Long parentId, String attributeName, Serializable attributeValue) {
@@ -331,11 +303,7 @@ public class SqlContentDao implements ContentDao {
     }
 
     /**
-     * Finds and returns all {@link Content} records witch are children of records with the specified identifiers.
-     * Result of the operation is being cached.
-     *
-     * @param parentIds parent record identifiers
-     * @return publisher for {@link Content} records
+     * {@inheritDoc}
      */
     @Override
     public Flux<Content> getContentByParentIds(Iterable <Long> parentIds) {
@@ -348,13 +316,7 @@ public class SqlContentDao implements ContentDao {
     }
 
     /**
-     * Like getContentByParentIds method, finds and returns {@link Content} records that are children of records
-     * with the specified identifiers, but also filters entities by type. Mostly used by custom user types serving.
-     * Result of the operation is being cached.
-     *
-     * @param parentIds parent record identifiers
-     * @param type name of entity, can be the name of entity class
-     * @return publisher for {@link Content} records
+     * {@inheritDoc}
      */
     @Override
     public Flux<Content> getContentByParentIdsAndType(Iterable <Long> parentIds, String type) {
@@ -367,12 +329,7 @@ public class SqlContentDao implements ContentDao {
     }
 
     /**
-     * Finds and returns all {@link Content} records witch are children of record with the specified identifier.
-     * Result of the operation is being cached. Difference between this method and getContentByParentIds is just in
-     * signature as SQL query is the same
-     *
-     * @param parentId parent record identifier
-     * @return publisher for {@link Content} records
+     * {@inheritDoc}
      */
     @Override
     public Flux<Content> getContentByParentId(Long parentId) {
@@ -385,12 +342,7 @@ public class SqlContentDao implements ContentDao {
     }
 
     /**
-     * Recursively fetches all {@link Content} records until the root or the specified offset record is found
-     *
-     * @param id     first parent record identifier, in case of null empty Flux will be returned
-     * @param offset depth of search, in case of null will be set to {@link Long#MAX_VALUE}
-     * @return       publisher for the sequence of records inheriting each other till the record with the specified
-     *               parent id (excluding this record itself)
+     * {@inheritDoc}
      */
     @Override
     public Flux<Content> getContentParents(@NotNull Long id, @Nullable Long offset) {
@@ -404,6 +356,11 @@ public class SqlContentDao implements ContentDao {
 
     // endregion
 
+    /**
+     * Function for fetching the {@link Content} record by {@link NodeEntity}.
+     *
+     * @return reactor.core.publisher.Mono emitting {@link Content} record found by specified entity
+     */
     @NotNull
     protected Function<NodeEntity, Publisher<Content>> getNodeEntityPublisherFunction() {
         return nodeEntity -> nodeAttributeEntityRepository.findAllByContentId(nodeEntity.getId())

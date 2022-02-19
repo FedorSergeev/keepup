@@ -32,18 +32,32 @@ public class NodeAttributeEntity extends AbstractEntityAttribute {
     @Serial
     private static final long serialVersionUID = 507224019294570770L;
     private static final Log log = LogFactory.getLog(NodeAttributeEntity.class);
-
+    /**
+     * Primary identifier
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "content_attribute_seq_generator")
     @SequenceGenerator(name = "content_attribute_seq_generator", sequenceName = "content_attribute_seq", allocationSize = 1)
     private Long id;
-
+    /**
+     * Identifier of {@link NodeEntity} which current attribute entity belongs to
+     */
     @Column(name = "content_id", nullable = false)
     private Long contentId;
 
+    /**
+     * Default constructor, no additional logic is implemented.
+     */
     public NodeAttributeEntity() {
     }
 
+    /**
+     * Crete new object with the specified parameters.
+     *
+     * @param contentId identifier of {@link NodeEntity} which cirrent object belongs to
+     * @param key       attribute key
+     * @param value     attribute value
+     */
     public NodeAttributeEntity(Long contentId, String key, Serializable value) {
 
         this.contentId = contentId;
@@ -63,18 +77,51 @@ public class NodeAttributeEntity extends AbstractEntityAttribute {
         }
     }
 
+    /**
+     * Crete new object with the specified parameters.
+     *
+     * @param id        entity primary identifier
+     * @param contentId identifier of {@link NodeEntity} which cirrent object belongs to
+     * @param key       attribute key
+     * @param value     attribute value
+     */
+    public NodeAttributeEntity(Long id, Long contentId, String key, Serializable value) {
+        this(contentId, key, value);
+        this.id = id;
+    }
+
+    /**
+     * Get entity ID.
+     *
+     * @return entity ID
+     */
     public Long getId() {
         return id;
     }
 
+    /**
+     * Set entity ID.
+     *
+     * @param id entity ID
+     */
     public void setId(Long id) {
         this.id = id;
     }
 
+    /**
+     * Get ID of {@link NodeEntity} which current object belongs to.
+     *
+     * @return ID of {@link NodeEntity} which current object belongs to
+     */
     public Long getContentId() {
         return contentId;
     }
 
+    /**
+     * Set ID of {@link NodeEntity} which current object belongs to.
+     *
+     * @param contentId ID of {@link NodeEntity} which current object belongs to
+     */
     public void setContentId(Long contentId) {
         this.contentId = contentId;
     }
@@ -104,11 +151,6 @@ public class NodeAttributeEntity extends AbstractEntityAttribute {
                 .concat(" attributeValue=").concat(ofNullable(stringAttributeValue).orElse("null"))
                 .concat(" creationTime=").concat(ofNullable(getCreationTime()).map(LocalDate::toString).orElse("null"))
                 .concat(" modificationTime=").concat(ofNullable(getModificationTime()).map(LocalDate::toString).orElse("null"));
-    }
-
-    public NodeAttributeEntity(Long id, Long contentId, String key, Serializable value) {
-        this(contentId, key, value);
-        this.id = id;
     }
 
     private static String apply(Long cId) {

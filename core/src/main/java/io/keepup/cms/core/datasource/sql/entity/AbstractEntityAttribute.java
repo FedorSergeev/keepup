@@ -34,7 +34,6 @@ public abstract class AbstractEntityAttribute implements Serializable {
      */
     @Column(name = "attribute_value")
     @Lob
-//    @Type(type = "org.hibernate.type.BinaryType")
     private byte[] attributeValue;
 
     /**
@@ -61,54 +60,114 @@ public abstract class AbstractEntityAttribute implements Serializable {
      */
     protected static ObjectMapper mapper = new ObjectMapper();
 
+    /**
+     * Get attribute name
+     *
+     * @return attribute name
+     */
     public String getAttributeKey() {
         return attributeKey;
     }
 
+    /**
+     * Set attribute name
+     *
+     * @param attributeKey attribute key
+     */
     public void setAttributeKey(String attributeKey) {
         this.attributeKey = attributeKey;
     }
 
+    /**
+     * Get serialized to byte array value of the attribute
+     *
+     * @return serialized to byte array attribute value
+     */
     public byte[] getAttributeValue() {
         return attributeValue;
     }
 
+    /**
+     * Set serialized to byte array value of the attribute
+     *
+     * @param attributeValue serialized to byte array attribute value
+     */
     public void setAttributeValue(byte[] attributeValue) {
         this.attributeValue = attributeValue != null
                 ? Arrays.copyOf(attributeValue, attributeValue.length)
                 : null;
     }
 
+    /**
+     * Get the information about Java class of the object stored as byte array in attribute value.
+     *
+     * @return the full name of Java class including package name
+     */
     public String getJavaClass() {
         return javaClass;
     }
 
+    /**
+     * Specify the name of Java class the attribute value should be deserialized to.
+     *
+     * @param javaClass Java type with package
+     */
     public void setJavaClass(String javaClass) {
         this.javaClass = javaClass;
     }
 
+    /**
+     * Get time when the attribute was created.
+     *
+     * @return attribute creation time
+     */
     public LocalDate getCreationTime() {
         return creationTime;
     }
 
+    /**
+     * Specify time when the attribute was created. Usually not needed for mappers.
+     *
+     * @param creationTime time of object creation
+     */
     public void setCreationTime(LocalDate creationTime) {
         this.creationTime = creationTime;
     }
 
+    /**
+     * Get time when the attribute was last time nodified.
+     *
+     * @return attribute last modification time
+     */
     public LocalDate getModificationTime() {
         return modificationTime;
     }
 
+    /**
+     * Specify time when the attribute was last time modified. Usually not needed for mappers.
+     *
+     * @param modificationTime time of object last modification
+     */
     public void setModificationTime(LocalDate modificationTime) {
         this.modificationTime = modificationTime;
     }
 
-    public final byte[] toByteArray(Object o) {
+    /**
+     * Converts object to byte array for persisting attribute values in the same storage. In case of
+     * IOException during serialization process no Throwable will be thrown and the an empty byte array will be
+     * returned as operation result. Maybe catching exception and wrapping it as a specific system exception
+     * is a better approach then checking the length of method result, but yet the process is design for user to
+     * receive response for his request anyway.
+     *
+     * @param object object to be serialized to byte array
+     * @return       object serialized to array of bytes
+     */
+    public final byte[] toByteArray(Object object) {
         byte[] result;
         var bos = new ByteArrayOutputStream();
         try {
             ObjectOutput out = new ObjectOutputStream(bos);
-            out.writeObject(o);
+            out.writeObject(object);
             out.flush();
             result = bos.toByteArray();
             bos.close();
@@ -119,6 +178,9 @@ public abstract class AbstractEntityAttribute implements Serializable {
         return result;
     }
 
+    /**
+     * Specifies the default value and Java type for node attribute value.
+     */
     protected void setDefaultValue() {
         attributeValue = new byte[0];
         javaClass = "java.lang.Byte[]";

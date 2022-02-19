@@ -20,12 +20,21 @@ import static java.util.Optional.ofNullable;
  * FTP operation or getting list of files from remote directory recursively
  */
 public class GetFilesOperation implements FtpOperation<List<StoredFileData>> {
+    /**
+     * Slash symbol
+     */
     public static final String SLASH_SYMBOL = "/";
 
     private final Log log = LogFactory.getLog(getClass());
     private final String relativePath;
     private final String localFilePath;
 
+    /**
+     * Abstraction describing the fetching files from static content storage operation.
+     *
+     * @param relativePath path where the needed files are being stored
+     * @param dumpFilePath path the needed files to be saved
+     */
     public GetFilesOperation(String relativePath, String dumpFilePath) {
         localFilePath = "%s/ftp/".formatted(dumpFilePath);
         final var localFileDirectory = new File(localFilePath);

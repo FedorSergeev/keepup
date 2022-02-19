@@ -22,6 +22,12 @@ import static java.util.Arrays.stream;
 import static java.util.Collections.singletonList;
 import static java.util.Optional.ofNullable;
 
+/**
+ * Component responsible for FTP operations.
+ *
+ * @author Fedor Sergeev
+ * @since 1.8
+ */
 @Service
 public class FtpFileProcessor implements StorageAccessor<String> {
 
@@ -33,10 +39,15 @@ public class FtpFileProcessor implements StorageAccessor<String> {
     private final int port;
     private final String dump;
 
+    /**
+     * Creates a new FTP file processor configured by application configuration.
+     *
+     * @param applicationConfig application configuration
+     */
     public FtpFileProcessor(ApplicationConfig applicationConfig) {
-        username = applicationConfig.getUsername();
-        password = applicationConfig.getPassword();
-        server = applicationConfig.getServer();
+        username = applicationConfig.getFtpUsername();
+        password = applicationConfig.getFtpPassword();
+        server = applicationConfig.getFtpServer();
         port = applicationConfig.getPort();
         dump = applicationConfig.getDump();
     }

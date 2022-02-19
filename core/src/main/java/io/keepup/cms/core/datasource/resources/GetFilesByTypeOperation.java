@@ -18,12 +18,21 @@ import static org.apache.commons.net.ftp.FTP.BINARY_FILE_TYPE;
  * FTP operation or getting list of files from remote directory recursively
  */
 public class GetFilesByTypeOperation implements FtpOperation<List<StoredFileData>> {
+    /**
+     * Slash symbol
+     */
     public static final String SLASH_SYMBOL = "/";
 
     private final Log log = LogFactory.getLog(getClass());
     private final String type;
     private final String localFilePath;
 
+    /**
+     * Wrapper for getting files by file type operation.
+     *
+     * @param type     file type
+     * @param filePath logical path to file
+     */
     public GetFilesByTypeOperation(String type, String filePath) {
         localFilePath = "%s/%s".formatted(filePath, "ftp/");
         final var localFileDirectory = new File(localFilePath);

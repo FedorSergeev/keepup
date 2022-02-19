@@ -7,6 +7,9 @@ package io.keepup.cms.core.datasource.access;
  */
 
 public class ContentPrivilegesFactory {
+    /**
+     * Set of standard privileges. Owner and owner's group have full access, everyone can only create node's children
+     */
     public static final ContentPrivileges STANDARD_PRIVILEGES;
     
     static {

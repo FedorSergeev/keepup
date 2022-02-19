@@ -14,7 +14,14 @@ import reactor.core.publisher.Mono;
  */
 public interface ReactiveFileRepository extends ReactiveCrudRepository<FileEntity, Long> {
 
-    @Query("SELECT * FROM files " +
+    /**
+     * Find a file by name and logical path.
+     *
+     * @param filename name of file
+     * @param path     logical path to file
+     * @return         Mono emitting the needed file
+     */
+    @Query("SELECT id, file_name, path, content_id, content, creation_time, modification_time FROM files " +
             "AS file " +
             "WHERE file.file_name  IN (:filename) " +
             "AND file.path IN (:path)")

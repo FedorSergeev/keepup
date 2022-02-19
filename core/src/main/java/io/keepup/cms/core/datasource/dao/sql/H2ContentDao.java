@@ -29,6 +29,15 @@ import java.util.Objects;
 @Primary
 @Profile("h2")
 public class H2ContentDao extends SqlContentDao {
+    /**
+     * {@link Content} DAO implementation for H2 as data source
+     *
+     * @param reactiveNodeEntityRepository          DAO for {@link io.keepup.cms.core.datasource.sql.entity.NodeEntity} objects
+     * @param reactiveNodeAttributeEntityRepository DAO for {@link io.keepup.cms.core.datasource.sql.entity.NodeAttributeEntity} objects
+     * @param objectMapper                          mapper component
+     * @param manager                               cache manager
+     * @param adapter                               cache adapter
+     */
     public H2ContentDao(ReactiveNodeEntityRepository reactiveNodeEntityRepository, ReactiveNodeAttributeEntityRepository reactiveNodeAttributeEntityRepository, ObjectMapper objectMapper, CacheManager manager, CacheAdapter adapter) {
         super(reactiveNodeEntityRepository, reactiveNodeAttributeEntityRepository, objectMapper, manager, adapter);
     }

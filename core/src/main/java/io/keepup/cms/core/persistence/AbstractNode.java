@@ -7,15 +7,24 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * @param <T>
+ * @param <T> node attribute type
  * @author Fedor Sergeev
  * @since 0.6.4
  */
 public abstract class AbstractNode<T> implements BasicEntity<T> {
+    /**
+     * Node identifier
+     */
     @JsonProperty("id")
     protected Long id;
+    /**
+     * Node parent id
+     */
     @JsonProperty("parentId")
     protected Long parentId;
+    /**
+     * Node attributes
+     */
     @JsonProperty("attributes")
     protected transient Map<String, T> attributes;
 

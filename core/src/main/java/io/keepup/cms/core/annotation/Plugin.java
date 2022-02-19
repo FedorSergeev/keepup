@@ -11,11 +11,16 @@ import java.lang.annotation.RetentionPolicy;
  * Simple marker interface to get components responsible for data deployment 
  * on core project startup. Standard KeepUP CMS annotation.
  * </p>
+ *
  * @author Fedor Sergeev
  */
-
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Plugin {
+    /**
+     * Specifies if plugin is active.
+     *
+     * @return determine if the condition matches.
+     */
     Class<? extends Condition>[] condition() default {};
 }

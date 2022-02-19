@@ -7,5 +7,10 @@ package io.keepup.cms.core.datasource.sql.entity;
  * @since 2.0.0
  */
 public interface RoleEntity {
+    /**
+     * Get role.
+     *
+     * @return role
+     */
     String getRole();
 }

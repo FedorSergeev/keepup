@@ -73,17 +73,34 @@ public class SecurityConfiguration {
     @Value("${keepup.security.csrf-enabled:true}")
     private boolean csrfEnabled;
 
+    /**
+     * Security configuration constructor with DAO component injection.
+     *
+     * @param dataSourceFacade main KeepUP data access object
+     */
     public SecurityConfiguration(DataSourceFacade dataSourceFacade) {
         this.dataSourceFacade = dataSourceFacade;
         log.debug("Security configuration instantiated with data source facade");
     }
 
+    /**
+     * A ServerCsrfTokenRepository that stores the CsrfToken in the HttpSession.
+     *
+     * @return CSRF tokens data access object
+     */
     @Bean
     WebSessionServerCsrfTokenRepository webSessionServerCsrfTokenRepository() {
         log.debug("Instantiating web session CSRF token repository");
         return new WebSessionServerCsrfTokenRepository();
     }
 
+    /**
+     * Instantiates a filter chain which is capable of being matched against a ServerWebExchange in order to decide
+     * whether it applies to that request.
+     *
+     * @param http reactive http security object
+     * @return     configured security filter chain component
+     */
     @Bean
     @Profile("security")
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
@@ -107,12 +124,22 @@ public class SecurityConfiguration {
                 .build();
     }
 
+    /**
+     * Instantiates the service for encoding passwords.
+     *
+     * @return password encoding service
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         log.debug("Instantiating the password encoder");
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * Instantiates reactive service for fetching information about users.
+     *
+     * @return reactive service that provides core user information
+     */
     @Bean
     public ReactiveUserDetailsService reactiveUserDetailsService() {
         log.debug("Instantiating the UserDetails service");

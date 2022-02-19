@@ -8,7 +8,9 @@ import java.util.Objects;
 import static java.util.Optional.ofNullable;
 
 /**
- * @author Fedor Sergeev f.sergeev@hldn.ru
+ * {@link io.keepup.cms.core.persistence.Content} object privileges aggregator.
+ *
+ * @author Fedor Sergee
  * @since 0.4
  */
 
@@ -17,42 +19,83 @@ public class ContentPrivileges implements Serializable {
     private static final String ROLE = "role";
     private static final String OTHERS = "others";
 
+    /**
+     * Owner privileges
+     */
     @JsonProperty(OWNER)
     private Privilege ownerPrivileges;
+    /**
+     * Role privileges
+     */
     @JsonProperty(ROLE)
     private Privilege rolePrivileges;
+    /**
+     * Privileges for anyone
+     */
     @JsonProperty(OTHERS)
     private Privilege otherPrivileges;
 
-    public Privilege getOwnerPrivileges() {
-        return ownerPrivileges;
-    }
-
-    public void setOwnerPrivileges(Privilege ownerPrivileges) {
-        this.ownerPrivileges = ownerPrivileges;
-    }
-
-    public Privilege getRolePrivileges() {
-        return rolePrivileges;
-    }
-
-    public void setRolePrivileges(Privilege rolePrivileges) {
-        this.rolePrivileges = rolePrivileges;
-    }
-
-    public Privilege getOtherPrivileges() {
-        return otherPrivileges;
-    }
-
-    public void setOtherPrivileges(Privilege otherPrivileges) {
-        this.otherPrivileges = otherPrivileges;
-    }
-    
+    /**
+     * Default constructor.
+     */
     public ContentPrivileges() {
         super();
     }
 
-    
+    /**
+     * Get {@link io.keepup.cms.core.persistence.Content} owner privileges
+     *
+     * @return owner's privileges for the object
+     */
+    public Privilege getOwnerPrivileges() {
+        return ownerPrivileges;
+    }
+
+    /**
+     * Define {@link io.keepup.cms.core.persistence.Content} owner privileges
+     *
+     * @param ownerPrivileges owner's privileges for the object
+     */
+    public void setOwnerPrivileges(Privilege ownerPrivileges) {
+        this.ownerPrivileges = ownerPrivileges;
+    }
+
+    /**
+     * Get privilege on an object for a user that has the same role as the owner of the object.
+     *
+     * @return privilege on an object for a user that has the same role as the owner of the object
+     */
+    public Privilege getRolePrivileges() {
+        return rolePrivileges;
+    }
+
+    /**
+     * Defines privilege on an object for a user that has the same role as the owner of the object.
+     *
+     * @param rolePrivileges privilege on an object for a user that has the same role as the owner of the object
+     */
+    public void setRolePrivileges(Privilege rolePrivileges) {
+        this.rolePrivileges = rolePrivileges;
+    }
+
+    /**
+     * Get {@link io.keepup.cms.core.persistence.Content} privileges on an object for anyone.
+     *
+     * @return privileges on an object for anyone.
+     */
+    public Privilege getOtherPrivileges() {
+        return otherPrivileges;
+    }
+
+    /**
+     * Define {@link io.keepup.cms.core.persistence.Content} privileges on an object for anyone.
+     *
+     * @param otherPrivileges privileges on an object for anyone.
+     */
+    public void setOtherPrivileges(Privilege otherPrivileges) {
+        this.otherPrivileges = otherPrivileges;
+    }
+
     @Override
     public String toString() {
         return "[ owner: " + ofNullable(ownerPrivileges).map(Privilege::toString)

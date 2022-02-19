@@ -6,6 +6,12 @@ import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;
 
+/**
+ * reactive data access object for {@link io.keepup.cms.core.datasource.sql.entity.UserAttributeEntity} entities.
+ *
+ * @author Fedor Sergeev
+ * @since 2.0.0
+ */
 @Repository
 public interface ReactiveUserEntityRepository extends ReactiveCrudRepository<UserEntity, Long> {
     /**

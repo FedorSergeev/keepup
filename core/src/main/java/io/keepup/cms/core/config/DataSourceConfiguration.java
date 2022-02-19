@@ -33,8 +33,9 @@ public class DataSourceConfiguration {
     private boolean liquibaseEnabled;
 
     /**
-     * Liquibase configuration
+     * Liquibase configuration.
      *
+     * @param dataSource factory for connections to the physical data source that this DataSource object represents.
      * @return component responsible for data source consistency check and update
      */
     @Bean
