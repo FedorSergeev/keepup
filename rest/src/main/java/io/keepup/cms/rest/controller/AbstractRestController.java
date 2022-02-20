@@ -28,8 +28,16 @@ public abstract class AbstractRestController<T> {
 
     private static final String NULL = "NULL";
     private final Log log = LogFactory.getLog(getClass());
+    /**
+     * Component responsible for items serving
+     */
     protected final EntityOperationServiceBase<T> operationService;
 
+    /**
+     * Creates a new REST controller with special operation service.
+     *
+     * @param operationService component that serves CRUD operations with items of specified type
+     */
     protected AbstractRestController(EntityOperationServiceBase<T> operationService) {
         this.operationService = operationService;
     }
@@ -63,8 +71,9 @@ public abstract class AbstractRestController<T> {
     }
 
     /**
-     * Get an entity with the specified type and served by the specified operation service
+     * Get an entity with the specified type and served by the specified operation service.
      *
+     * @param id item primary identifier
      * @return Mono signaling when the entity is ready or empty/error
      */
     @GetMapping("/{id}")
