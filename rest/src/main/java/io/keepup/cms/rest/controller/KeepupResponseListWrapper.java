@@ -5,7 +5,7 @@ import java.util.List;
 
 /**
  * Wraps web request response with additional information fields so both error and success will
- * have the same structure
+ * have the same structure.
  *
  * @param <T> entity type
  * @author Fedor Sergeev
@@ -13,38 +13,29 @@ import java.util.List;
  */
 public class KeepupResponseListWrapper<T> extends AbstractResponseWrapper {
     private List<T> entities;
-    private boolean success;
-    private String error;
 
+    /**
+     * Default constructor. Empty list of entities is initialized.
+     */
     public KeepupResponseListWrapper() {
         entities = new ArrayList<>();
     }
 
+    /**
+     * Get the list of entities.
+     *
+     * @return entities stored in response object
+     */
     public List<T> getEntities() {
         return entities;
     }
 
+    /**
+     * Define the list of entities.
+     *
+     * @param entities entities stored in response object
+     */
     public void setEntities(List<T> entities) {
         this.entities = entities;
-    }
-
-    @Override
-    public boolean isSuccess() {
-        return success;
-    }
-
-    @Override
-    public void setSuccess(boolean success) {
-        this.success = success;
-    }
-
-    @Override
-    public String getError() {
-        return error;
-    }
-
-    @Override
-    public void setError(String error) {
-        this.error = error;
     }
 }

@@ -27,6 +27,11 @@ public class ApiCatalogController {
     private final Log log = LogFactory.getLog(getClass());
     private final AdminUiService adminUiService;
 
+    /**
+     * Create Controller for administrative pages with injected service.
+     *
+     * @param adminUiService service responsible for routing administrative panel components
+     */
     public ApiCatalogController(AdminUiService adminUiService) {
         this.adminUiService = adminUiService;
     }
