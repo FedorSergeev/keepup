@@ -42,6 +42,13 @@ public class UserAttributeEntity extends AbstractEntityAttribute {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    /**
+     * Constructor with parameters.
+     *
+     * @param userId user's primary identifier
+     * @param key    attribute key
+     * @param value  attribute value
+     */
     public UserAttributeEntity(Long userId, String key, Object value) {
         this.userId = userId;
         setAttributeKey(key);
@@ -49,26 +56,54 @@ public class UserAttributeEntity extends AbstractEntityAttribute {
         serializeValue(key, value);
     }
 
+    /**
+     * Default constructor.
+     */
     public UserAttributeEntity() {
     }
 
+    /**
+     * Get attribute ID.
+     *
+     * @return attribute ID
+     */
     public Long getId() {
         return id;
     }
 
+    /**
+     * Set attribute ID.
+     *
+     * @param id attribute ID
+     */
     public void setId(Long id) {
         this.id = id;
     }
 
+    /**
+     * Get user's ID.
+     *
+     * @return user's ID
+     */
     public Long getUserId() {
         return userId;
     }
 
+    /**
+     * Set user's ID.
+     *
+     * @param userId user's ID
+     */
     public void setUserId(Long userId) {
         this.userId = userId;
     }
 
-
+    /**
+     * Serialize object as byte array for saving it as user's attribute value.
+     *
+     * @param key   user's attribute name
+     * @param value user's attribute value
+     */
     public final void serializeValue(String key, Object value) {
         if (key == null) {
             throw new IllegalArgumentException("User attribute key cannot be null");
@@ -92,6 +127,11 @@ public class UserAttributeEntity extends AbstractEntityAttribute {
         }
     }
 
+    /**
+     * Get logger instance.
+     *
+     * @return logger instance
+     */
     @Override
     protected Log getLog() {
         return log;

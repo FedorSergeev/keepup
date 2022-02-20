@@ -17,7 +17,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Implementation of data source provider
+ * Implementation of data source provider.
+ *
+ * @author Fedor Sergeev
+ * @since 2.0.0
  */
 @Service
 public class DataSourceFacadeImpl implements DataSourceFacade {
@@ -26,6 +29,13 @@ public class DataSourceFacadeImpl implements DataSourceFacade {
     private final FileDao fileDao;
     private final UserDao userDao;
 
+    /**
+     * Constructor that defines bound parameters.
+     *
+     * @param contentDao DAO for {@link Content} records
+     * @param fileDao    DAO for {@link io.keepup.cms.core.datasource.sql.entity.FileEntity} objects
+     * @param userDao    DAO for {@link io.keepup.cms.core.datasource.sql.entity.UserEntity} objects
+     */
     @Autowired
     public DataSourceFacadeImpl(ContentDao contentDao, FileDao fileDao, UserDao userDao) {
         this.contentDao = contentDao;
@@ -38,6 +48,13 @@ public class DataSourceFacadeImpl implements DataSourceFacade {
         return contentDao.getContent(id);
     }
 
+    /**
+     * Looks up for the record and filters it by type
+     *
+     * @param id item identifier
+     * @param type item type
+     * @return Publisher signaling when the satisfying record is found
+     */
     @Override
     public Mono<Content> getContentByIdAndType(Long id, String type) {
         return contentDao.getContentByIdAndType(id, type);
@@ -94,6 +111,14 @@ public class DataSourceFacadeImpl implements DataSourceFacade {
         return contentDao.getContentByParentIdsAndType(parentIds, type);
     }
 
+    /**
+     * Finds and returns all {@link Content} records witch are children of record with the specified identifier.
+     * Result of the operation is being cached. Difference between this method and getContentByParentIds is just in
+     * signature as SQL query is the same
+     *
+     * @param parentId parent record identifier
+     * @return publisher for {@link Content} records
+     */
     @Override
     public Flux<Content> getContentByParentId(Long parentId) {
         return contentDao.getContentByParentId(parentId);

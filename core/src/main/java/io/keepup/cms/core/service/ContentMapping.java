@@ -9,5 +9,10 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface ContentMapping {
+    /**
+     * Name of {@link io.keepup.cms.core.persistence.Content} attribute key.
+     *
+     * @return attribute key
+     */
     String value() default "";
 }

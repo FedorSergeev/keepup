@@ -10,5 +10,11 @@ import java.io.Serializable;
  */
 public interface KeepupPluginConfiguration extends Serializable {
 
+    /**
+     * Get configuration.
+     *
+     * @param configName name of configuration
+     * @return           Configuration object
+     */
     Serializable getConfigByName(String configName);
 }

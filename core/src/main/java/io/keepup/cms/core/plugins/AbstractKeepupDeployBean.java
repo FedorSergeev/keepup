@@ -38,22 +38,50 @@ public abstract class AbstractKeepupDeployBean implements PluginService, BasicDe
 
     private JarHelper jarHelper;
 
+    /**
+     * Data source
+     */
     @Autowired
     protected DataSourceFacade dataSourceFacade;
 
+    /**
+     * Application configuration
+     */
     protected ApplicationConfig applicationConfig;
+    /**
+     * Logger instance
+     */
     protected Log logger;
+    /**
+     * Name of plugin component
+     */
     protected String name;
+    /**
+     * Plugin configurations
+     */
     protected Iterable<KeepupPluginConfiguration> configurations;
+    /**
+     * Initialization order
+     */
     protected int initOrder;
 
     // region public API
 
+    /**
+     * Set the configuration component
+     *
+     * @param applicationConfig configuration component
+     */
     @Autowired
     public void setApplicationConfig(ApplicationConfig applicationConfig) {
         this.applicationConfig = applicationConfig;
     }
 
+    /**
+     * Set the helper for extracting plugin content from JAR file.
+     *
+     * @param jarHelper helper for extracting static content
+     */
     @Autowired
     public void setJarHelper(JarHelper jarHelper) {
         this.jarHelper = jarHelper;
@@ -79,6 +107,9 @@ public abstract class AbstractKeepupDeployBean implements PluginService, BasicDe
         logger.info("No tasks to run after basic configuration of %s plugin is completed".formatted(name));
     }
 
+    /**
+     * Extracts static data from plugin boundary on application startup.
+     */
     @Override
     public void deploy() {
         logger.info("Deploying plugin '%s' data".formatted(name));
@@ -111,6 +142,13 @@ public abstract class AbstractKeepupDeployBean implements PluginService, BasicDe
         }
     }
 
+    /**
+     * Checks if root record for the plugin exists and creates it if not.
+     *
+     * @param parentId   id of the record under which the parent plugin node should be placed
+     * @param folderName name of the root plugin folder record
+     * @return           publisher for the plugin root record identifier
+     */
     public Mono<Long> checkUnitFolder(long parentId, String folderName) {
         if (dataSourceFacade != null) {
             return dataSourceFacade.getContentByParentIdAndAttributeValue(parentId, "meta", folderName)

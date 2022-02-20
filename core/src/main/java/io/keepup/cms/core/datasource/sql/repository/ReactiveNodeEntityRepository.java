@@ -8,9 +8,20 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+/**
+ * Reactive data access object for {@link NodeEntity} entities.
+ *
+ * @author Fedor Sergeev
+ * @since 2.0.0
+ */
 @Repository
 public interface ReactiveNodeEntityRepository extends ReactiveCrudRepository<NodeEntity, Long> {
 
+    /**
+     * Find all {@link NodeEntity} objects by primary identifiers
+     * @param ids collection of node primary identifiers
+     * @return    reactive stream publisher emitting all the found {@link NodeEntity} objects.
+     */
     @Query("SELECT id, parent_id, owner_id, entity_type," +
             " owner_read_privilege, owner_write_privilege, owner_create_children_privilege, owner_execute_privilege," +
             " role_read_privilege, role_write_privilege, role_create_children_privilege, role_execute_privilege," +
@@ -18,6 +29,12 @@ public interface ReactiveNodeEntityRepository extends ReactiveCrudRepository<Nod
            "FROM node_entity as node WHERE node.id IN (:ids)")
     Flux<NodeEntity> findByIds(@Param("ids") Iterable<Long> ids);
 
+    /**
+     * Find all records by the parent id. Use 0 to get the list of root records.
+     *
+     * @param ids collection of parent node identifiers
+     * @return    reactive stream publisher emitting all the found {@link NodeEntity} objects
+     */
     @Query("SELECT id, parent_id, owner_id, entity_type," +
             " owner_read_privilege, owner_write_privilege, owner_create_children_privilege, owner_execute_privilege," +
             " role_read_privilege, role_write_privilege, role_create_children_privilege, role_execute_privilege," +
@@ -25,6 +42,13 @@ public interface ReactiveNodeEntityRepository extends ReactiveCrudRepository<Nod
             "FROM node_entity as node WHERE node.parent_id IN (:ids)")
     Flux<NodeEntity> findByParentIds(@Param("ids") Iterable<Long> ids);
 
+    /**
+     * Find all records by the parent id and entity type. Use 0 to get the list of root records.
+     *
+     * @param ids  collection of parent node identifiers
+     * @param type entity type (Java class)
+     * @return     reactive stream publisher emitting all the found {@link NodeEntity} objects
+     */
     @Query("SELECT id, parent_id, owner_id, entity_type," +
             " owner_read_privilege, owner_write_privilege, owner_create_children_privilege, owner_execute_privilege," +
             " role_read_privilege, role_write_privilege, role_create_children_privilege, role_execute_privilege," +
@@ -36,6 +60,13 @@ public interface ReactiveNodeEntityRepository extends ReactiveCrudRepository<Nod
            "                    WHERE ENTITY_CLASSES.class_name = :type))")
     Flux<NodeEntity> findByParentIdsAndType(@Param("ids") Iterable<Long> ids, @Param("type") String type);
 
+    /**
+     * Find all records by primary identifier and entity type.
+     *
+     * @param id   entity ID
+     * @param type entity type (Java class)
+     * @return     reactor.core.publisher.Mono emitting all the found {@link NodeEntity} objects
+     */
     @Query("SELECT id, parent_id, owner_id, entity_type," +
             " owner_read_privilege, owner_write_privilege, owner_create_children_privilege, owner_execute_privilege," +
             " role_read_privilege, role_write_privilege, role_create_children_privilege, role_execute_privilege," +
@@ -47,6 +78,12 @@ public interface ReactiveNodeEntityRepository extends ReactiveCrudRepository<Nod
             "                 WHERE ENTITY_CLASSES.class_name = :type))")
     Mono<NodeEntity> findByIdAndType(@Param("id") Long id, @Param("type") String type);
 
+    /**
+     * FInd records by primary ID or parent record identifier.
+     *
+     * @param id primary identifier or parent node primary ID
+     * @return   reactor.core.publisher.Mono emitting all the found {@link NodeEntity} objects
+     */
     @Query("SELECT id, parent_id, owner_id, entity_type," +
             " owner_read_privilege, owner_write_privilege, owner_create_children_privilege, owner_execute_privilege," +
             " role_read_privilege, role_write_privilege, role_create_children_privilege, role_execute_privilege," +

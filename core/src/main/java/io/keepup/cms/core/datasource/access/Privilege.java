@@ -19,12 +19,24 @@ public class Privilege implements BasicPrivilege, Serializable {
     private static final String WRITE_KEY = "write";
     private static final String READ_KEY = "read";
 
+    /**
+     * Defines whether {@link io.keepup.cms.core.persistence.Content} children can be read
+     */
     @JsonProperty(READ_KEY)
     private boolean read;
+    /**
+     * Defines whether {@link io.keepup.cms.core.persistence.Content} children can be updated
+     */
     @JsonProperty(WRITE_KEY)
     private boolean write;
+    /**
+     * Defines whether {@link io.keepup.cms.core.persistence.Content} children can be executed
+     */
     @JsonProperty(EXECUTE_KEY)
     private boolean execute;
+    /**
+     * Defines whether {@link io.keepup.cms.core.persistence.Content} children can be created
+     */
     @JsonProperty(CREATE_KEY)
     private boolean createChildren;
     

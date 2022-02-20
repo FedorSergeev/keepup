@@ -37,6 +37,11 @@ public class SqlFileDao implements FileDao {
     @Value(KEEPUP_STORAGE_USER_DIRECTORY_PATH_APP_FILES)
     private String userFileDirectoryPath;
 
+    /**
+     * File constructor with file DAP injection via argument.
+     *
+     * @param fileRepository {@link FileEntity} data access object
+     */
     public SqlFileDao(ReactiveFileRepository fileRepository) {
         this.fileRepository = fileRepository;
     }
@@ -61,8 +66,8 @@ public class SqlFileDao implements FileDao {
 
     /**
      * Looks for the file and wraps it if found
-     * @param fileName
-     * @return
+     * @param fileName name of the file
+     * @return         reactor.core.publisher.Mono emitting the file wrapper
      */
     @Override
     public Mono<FileWrapper> getFile(final String fileName) {

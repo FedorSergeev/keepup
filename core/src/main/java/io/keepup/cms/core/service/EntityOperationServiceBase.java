@@ -53,26 +53,56 @@ public abstract class EntityOperationServiceBase<T> implements EntityService<T> 
 
     private ObjectMapper mapper;
     private ReactiveContentClassRepository contentClassRepository;
-
+    /**
+     * Instance logger
+     */
     protected final Log log = LogFactory.getLog(getClass());
+    /**
+     * Parent identifier for records which can be used as root records for entities stored by this operation service.
+     */
     protected List<Long> entityParentIds;
+    /**
+     * Content DAO
+     *
+     * @see Content
+     */
     protected DataSourceFacade dataSourceFacade;
 
+    /**
+     * Protected default constructor. Sets the single root node identifier as 0, but the number
+     * of root node IDs can be changed as this field is mutable.
+     */
     protected EntityOperationServiceBase() {
         entityParentIds = asList(0L);
         this.typeClass = getGenericParameterClass(getClass());
     }
 
+    /**
+     * Set Jackson object mapper.
+     *
+     * @param mapper mapper responsible for objects serialization and deserialization
+     */
     @Autowired
     public void setMapper(ObjectMapper mapper) {
         this.mapper = mapper;
     }
 
+    /**
+     * Set the DAO for linkages between {@link io.keepup.cms.core.persistence.Content} records and it's classes.
+     *
+     * @param contentClassRepository DAO for linkages between {@link io.keepup.cms.core.persistence.Content} records and
+     *                               it's classes.
+     */
     @Autowired
     public void setContentClassRepository(ReactiveContentClassRepository contentClassRepository) {
         this.contentClassRepository = contentClassRepository;
     }
 
+    /**
+     * Set {@link Content} and {@link io.keepup.cms.core.persistence.User} DAO
+     *
+     * @param dataSourceFacade DAO for {@link Content} and {@link io.keepup.cms.core.persistence.User} records
+     */
     @Autowired
     public void setDataSourceFacade(DataSourceFacade dataSourceFacade) {
         this.dataSourceFacade = dataSourceFacade;
@@ -138,6 +168,8 @@ public abstract class EntityOperationServiceBase<T> implements EntityService<T> 
 
     /**
      * Sets the list of current node parent identifiers till the root node
+     *
+     * @param entityParentIds a sequence of record identifiers that are ancestors of the given
      */
     public void setEntityParentIds(List<Long> entityParentIds) {
         this.entityParentIds = entityParentIds;

@@ -8,6 +8,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -40,12 +41,25 @@ public class JarHelper {
     private ApplicationConfig applicationConfig;
     private StaticContentDeliveryService contentDeliveryService;
 
+    @Value("${keepup.plugins.threshold-entries:10000}")
+    private int thresholdEntries;
+    @Value("${keepup.plugins.threshold-size:1000000000}")
+    private int thresholdSize;
+    @Value("${keepup.plugins.threshold-ratio:10}")
+    private double thresholdRatio;
+
     // region lambda maps
     private final Map<StorageType, Consumer<ResourceFileToCopy>> directoryProcessors = new EnumMap<>(StorageType.class);
     // endregion
 
+    /**
+     * Path to inner resource where JAR files in Spring Boot application are stored.
+     */
     public static final String JAR_BOOT_INF_LIB = "/BOOT-INF/lib";
 
+    /**
+     * Default constructor.
+     */
     public JarHelper() {
         directoryProcessors.put(StorageType.FILESYSTEM, new CreateFilesystemDirectory());
     }
@@ -108,17 +122,20 @@ public class JarHelper {
     /**
      * Performs unpacking of static resources according to the specified rules. Files from META-INF/dump directory
      * of Jar entry will be copied to {@link ApplicationConfig#getDump()} folder, files from directory
-     * META-INF/server - to {@link ApplicationConfig#getServer()}, files from directory META-INF/static
+     * META-INF/server - to {@link ApplicationConfig#getFtpServer()}, files from directory META-INF/static
      * will be copied to {@link ApplicationConfig#getStaticPath()} folder.
      *
      * @param jarFile      content file that can be read by Java
      * @throws IOException is thrown if something went wrong during IO operations
      */
     public void processJarStaticResources(JarFile jarFile) throws IOException {
+
+
         var enumEntries = jarFile.entries();
         while (enumEntries.hasMoreElements()) {
 
             var file = enumEntries.nextElement();
+
             if (file.getName().startsWith("META-INF/")) {
                 ResourceFileToCopy copyCondition = getCopyCondition(file);
                 var copy = copyCondition.copy();

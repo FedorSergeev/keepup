@@ -25,31 +25,63 @@ public class ContentClass {
     @Column(name = "class_name", nullable = false)
     private String className;
 
+    /**
+     * Creates a new {@link ContentClass} entity with specified {@link io.keepup.cms.core.persistence.Content} identifier
+     * and name of Java type as String.
+     *
+     * @param contentId {@link io.keepup.cms.core.persistence.Content} record identifier
+     * @param className name of the Java class stored by the {@link io.keepup.cms.core.persistence.Content} record
+     */
     public ContentClass(Long contentId, String className) {
         this.contentId = contentId;
         this.className = className;
     }
 
+    /**
+     * Get entity ID.
+     *
+     * @return entity ID
+     */
     public Long getId() {
         return id;
     }
-
+    /**
+     * Set entity ID.
+     *
+     * @param id entity ID
+     */
     public void setId(Long id) {
         this.id = id;
     }
-
+    /**
+     * Get entity {@link io.keepup.cms.core.persistence.Content} ID.
+     *
+     * @return ID of {@link io.keepup.cms.core.persistence.Content} record linked to current entity
+     */
     public Long getContentId() {
         return contentId;
     }
-
+    /**
+     * Set entity {@link io.keepup.cms.core.persistence.Content} ID.
+     *
+     * @param contentId  ID of {@link io.keepup.cms.core.persistence.Content} record linked to current entity
+     */
     public void setContentId(Long contentId) {
         this.contentId = contentId;
     }
-
+    /**
+     * Get name of the Java class represented by {@link io.keepup.cms.core.persistence.Content} record.
+     *
+     * @return name of the Java class represented by {@link io.keepup.cms.core.persistence.Content} record
+     */
     public String getClassName() {
         return className;
     }
-
+    /**
+     * Set name of the Java class represented by {@link io.keepup.cms.core.persistence.Content} record.
+     *
+     * @param className name of the Java class represented by {@link io.keepup.cms.core.persistence.Content} record
+     */
     public void setClassName(String className) {
         this.className = className;
     }

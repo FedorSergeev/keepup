@@ -14,11 +14,14 @@ import static java.util.Optional.ofNullable;
 import static org.apache.commons.io.FileUtils.copyFileToDirectory;
 
 /**
- * Component for working wih static content right on the server side in the same filesystem
+ * Component for working wih static content right on the server side in the same filesystem.
+ *
+ * @author Fedor Sergeev
+ * @since 1.8
  */
 public class FilesystemFileProcessor implements StorageAccessor<String> {
 
-    public static final String SLASH = "/";
+    private static final String SLASH = "/";
     private final Log log = LogFactory.getLog(getClass());
 
     private final String rootPath;

@@ -10,6 +10,12 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.data.r2dbc.config.AbstractR2dbcConfiguration;
 import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories;
 
+/**
+ * Reactive DAO configuration for H2 database as data source. Recommended to be used onlu in test environment.
+ *
+ * @author Fedor Sergeev
+ * @since 2.0.0
+ */
 @Configuration
 @Profile("h2")
 @EnableR2dbcRepositories

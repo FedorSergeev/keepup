@@ -47,6 +47,14 @@ public class SqlUserDao implements UserDao {
     private final ReactiveUserAttributeEntityRepository userAttributeEntityRepository;
     private final ReactiveRoleByUserEntityRepository roleByUserEntityRepository;
 
+    /**
+     * Constructor with injection of beans managed by IoC container.
+     *
+     * @param objectMapper                       component used for serialization to JSON and deserialization from this format.
+     * @param userEntityRepository               reactive {@link UserEntity} data access object
+     * @param userAttributeEntityRepository      reactive {@link UserAttributeEntity} data access object
+     * @param reactiveRoleByUserEntityRepository reactive {@link RoleByUserIdEntity} data access object
+     */
     @Autowired
     public SqlUserDao(ObjectMapper objectMapper,
                       ReactiveUserEntityRepository userEntityRepository,
@@ -86,18 +94,8 @@ public class SqlUserDao implements UserDao {
                 .orElseGet(Mono::empty);
     }
 
-
-    private Iterable<RoleByUserIdEntity> getRoles(Long userId, Collection<? extends GrantedAuthority> authorities) {
-        return authorities.stream().map(authority -> {
-            var roleByUserIdEntity = new RoleByUserIdEntity();
-            roleByUserIdEntity.setUserId(userId);
-            roleByUserIdEntity.setRole(authority.getAuthority());
-            return roleByUserIdEntity;
-        }).toList();
-    }
-
     /**
-     * Finds user by id
+     * Finds user by ID.
      *
      * @param userId user identifier
      * @return application user object
@@ -111,7 +109,7 @@ public class SqlUserDao implements UserDao {
     }
 
     /**
-     * Finds all users with the specified roles
+     * Finds all users with the specified roles.
      *
      * @param roles specified roles that users should have or null if there is a need to get all users
      * @return users Flux
@@ -134,7 +132,8 @@ public class SqlUserDao implements UserDao {
     }
 
     /**
-     * Deletes user;s entity
+     * Deletes user;s entity.
+     *
      * @param id identifier of user
      * @return Publisher signaling the operation execution success
      */
@@ -159,7 +158,7 @@ public class SqlUserDao implements UserDao {
                 .flatMap(this::mapUserRoles);
     }
 
-// endregion
+    // endregion
 
     @NotNull
     private Mono<User> mapUserRoles(User user) {
@@ -257,4 +256,12 @@ public class SqlUserDao implements UserDao {
         return user;
     }
 
+    private Iterable<RoleByUserIdEntity> getRoles(Long userId, Collection<? extends GrantedAuthority> authorities) {
+        return authorities.stream().map(authority -> {
+            var roleByUserIdEntity = new RoleByUserIdEntity();
+            roleByUserIdEntity.setUserId(userId);
+            roleByUserIdEntity.setRole(authority.getAuthority());
+            return roleByUserIdEntity;
+        }).toList();
+    }
 }

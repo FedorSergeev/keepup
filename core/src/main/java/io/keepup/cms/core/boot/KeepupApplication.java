@@ -14,6 +14,11 @@ import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories;
 @EnableCaching
 public class KeepupApplication {
 
+    /**
+     * Application launch method.
+     *
+     * @param args command line arguments
+     */
     public static void main(String... args) {
         SpringApplication.run(KeepupApplication.class);
     }
