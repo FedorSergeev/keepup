@@ -77,6 +77,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 })
 @TestPropertySource(properties = {
         "keepup.security.permitted-urls=/admin-ui/userinfo",
+        "keepup.security.default-web-filter-chain.enabled=true",
         "keepup.plugins.adminui.enabled=true"
 })
 class AdminPanelControllerTest {

@@ -13,8 +13,8 @@ import javax.sql.DataSource;
 /**
  * Contains the set of beans for data source management
  *
- * @since 2.0.0
  * @author Fedor Sergeev
+ * @since 2.0.0
  */
 @Configuration(proxyBeanMethods = false)
 public class DataSourceConfiguration {
@@ -38,7 +38,7 @@ public class DataSourceConfiguration {
      * @param dataSource factory for connections to the physical data source that this DataSource object represents.
      * @return component responsible for data source consistency check and update
      */
-    @Bean
+    @Bean("liquibase")
     public SpringLiquibase liquibase(DataSource dataSource) {
         var liquibase = new SpringLiquibase();
         liquibase.setDataSource(dataSource);
@@ -71,11 +71,10 @@ public class DataSourceConfiguration {
     public NamingStrategy namingStrategy() {
         return new NamingStrategy() {
             @Override
-            public String getTableName(Class<?> type) {
-                if (type.isAnnotationPresent(Table.class)) {
-                    return type.getAnnotation(Table.class).name();
-                }
-                return NamingStrategy.super.getTableName(type);
+            public String getTableName(final Class<?> type) {
+                return type.isAnnotationPresent(Table.class)
+                        ? type.getAnnotation(Table.class).name()
+                        : NamingStrategy.super.getTableName(type);
             }
         };
     }

@@ -26,7 +26,7 @@ import static io.keepup.cms.core.datasource.sql.EntityUtils.convertToLocalDateVi
 public class UserAttributeEntity extends AbstractEntityAttribute {
     @Serial
     private static final long serialVersionUID = 1L;
-    private static final Log log = LogFactory.getLog(UserAttributeEntity.class);
+    private static final Log LOG = LogFactory.getLog(UserAttributeEntity.class);
 
     /**
      * Primary key, identifier
@@ -134,6 +134,6 @@ public class UserAttributeEntity extends AbstractEntityAttribute {
      */
     @Override
     protected Log getLog() {
-        return log;
+        return LOG;
     }
 }

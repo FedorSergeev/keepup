@@ -2,7 +2,6 @@ package io.keepup.cms.core.datasource.sql.entity;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
-import org.hibernate.annotations.Type;
 
 import javax.persistence.Basic;
 import javax.persistence.Column;
@@ -19,6 +18,8 @@ import java.util.Optional;
  */
 @MappedSuperclass
 public abstract class AbstractEntityAttribute implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
     /**
      * Attribute key
      */
@@ -39,7 +40,7 @@ public abstract class AbstractEntityAttribute implements Serializable {
     /**
      * Attribute Java type for serialization
      */
-    @Column(name = "class", nullable = false)
+    @Column(name = "java_class", nullable = false)
     @Basic
     private String javaClass;
 
@@ -191,9 +192,7 @@ public abstract class AbstractEntityAttribute implements Serializable {
      *
      * @return logger implementation instance
      */
-    protected Log getLog() {
-        return null;
-    }
+    protected abstract Log getLog();
 
     /**
      * Log error message if needed

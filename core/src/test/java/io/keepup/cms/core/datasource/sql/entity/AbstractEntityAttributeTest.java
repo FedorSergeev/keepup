@@ -1,5 +1,6 @@
 package io.keepup.cms.core.datasource.sql.entity;
 
+import org.apache.commons.logging.Log;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -17,7 +18,12 @@ class AbstractEntityAttributeTest {
         assertEquals(0, abstractEntityAttribute.toByteArray(new NotSerializableType()).length);
     }
 
-    static class AbstractEntityAttributeImpl extends AbstractEntityAttribute {}
+    static class AbstractEntityAttributeImpl extends AbstractEntityAttribute {
+        @Override
+        protected Log getLog() {
+            return null;
+        }
+    }
 
     static class NotSerializableType {}
 }

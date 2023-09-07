@@ -1,7 +1,7 @@
 package io.keepup.cms.rest.controller;
 
 import io.keepup.cms.core.persistence.User;
-import io.keepup.cms.core.service.EntityOperationServiceBase;
+import io.keepup.cms.core.service.AbstractEntityOperationService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jetbrains.annotations.NotNull;
@@ -19,26 +19,31 @@ import static java.util.Optional.ofNullable;
 
 /**
  * Basic implementation of Reactive REST controller responsible for work with objects managed by
- * extensions of {@link io.keepup.cms.core.service.EntityOperationServiceBase}
+ * extensions of {@link AbstractEntityOperationService}
  *
  * @author Fedor Sergeev
  * @since 2.0.0
  */
 public abstract class AbstractRestController<T> {
-
+    /**
+     * Constant used for class name stubbing
+     */
     private static final String NULL = "NULL";
+    /**
+     * Log object
+     */
     private final Log log = LogFactory.getLog(getClass());
     /**
-     * Component responsible for items serving
+     * Service responsible for CRUD operations
      */
-    protected final EntityOperationServiceBase<T> operationService;
+    protected final AbstractEntityOperationService<T> operationService;
 
     /**
-     * Creates a new REST controller with special operation service.
+     * Constructor used by implementations
      *
-     * @param operationService component that serves CRUD operations with items of specified type
+     * @param operationService component used for CRUD operations
      */
-    protected AbstractRestController(EntityOperationServiceBase<T> operationService) {
+    protected AbstractRestController(AbstractEntityOperationService<T> operationService) {
         this.operationService = operationService;
     }
 

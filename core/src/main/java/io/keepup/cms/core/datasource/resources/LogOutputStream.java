@@ -23,7 +23,7 @@ public class LogOutputStream extends OutputStream {
      *
      * @param log the logger where to log the written bytes
      */
-    public LogOutputStream (Log log) {
+    public LogOutputStream (final Log log) {
         setLogger(log);
         mem = EMPTY;
     }

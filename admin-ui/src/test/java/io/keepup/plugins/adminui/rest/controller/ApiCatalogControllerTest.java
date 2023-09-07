@@ -60,6 +60,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 })
 @TestPropertySource(properties = {
         "keepup.security.permitted-urls=/apicatalog/**",
+        "keepup.security.default-web-filter-chain.enabled=true",
         "keepup.plugins.adminui.enabled=true"
 })
 class ApiCatalogControllerTest {

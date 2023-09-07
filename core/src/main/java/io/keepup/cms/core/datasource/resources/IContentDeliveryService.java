@@ -44,4 +44,13 @@ public interface IContentDeliveryService {
      * @see            GetTreeFromStoreResult
      */
     GetFileFromStoreResult getFile(String filename, String path);
+
+    /**
+     * Registers new storage accessor when it is useful for user. For instance, method can be called from custom storage
+     * accessor constructor
+     *
+     * @param storageType storage type served by the second argument
+     * @param processor   storage service
+     */
+    void setStorageAccessor(StorageType storageType, StorageAccessor<String> processor);
 }

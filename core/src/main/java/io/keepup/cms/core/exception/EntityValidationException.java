@@ -1,5 +1,7 @@
 package io.keepup.cms.core.exception;
 
+import java.io.Serial;
+
 /**
  * Standard exception witch is thrown in case of entities validation failures.
  *
@@ -7,7 +9,8 @@ package io.keepup.cms.core.exception;
  * @since  2.0
  */
 public class EntityValidationException extends RuntimeException {
-
+    @Serial
+    private static final long serialVersionUID = 1L;
     /**
      * Constructs a new entity validation exception with the specified detail message. The cause is not initialized.
      *

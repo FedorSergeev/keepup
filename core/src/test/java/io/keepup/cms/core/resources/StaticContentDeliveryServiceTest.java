@@ -8,7 +8,6 @@ import io.keepup.cms.core.config.KeepupConfiguration;
 import io.keepup.cms.core.config.WebFluxConfig;
 import io.keepup.cms.core.datasource.resources.*;
 import io.keepup.cms.core.plugins.TestAbstractKeepupDeployBeanImpl;
-import org.boon.core.Sys;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

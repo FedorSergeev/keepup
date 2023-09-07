@@ -12,7 +12,6 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.*;
-
 /**
  * New representation of Content entity.
  *

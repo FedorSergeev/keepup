@@ -61,7 +61,7 @@ public abstract class AbstractNode<T> implements BasicEntity<T> {
     }
 
     @Override
-    public void setAttribute(String attrKey, T attrValue) {
+    public void setAttribute(final String attrKey, final T attrValue) {
         if (attributes == null)
             attributes = new HashMap<>();
         attributes.put(attrKey, attrValue);

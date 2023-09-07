@@ -24,6 +24,7 @@ import io.keepup.plugins.catalog.model.LayoutApiAttribute;
 import io.keepup.plugins.catalog.service.LayoutService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -35,6 +36,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 import reactor.core.publisher.Mono;
 
 import java.util.Collections;
@@ -108,7 +110,9 @@ class LayoutServiceTest {
 
     @Test
     void get() {
-        Layout layout = layoutService.save(this.layout)
+        layout.setId(null);
+        layout.setName("otherName");
+        final var layout = layoutService.save(this.layout)
                 .flatMap(savedLayout -> layoutService.get(savedLayout.getId()))
                 .block();
         assertNotNull(layout);
@@ -121,7 +125,7 @@ class LayoutServiceTest {
     }
 
     @Test
-    void save() {
+    void saveTest() {
         Layout layout = layoutService.deleteAll()
                 .then(layoutService.save(this.layout))
                 .block();
@@ -138,20 +142,24 @@ class LayoutServiceTest {
     void testWithWrongJsonMapper() throws JsonProcessingException {
         when(mapper.writeValueAsString(any()))
                 .thenThrow(new JsonMappingException(() -> log.info("exception"),"test exception"));
-        var mockLayoutService = new LayoutService(reactiveLayoutEntityRepository, mapper);
+        var mockLayoutService = new LayoutService(reactiveLayoutEntityRepository);
+        ReflectionTestUtils.setField(mockLayoutService, "objectMapper", mapper);
         this.layout.setName(UUID.randomUUID().toString());
-        var layout = mockLayoutService.save(this.layout).block();
-        assertNotNull(layout);
-        assertNotNull(layout.getId());
-        assertNotNull(layout.getHtml());
-        assertNotNull(layout.getAttributes());
-        assertTrue(layout.getAttributes().isEmpty());
+        var newLayout = mockLayoutService.save(this.layout).block();
+
+        ReflectionTestUtils.setField(mockLayoutService, "objectMapper", new ObjectMapper());
+
+        assertNotNull(newLayout);
+        assertNotNull(newLayout.getId());
+        assertNotNull(newLayout.getHtml());
+        assertNotNull(newLayout.getAttributes());
+        assertTrue(newLayout.getAttributes().isEmpty());
     }
 
     @Test
     void testWithWrongDao() {
         when(layoutEntityRepository.save(any())).thenReturn(Mono.just(wrongEntity()));
-        var mockLayoutService = new LayoutService(layoutEntityRepository, objectMapper);
+        var mockLayoutService = new LayoutService(layoutEntityRepository);
         var layout = mockLayoutService.save(this.layout).block();
         assertNotNull(layout);
         assertNotNull(layout.getId());
@@ -164,7 +172,7 @@ class LayoutServiceTest {
     void testWithErrorOnGetRequest() {
         when(layoutEntityRepository.findById(anyLong()))
                 .thenReturn(error(new RuntimeException("test error")));
-        var mockLayoutService = new LayoutService(layoutEntityRepository, objectMapper);
+        var mockLayoutService = new LayoutService(layoutEntityRepository);
         try {
             mockLayoutService.get(1L).block();
         } catch (RuntimeException e) {

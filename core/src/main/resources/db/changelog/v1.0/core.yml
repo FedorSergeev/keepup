@@ -234,7 +234,7 @@ databaseChangeLog:
             schemaName: keepup
 
   - changeSet:
-      id: 1601462504025-35
+      id: 1601462504025-137
       author: Fedor Sergeev
       changes:
         - createTable:
@@ -385,7 +385,7 @@ databaseChangeLog:
 
 
   - changeSet:
-      id: 1601462504025-34
+      id: 1601462504025-35
       author: Fedor Sergeev
       changes:
         - createTable:
@@ -399,7 +399,7 @@ databaseChangeLog:
                   type: BIGSERIAL
               - column:
                   name: user_id
-                  type: VARCHAR(255)
+                  type: BIGSERIAL
               - column:
                   name: role
                   type: VARCHAR(255)
@@ -499,7 +499,7 @@ databaseChangeLog:
                   constraints:
                     nullable: false
                   name: attributes
-                  type: VARCHAR(255)
+                  type: VARCHAR(500)
             tableName: layouts
             schemaName: keepup
 

@@ -15,7 +15,7 @@ import java.util.Date;
  * @author Fedor Sergeev
  * @since 2.0.0
  */
-public class EntityUtils {
+public final class EntityUtils {
 
     private EntityUtils() {}
 

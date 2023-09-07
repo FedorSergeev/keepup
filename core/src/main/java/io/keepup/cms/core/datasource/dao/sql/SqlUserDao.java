@@ -183,8 +183,9 @@ public class SqlUserDao implements UserDao {
         user.setAttributes(getAttributes(attributeEntities));
         user.setId(userEntity.getId());
         user.setExpirationDate(userEntity.getExpirationDate());
-        user.setEnabled(userEntity.getExpirationDate()
-                .isAfter(EntityUtils.convertToLocalDateViaInstant(new Date())));
+        user.setEnabled(ofNullable(userEntity.getExpirationDate())
+                .map(date -> date.isAfter(EntityUtils.convertToLocalDateViaInstant(new Date())))
+                .orElse(false));
         log.debug("User object created from database entity with id = %d".formatted(user.getId()));
         return user;
     }

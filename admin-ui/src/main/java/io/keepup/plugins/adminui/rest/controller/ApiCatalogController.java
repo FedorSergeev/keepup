@@ -28,9 +28,9 @@ public class ApiCatalogController {
     private final AdminUiService adminUiService;
 
     /**
-     * Create Controller for administrative pages with injected service.
+     * REST controller for administrative UI module.
      *
-     * @param adminUiService service responsible for routing administrative panel components
+     * @param adminUiService service layer component for operations with administrative panel
      */
     public ApiCatalogController(AdminUiService adminUiService) {
         this.adminUiService = adminUiService;
@@ -39,6 +39,7 @@ public class ApiCatalogController {
     /**
      * Get content of admin page with catalog module
      *
+     * @param  webSession session attributes
      * @return publisher for UI page content
      * @throws io.keepup.plugins.adminui.exception.ApiCatalogPageNotFoundException is thrown when no page was loaded by
      *         service component after application startup

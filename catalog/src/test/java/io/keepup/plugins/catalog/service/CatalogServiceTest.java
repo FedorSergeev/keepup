@@ -3,6 +3,7 @@ package io.keepup.plugins.catalog.service;
 import io.keepup.cms.core.boot.KeepupApplication;
 import io.keepup.cms.core.cache.CacheAdapter;
 import io.keepup.cms.core.cache.KeepupCacheConfiguration;
+import io.keepup.cms.core.commons.ApplicationConfig;
 import io.keepup.cms.core.config.DataSourceConfiguration;
 import io.keepup.cms.core.config.R2dbcConfiguration;
 import io.keepup.cms.core.config.WebFluxConfig;
@@ -11,6 +12,7 @@ import io.keepup.cms.core.datasource.dao.DataSourceFacadeImpl;
 import io.keepup.cms.core.datasource.dao.sql.SqlContentDao;
 import io.keepup.cms.core.datasource.dao.sql.SqlFileDao;
 import io.keepup.cms.core.datasource.dao.sql.SqlUserDao;
+import io.keepup.cms.core.datasource.resources.StaticContentDeliveryService;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveContentClassRepository;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveNodeAttributeEntityRepository;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveNodeEntityRepository;
@@ -20,17 +22,29 @@ import io.keepup.plugins.catalog.model.CatalogEntityWrapper;
 import io.keepup.plugins.catalog.model.Layout;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.r2dbc.DataR2dbcTest;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DefaultDataBufferFactory;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.io.File;
+import java.nio.ByteBuffer;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -52,8 +66,10 @@ import static org.junit.jupiter.api.Assertions.*;
         SqlFileDao.class,
         SqlUserDao.class,
         DataSourceFacadeImpl.class,
-        CatalogService.class,
-        LayoutService.class
+        CatalogServiceAbstract.class,
+        LayoutService.class,
+        ApplicationConfig.class,
+        StaticContentDeliveryService.class
 })
 @TestPropertySource(properties = {
         "keepup.plugins.catalog.enabled=true",
@@ -64,7 +80,7 @@ class CatalogServiceTest {
     private final Log log = LogFactory.getLog(getClass());
 
     @Autowired
-    private CatalogService catalogService;
+    private CatalogServiceAbstract catalogService;
     @Autowired
     private DataSourceFacade dataSourceFacade;
     @Autowired
@@ -73,6 +89,16 @@ class CatalogServiceTest {
     private ReactiveContentClassRepository contentClassRepository;
     @Autowired
     private ReactiveNodeEntityRepository nodeEntityRepository;
+    @Autowired
+    private ApplicationConfig applicationConfig;
+
+
+    @Mock
+    private FilePart filePart;
+    @Mock
+    private DataBuffer dataBuffer;
+
+    private ByteBuffer byteBuffer;
 
     private TestCatalogEntity testCatalogEntity;
 
@@ -198,6 +224,64 @@ class CatalogServiceTest {
         assertFalse(catalogEntitiesWithLayouts.get(0).isSuccess());
         assertEquals("Can not find content by null id value", catalogEntitiesWithLayouts.get(0).getError());
         // endregion
+    }
+
+    @Test
+    void updateContentAttributeAsFileTest() {
+        MockitoAnnotations.openMocks(this);
+        byteBuffer = ByteBuffer.allocate(100);
+        final var tempFile = new File("tmp");
+        Mockito.when(filePart.transferTo(ArgumentMatchers.any(File.class))).thenAnswer((file) -> {
+            tempFile.createNewFile();
+            return Mono.empty();
+        });
+        Mockito.when(filePart.filename()).thenReturn("testFile.txt");
+        Mockito.when(dataBuffer.asByteBuffer()).thenReturn(byteBuffer);
+        Mockito.when(dataBuffer.factory()).thenReturn(new DefaultDataBufferFactory());
+        Mockito.when(filePart.content()).thenReturn(Flux.just(dataBuffer));
+
+        final var testCatalogEntity = new TestCatalogEntity();
+        catalogService.save(testCatalogEntity, 0L)
+                .map(CatalogEntity::getId)
+                .flatMap(id ->
+            catalogService.updateContentAttributeAsFile(id, "file", filePart)
+                    .map(result -> {
+                        assertNotNull(result);
+                        return true;
+                    }))
+                .then(Mono.just(tempFile.delete()))
+                .block();
+        tempFile.delete();
+    }
+
+    @Test
+    void updateContentAttributeAsFileErrorTest() {
+        final var dumpPath = applicationConfig.getDump();
+        ReflectionTestUtils.setField(applicationConfig, "dump", "/non-existent-path");
+        MockitoAnnotations.openMocks(this);
+        byteBuffer = ByteBuffer.allocate(100);
+        final var tempFile = new File("tmp");
+        Mockito.when(filePart.transferTo(ArgumentMatchers.any(File.class))).thenAnswer((file) -> {
+            tempFile.createNewFile();
+            return Mono.empty();
+        });
+        Mockito.when(filePart.filename()).thenReturn("testFile.txt");
+        Mockito.when(dataBuffer.asByteBuffer()).thenReturn(byteBuffer);
+        Mockito.when(dataBuffer.factory()).thenReturn(new DefaultDataBufferFactory());
+        Mockito.when(filePart.content()).thenReturn(Flux.just(dataBuffer));
+
+        final var testCatalogEntity = new TestCatalogEntity();
+        String errorSignature = catalogService.save(testCatalogEntity, 0L)
+                .map(entity -> entity.getId())
+                .flatMap(id ->
+                        catalogService.updateContentAttributeAsFile(id, "file", filePart)
+                                .doOnError(Assertions::assertNotNull))
+                .onErrorReturn("error")
+                .block();
+        tempFile.delete();
+        assertEquals("error", errorSignature);
+
+        ReflectionTestUtils.setField(applicationConfig, "dump", dumpPath);
     }
 
     private Mono<Layout> createNewLayout() {

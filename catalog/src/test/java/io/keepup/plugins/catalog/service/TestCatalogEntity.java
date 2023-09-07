@@ -22,6 +22,8 @@ public class TestCatalogEntity implements CatalogEntity {
     private String name;
     @ContentMapping("layout_name")
     private String layoutName;
+    @ContentMapping("file")
+    private String file;
 
     public TestCatalogEntity() {
         var layoutAttributes = new ArrayList<LayoutApiAttribute>();
@@ -66,5 +68,13 @@ public class TestCatalogEntity implements CatalogEntity {
 
     public void setTestLayout(Layout testLayout) {
         this.testLayout = testLayout;
+    }
+
+    public String getFile() {
+        return file;
+    }
+
+    public void setFile(String file) {
+        this.file = file;
     }
 }

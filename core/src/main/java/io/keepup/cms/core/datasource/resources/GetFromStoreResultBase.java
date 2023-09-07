@@ -7,7 +7,7 @@ import static org.apache.commons.logging.LogFactory.getLog;
 /**
  * Universal set of get from storage result wrapper fields
  */
-public abstract class AbstractGetFromStoreResult {
+public class GetFromStoreResultBase {
 
     /**
      * Success flag
@@ -18,6 +18,13 @@ public abstract class AbstractGetFromStoreResult {
      * Additional response information
      */
     private String message;
+
+    /**
+     * Creating instances of current class is not allowed
+     */
+    protected GetFromStoreResultBase() {
+        // This constructor is intentionally empty. Nothing special is needed here.
+    }
 
     /**
      * Get success flag.
@@ -33,7 +40,7 @@ public abstract class AbstractGetFromStoreResult {
      *
      * @param success success flag, true when operation is successful.
      */
-    public void setSuccess(boolean success) {
+    public void setSuccess(final boolean success) {
         this.success = success;
     }
 
@@ -51,7 +58,7 @@ public abstract class AbstractGetFromStoreResult {
      *
      * @param message text
      */
-    public void setMessage(String message) {
+    public void setMessage(final String message) {
         this.message = message;
     }
 
@@ -63,18 +70,22 @@ public abstract class AbstractGetFromStoreResult {
      * @param <T>     type of object to be found at storage
      * @return        get object operation result with error message
      */
-    public static <T extends AbstractGetFromStoreResult> T error(String message, Class<T> type) {
-        final var staticLogger = getLog("GetFromSoreResult");
+    public static <T extends GetFromStoreResultBase> T error(final String message, final Class<T> type) {
+        T result = null;
+        final var staticLogger = getLog(GetFromStoreResultBase.class);
         try {
-            final var result = type.getConstructor().newInstance();
+            result = type.getConstructor().newInstance();
             result.setSuccess(false);
             result.setMessage(message);
-            return result;
         } catch (NoSuchMethodException e) {
-            staticLogger.error("Type %s has no default constructors".formatted(type.getName()));
+            if (staticLogger.isErrorEnabled()) {
+                staticLogger.error("Type %s has no default constructors".formatted(type.getName()));
+            }
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException ex) {
-            staticLogger.error("Failed to instantiate type %s: %s".formatted(type.getName(), ex.toString()));
+            if (staticLogger.isErrorEnabled()) {
+                staticLogger.error("Failed to instantiate type %s: %s".formatted(type.getName(), ex.toString()));
+            }
         }
-        return null;
+        return result;
     }
 }

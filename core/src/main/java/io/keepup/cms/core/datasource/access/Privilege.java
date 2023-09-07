@@ -1,6 +1,8 @@
 package io.keepup.cms.core.datasource.access;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -14,6 +16,8 @@ import java.io.Serializable;
 
 public class Privilege implements BasicPrivilege, Serializable {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
     private static final String CREATE_KEY = "create";
     private static final String EXECUTE_KEY = "execute";
     private static final String WRITE_KEY = "write";

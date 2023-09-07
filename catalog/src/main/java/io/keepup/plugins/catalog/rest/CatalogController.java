@@ -1,14 +1,16 @@
 package io.keepup.plugins.catalog.rest;
 
 import io.keepup.cms.core.persistence.User;
+import io.keepup.cms.rest.controller.KeepupResponseWrapper;
 import io.keepup.plugins.catalog.model.*;
-import io.keepup.plugins.catalog.service.CatalogService;
+import io.keepup.plugins.catalog.service.CatalogServiceAbstract;
 import io.keepup.plugins.catalog.service.LayoutService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContext;
@@ -16,11 +18,17 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.WebSession;
 import reactor.core.publisher.Mono;
 
+import java.io.Serializable;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 import static org.springframework.http.ResponseEntity.internalServerError;
 import static org.springframework.http.ResponseEntity.ok;
 import static reactor.core.publisher.Mono.just;
@@ -40,11 +48,17 @@ public class CatalogController {
 
     private static final String SESSION_ID_WITH_RESPONSE = "Session id: %s, Send response: %s";
     private final Log log = LogFactory.getLog(getClass());
-    private final CatalogService catalogService;
+    private final CatalogServiceAbstract catalogService;
     private final LayoutService layoutService;
 
-    public CatalogController(CatalogService catalogService,
-                             LayoutService layoutService) {
+    /**
+     * Constructs a new service entity.
+     *
+     * @param catalogService business layer service for catalog entities
+     * @param layoutService  component responsible for operations with entity views
+     */
+    public CatalogController(final CatalogServiceAbstract catalogService,
+                             final LayoutService layoutService) {
         this.catalogService = catalogService;
         this.layoutService = layoutService;
     }
@@ -53,8 +67,11 @@ public class CatalogController {
      * Get catalog entity possibly with it's children, with corresponding
      * {@link io.keepup.plugins.catalog.model.Layout} objects
      *
-     * @param id       entity primary identifier
-     * @param children flag for getting children as well
+     * @param id         entity primary identifier
+     * @param children   flag for getting children as well
+     * @param parents    include parent nodes to the result list
+     * @param offset     number of parent records to get, will be set to {@link Long#MAX_VALUE} if null
+     * @param webSession server-side session data abstraction
      * @return publisher signaling when entities are fetched
      * with {@link io.keepup.plugins.catalog.model.Layout} views
      */
@@ -67,8 +84,8 @@ public class CatalogController {
                                                                                      required = false,
                                                                                      defaultValue = "false") final boolean parents,
                                                                              @RequestParam(value = "parentOffsetId",
-                                                                                     required = false) Long offset,
-                                                                             WebSession webSession) {
+                                                                                     required = false) final Long offset,
+                                                                             final WebSession webSession) {
         log.info("Session id: %s, Received request to get entity id = %d  with%s children and with%s parents"
                 .formatted(webSession.getId(), id, getWithoutChildrenSuffix(children), getWithoutChildrenSuffix(parents)));
         final var layoutNames = new HashSet<String>();
@@ -94,17 +111,18 @@ public class CatalogController {
                 .doOnNext(response -> tryLogResponse(response, webSession.getId()))
                 .onErrorResume(errorResponse -> Mono.just(CatalogEntityListWrapper.error(errorResponse.getMessage())))
                 .map(responseEntity -> responseEntity.isSuccess()
-                            ? ok(responseEntity)
-                            : internalServerError().body(responseEntity));
+                        ? ok(responseEntity)
+                        : internalServerError().body(responseEntity));
     }
 
     /**
      * Get all catalog entities and layouts.
      *
+     * @param webSession server-side session data abstraction
      * @return Publisher for ResponseEntity wrapping catalog entities with layouts
      */
     @GetMapping
-    public Mono<ResponseEntity<CatalogEntityListWrapper<CatalogEntity>>> getAll(WebSession webSession) {
+    public Mono<ResponseEntity<CatalogEntityListWrapper<CatalogEntity>>> getAll(final WebSession webSession) {
         log.info("Session id: %s, Received request to read all values".formatted(webSession.getId()));
         final var layoutNames = new HashSet<String>();
         return catalogService.getAllWithLayouts()
@@ -126,12 +144,13 @@ public class CatalogController {
      *
      * @param parentId      identifier of record witch will be current entity's parent node
      * @param catalogEntity entity to be saved or updated
+     * @param webSession    server-side session data abstraction
      * @return Publisher for ResponseEntity wrapping the created catalog entity
      */
     @PostMapping(value = {"/{parentId}", EMPTY}, consumes = APPLICATION_JSON_VALUE)
     public Mono<ResponseEntity<CatalogEntityWrapper<CatalogEntity>>> save(@PathVariable(name = "parentId", required = false) final Long parentId,
-                                                                          @RequestBody CatalogEntity catalogEntity,
-                                                                          WebSession webSession) {
+                                                                          final @RequestBody CatalogEntity catalogEntity,
+                                                                          final WebSession webSession) {
         log.info("Session id: %s, Received request to save catalog entity %s"
                 .formatted(webSession.getId(), catalogEntity.toString()));
         if (parentId != null && parentId < 0) {
@@ -155,13 +174,57 @@ public class CatalogController {
     }
 
     /**
-     * Removes entity by id if is served by {@link CatalogService}
+     * Upload file and set a link to it as an attribute for the specified entity.
      *
+     * @param id         identifier of the entity whose attribute is to be updated as a file
+     * @param name       name if file to be set as a new entity attribute
+     * @param isPublic   flag defines whether a new file shoud be visible worldwide or not
+     * @param filePart   publisher for file part object emitting
+     * @param webSession server-side session abstraction
+     * @return publisher for link to the file
+     */
+    @PostMapping(value = {"/{id}/attribute"}, consumes = MULTIPART_FORM_DATA_VALUE)
+    public Mono<ResponseEntity<UpdateAttributeAsFileResponse>> updateContentAttributeAsFile(@PathVariable("id") final Long id,
+                                                                     @RequestParam("name") final String name,
+                                                                     @RequestParam(value = "public", required = false, defaultValue = "false") final boolean isPublic,
+                                                                     @RequestPart("file") Mono<FilePart> filePart,
+                                                                     final WebSession webSession) {
+        log.info("Session id: %s, Received request to update catalog entity %s as file"
+                .formatted(webSession.getId(), id));
+        return filePart.flatMap(part -> catalogService.updateContentAttributeAsFile(id, name, part))
+                .map(attributeValue -> new UpdateAttributeAsFileResponse(id, name, attributeValue))
+                .map(ResponseEntity::ok);
+    }
+
+    /**
+     * Set new values only for the specified keys attributes.
+     *
+     * @param id entity identifier
+     * @param attributes entity attributes to be updated
+     * @param webSession server-side web session representation
+     * @return publisher witch emits an updated entity
+     */
+    @PostMapping("/{id}/updateAttributes")
+    public Mono<ResponseEntity<KeepupResponseWrapper<Map<String, Serializable>>>> updateContentAttributes(@PathVariable("id") final Long id,
+                                                                              final Map<String, Serializable> attributes,
+                                                                              final WebSession webSession) {
+        log.info("Session id: %s, Received request to update catalog entity %s attributes"
+                .formatted(webSession.getId(), id));
+        return catalogService.updateContentAttributes(id, attributes)
+                .map(result -> ResponseEntity.ok(KeepupResponseWrapper.of(result)))
+                .onErrorReturn(ResponseEntity.internalServerError().body(KeepupResponseWrapper.error("Failed to update attributes for entity %d".formatted(id))));
+    }
+
+
+    /**
+     * Removes entity by id if is served by {@link CatalogServiceAbstract}
+     * @param id         entity identifier
+     * @param webSession server-side session data abstraction
      * @return publisher witch produces information about delete operation result
      */
     @DeleteMapping("/{id}")
     public Mono<ResponseEntity<DeleteCatalogEntityRequestResponseWrapper>> delete(@PathVariable("id") final Long id,
-                                                                                  WebSession webSession) {
+                                                                                  final WebSession webSession) {
         return catalogService.delete(id)
                 .thenReturn(ResponseEntity.ok(DeleteCatalogEntityRequestResponseWrapper.success()))
                 .onErrorResume(error -> Mono.just(internalServerError()
@@ -175,20 +238,23 @@ public class CatalogController {
         return children ? EMPTY : "out";
     }
 
-    private void tryLogResponse(CatalogEntityListWrapper<CatalogEntity> response, String sessionId) {
+    private void tryLogResponse(final CatalogEntityListWrapper<CatalogEntity> response, final String sessionId) {
         log.info(SESSION_ID_WITH_RESPONSE.formatted(sessionId, response.toString()));
     }
 
-    private static Mono<? extends CatalogEntityWrapper<CatalogEntity>> applyError(Throwable throwable) {
+    private static Mono<? extends CatalogEntityWrapper<CatalogEntity>> applyError(final Throwable throwable) {
         return CatalogEntityWrapper.error(throwable.getMessage());
     }
 
     @NotNull
-    private Mono<CatalogEntityListWrapper<CatalogEntity>> getCatalogEntityListWrapperWithLayouts(HashSet<String> layoutNames, CatalogEntityListWrapper<CatalogEntity> wrapper) {
+    private Mono<CatalogEntityListWrapper<CatalogEntity>> getCatalogEntityListWrapperWithLayouts(final Set<String> layoutNames,
+                                                                                                 final CatalogEntityListWrapper<CatalogEntity> wrapper) {
         if (layoutNames.isEmpty()) {
             return Mono.just(wrapper);
         }
-        return layoutService.getByNames(layoutNames)
+        return layoutService.getByNames(layoutNames.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet()))
                 .collectList()
                 .map(layouts -> {
                     wrapper.setLayouts(layouts);

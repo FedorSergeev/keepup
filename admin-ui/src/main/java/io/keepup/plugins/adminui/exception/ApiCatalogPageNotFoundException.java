@@ -8,6 +8,10 @@ package io.keepup.plugins.adminui.exception;
  * @since 2.0.0
  */
 public class ApiCatalogPageNotFoundException extends RuntimeException {
+    /**
+     * Constructor
+     * @param message detailed message
+     */
     public ApiCatalogPageNotFoundException(String message) {
         super(message);
     }

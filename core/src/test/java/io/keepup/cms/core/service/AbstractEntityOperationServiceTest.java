@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
@@ -53,24 +54,24 @@ import static org.junit.Assert.*;
         SqlFileDao.class,
         SqlUserDao.class,
         DataSourceFacadeImpl.class,
-        TestEntityOperationService.class,
-        TestNotSerializableAttributesEntityOperationService.class,
-        TestEntityWithoutDefaultConstructorOperationService.class,
-        EntityWithFinalFieldOperationService.class,
-        TestEntityInterfaceService.class
+        TestAbstractEntityOperationService.class,
+        TestNotSerializableAttributesAbstractEntityOperationService.class,
+        TestAbstractEntityWithoutDefaultConstructorOperationService.class,
+        AbstractEntityWithFinalFieldOperationService.class,
+        TestAbstractEntityInterfaceService.class
 })
 @DataR2dbcTest
-class EntityOperationServiceBaseTest {
+class AbstractEntityOperationServiceTest {
     @Autowired
-    TestEntityOperationService entityOperationService;
+    TestAbstractEntityOperationService entityOperationService;
     @Autowired
-    TestNotSerializableAttributesEntityOperationService notSerializableAttributesEntityOperationService;
+    TestNotSerializableAttributesAbstractEntityOperationService notSerializableAttributesEntityOperationService;
     @Autowired
-    TestEntityWithoutDefaultConstructorOperationService entityWithoutDefaultConstructorOperationService;
+    TestAbstractEntityWithoutDefaultConstructorOperationService entityWithoutDefaultConstructorOperationService;
     @Autowired
-    EntityWithFinalFieldOperationService entityWithFinalFieldOperationService;
+    AbstractEntityWithFinalFieldOperationService entityWithFinalFieldOperationService;
     @Autowired
-    TestEntityInterfaceService testEntityInterfaceService;
+    TestAbstractEntityInterfaceService testEntityInterfaceService;
     @Autowired
     DataSourceFacade dataSourceFacade;
     @Autowired
@@ -78,15 +79,25 @@ class EntityOperationServiceBaseTest {
 
     @Test
     void get() {
+        var savedRef = new AtomicReference<TestEntity>();
+        var updatedRef = new AtomicReference<TestEntity>();
         var example = new TestEntity();
+        example.setTestId(null);
         example.setSomeValue("some value");
-        final var saved = entityOperationService.save(example, 0L).block();
-        final var updated = entityOperationService.save(saved, 0L).block();
-        final var testObject = entityOperationService.get(saved.getTestId()).block();
+        final var testObject = entityOperationService.save(example, 0L)
+                .flatMap(saved -> {
+                    savedRef.set(saved);
+                    return entityOperationService.save(saved, 0L);
+                })
+                .flatMap(updated -> {
+                    updatedRef.set(updated);
+                    return entityOperationService.get(savedRef.get().getTestId());
+                }).block();
+
         assertNotNull(testObject);
-        assertEquals(saved.getSomeValue(), testObject.getSomeValue());
-        assertEquals(saved.getTestId(), testObject.getTestId());
-        assertEquals(saved, updated);
+        assertEquals(savedRef.get().getSomeValue(), testObject.getSomeValue());
+        assertEquals(savedRef.get().getTestId(), testObject.getTestId());
+        assertEquals(savedRef.get(), updatedRef.get());
     }
 
     @Test

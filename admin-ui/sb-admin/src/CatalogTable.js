@@ -1,10 +1,22 @@
 import React, { Component } from "react";
 import dompurify from "dompurify";
 
+import TableRow from "./table/TableRow";
+import TableHead from "./table/TableHead";
+import CatalogDataProvider from "./data/CatalogDataProvider";
+
+const editTextFieldStyle = {
+  width: '100%'
+};
+
 class CatalogTable extends Component {
   defaultPageSize = 10;
   activePages = {};
   beadcrumbs;
+  /** Edit mode defines the view and element behaviour */
+  isEditMode;
+  /** Element being edited at the moment */
+  currentlyEditableElement;
   constructor(props) {
     super(props);
     this.state = {
@@ -12,8 +24,13 @@ class CatalogTable extends Component {
       history: props.history,
       parentEntity: null,
       entitiesBylayouts: {},
+      scrollPositionY: 0,
       loaded: false
     };
+    this.isEditMode = false;
+    this.currentlyEditableElement = {
+      id: NaN
+    }
     this.breadcrumbs = [];
     this.rowTapped = this
       .rowTapped
@@ -23,8 +40,20 @@ class CatalogTable extends Component {
       .bind(this);
     this.confirmDeleteElement = this.confirmDeleteElement.bind(this);
     this.editElement = this.editElement.bind(this);
+    this.saveElement = this.saveElement.bind(this);
+    this.processElement = this.processElement.bind(this);
     this.getPaginationInfo = this.getPaginationInfo.bind(this);
+
+    this.dataProvider = new CatalogDataProvider(this);
   }
+
+  /**
+   * Handle element rendering finished event
+   */
+  componentDidMount() {
+    window.scrollTo(0, parseInt(sessionStorage.getItem("scrollPosition")));
+  }
+
 
   componentDidMount() {
     if (!this.state.loaded) {
@@ -33,10 +62,12 @@ class CatalogTable extends Component {
   }
 
   rowTapped(contentId) {
-    this.state.loaded = false;
-    this.state.history('/apicatalog/' + contentId);
-    this.state.contentId = contentId;
-    this.getData(this.state.contentId);
+    if (!this.isEditMode) {
+      this.state.loaded = false;
+      this.state.history('/apicatalog/' + contentId);
+      this.state.contentId = contentId;
+      this.getData(this.state.contentId);
+    }
   }
 
   handleBreadCrumbClicked(contentId) {
@@ -53,8 +84,43 @@ class CatalogTable extends Component {
     }
   }
 
+  /**
+   * 
+   * @param {content id} contentId 
+   * @param {parent node id} parentId
+   * @param {layout name} layoutName
+   * @returns real processing function
+   */
+  processElement(contentId, parentId, layoutName, type) {
+    sessionStorage.setItem("scrollPosition", window.pageYOffset);
+    if (this.isEditMode) {
+      return this.saveElement(parentId, layoutName, type);
+    }
+    return this.editElement(contentId);
+  }
+
+  /**
+   * Edit content element
+   * @param {content node identifier} contentId 
+   */
   editElement(contentId) {
-    // edit element
+    this.isEditMode = true;
+    this.currentlyEditableElement["id"]= contentId;
+    this.setState(this.state);
+  }
+
+  /**
+   * Save element being edited at the moment
+   * @param {content identifier} contentId 
+   */
+  saveElement(parentId, layoutName, type) {
+    this.saveData(this.currentlyEditableElement, parentId, layoutName, type);
+    this.isEditMode = false;
+    this.currentlyEditableElement = {id: NaN};
+  }
+  
+  getEditOrSaveIcon() {
+    return this.isEditMode ? "fa-save" : "fa-edit";
   }
 
   sortEntitiesByLayouts(data) {
@@ -92,48 +158,75 @@ class CatalogTable extends Component {
     }
   }
 
-  getData(id) {
+  async getData(id) {
     if (!this.state.loaded) {
       if (id == null) {
         id = 0;
       }
+      await this.dataProvider.getContent(id)
+      .then(res => res.json())
+      .then(
+        (result) => this.successGetCallback(result),
+        (error) => this.errorCallback(error)
+      );
+    }
+  }
+
+  async saveData(content, parentId, layoutName, type) {
+      content["type"] = layoutName;
+      console.log("Update entity request");
       // todo link from configuration
-      fetch("http://localhost:8080/catalog/" + id + "?children=true&parents=true")
+      await this.dataProvider.saveData(content, parentId, layoutName)
         .then(res => res.json())
         .then(
           (result) => {
-            console.log("Received set of " + result.entities.length + " objects");
-            var entitiesBylayouts = this.sortEntitiesByLayouts(result);
-            if (Object.keys(this.activePages).length == 0) {
-              for (var entityByLayoutIndex in entitiesBylayouts) {
-                this.activePages[entityByLayoutIndex] = { currentPage: 0, elements: entitiesBylayouts[entityByLayoutIndex].entities };
-              }
+            for (var entity in this.state.entitiesBylayouts[result.layout.name].entities) {
+                if (this.state.entitiesBylayouts[result.layout.name].entities[entity].id === result.entity.id) {
+                  this.state.entitiesBylayouts[result.layout.name].entities[entity] = result.entity;
+                }
             }
-            // todo use method
-            let parent = result.entities.filter(entity => this.state.contentId == entity.id)[0];
-            let parentLayout;
-            if (parent) {
-              let parentLayouts = result.layouts.filter(layout => layout.name == parent.layoutName);
-              if (parentLayouts.length == 0) {
-                parentLayout = null;
-              } else {
-                parentLayout = parentLayouts[0];
-              }
-            }
-            this.breadcrumbs = result.parents.reverse();
-
-            this.setState({
-              entitiesBylayouts: entitiesBylayouts,
-              parentEntity: parent,
-              parentLayout: parentLayout,
-              loaded: true
-            });
+            //this.setState(this.state);
           },
           (error) => {
             console.log("Error during request: " + error);
           }
         )
+    
+  }
+
+  successGetCallback(result) {
+    console.log("Received set of " + result.entities.length + " objects");
+    var entitiesBylayouts = this.sortEntitiesByLayouts(result);
+    if (Object.keys(this.activePages).length == 0) {
+      for (var entityByLayoutIndex in entitiesBylayouts) {
+        this.activePages[entityByLayoutIndex] = { currentPage: 0, elements: entitiesBylayouts[entityByLayoutIndex].entities };
+      }
     }
+    // todo use method
+    let parent = result.entities.filter(entity => this.state.contentId == entity.id)[0];
+    let parentLayout;
+    if (parent) {
+      let parentLayouts = result.layouts.filter(layout => layout.name == parent.layoutName);
+      if (parentLayouts.length == 0) {
+        parentLayout = null;
+      } else {
+        parentLayout = parentLayouts[0];
+      }
+    }
+    if (result.parents) {
+      this.breadcrumbs = result.parents.reverse();
+    }
+
+    this.setState({
+      entitiesBylayouts: entitiesBylayouts,
+      parentEntity: parent,
+      parentLayout: parentLayout,
+      loaded: true
+    });
+  }
+
+  errorCallback(error) {
+    console.log("Error during request: " + error);
   }
 
   getPageFirstElementIndex(layoutName) {
@@ -173,11 +266,12 @@ class CatalogTable extends Component {
    * @param {*} attribute e.g. TEXT, IMAGE, FILE, HTML, BOOLEAN, ENUM, ARRAY
    * @returns 
    */
-  renderTableItem(item, attribute) {
-    if (attribute.resolve == "TEXT") {
-      return item;
-    } else if (attribute.resolve == "IMAGE") {
-      return <img src={item}></img>
+  renderTableItem(item, key, attribute, id) {
+    if (this.isEditMode && this.currentlyEditableElement.id == id) {
+      console.log("entering edit mode");
+      return this.renderTableItemInEditMode(item, key, attribute);
+    } else {
+      return this.renderTableItemInReadMode(item, attribute);
     }
   }
 
@@ -186,14 +280,14 @@ class CatalogTable extends Component {
       <li className="breadcrumb-item">
         {/*  todo root element for current user */}
         <a href="/apicatalog/0">Root</a></li>
-      {Object.values(this.breadcrumbs).map(breadcrumb => (<li onClick={() => this.handleBreadCrumbClicked(breadcrumb.id)} className="breadcrumb-item active">{breadcrumb.stringValue}</li>))}
+      {Object.values(this.breadcrumbs).map(breadcrumb => (<li key={breadcrumb.id} onClick={() => this.handleBreadCrumbClicked(breadcrumb.id)} className="breadcrumb-item active">{breadcrumb.stringValue}</li>))}
 
     </ol>);
   }
 
   getSubList(tableElements) {
     let result = [];
-    for (let index = this.activePages[tableElements.layout.name].currentPage * this.defaultPageSize; 
+    for (let index = this.getCurrentPage(tableElements) * this.defaultPageSize; 
       index < (this.activePages[tableElements.layout.name].currentPage  + 1)* this.defaultPageSize;
       index++) {
         if (tableElements.entities.length > index) {
@@ -203,10 +297,15 @@ class CatalogTable extends Component {
     return result;
   }
 
+  getCurrentPage(tableElements) {
+    return this.activePages[tableElements.layout.name] 
+      ? this.activePages[tableElements.layout.name].currentPage
+      : 0;
+  }
+
   setCurrentPage(layoutName, index) {
     console.log("[DEBUG] Setting page index = " + index + " for layout " + layoutName);
-    // todo active pages to state
-    if (this.activePages[layoutName].currentPage != parseInt(index)) {
+    if (!this.isEditMode && this.activePages[layoutName].currentPage != parseInt(index)) {
       this.activePages[layoutName].currentPage = parseInt(index);
       this.setState(this.state);
     }
@@ -226,7 +325,7 @@ class CatalogTable extends Component {
       : "";
 
       elements.push(
-      <li className={className}>
+      <li key={parseInt(selectElement) + 1} className={className}>
         <a id={selectElement} onClick={() => this.setCurrentPage(tableElements.layout.name, selectElement)}>{parseInt(selectElement) + 1}</a>
       </li>
       );
@@ -236,7 +335,7 @@ class CatalogTable extends Component {
     
   }
 
-  renderTable(tableElements) {
+  renderTable(tableElements, contentId) {
     if (tableElements.layout.attributes == null || tableElements.entities.length == 0) {
       return (<div></div>);
     }
@@ -244,35 +343,11 @@ class CatalogTable extends Component {
       <div>
         <p>{tableElements.layout.name}</p>
         <table id={tableElements.layout.name} className="dataTable-table">
-          <thead>
-            <tr key={"header"}>
-              {Object.values(tableElements.layout.attributes).map((key) => (
-                <th>{key.name}</th>
-              ))}
-              <th style={{ padding: '0.375rem 0.5rem', width: '6em' }}>
-                <a href="#" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.75rem!important', fontStyle: 'normal', padding: '0.375rem 0.5rem', borderColor: '#0d6efd', backgroundColor: '#0d6efd', color: '#fff', borderRadius: '0.375rem' }}>
-                  <i className="fa fa-plus-square"></i>
-                </a>
-              </th>
-            </tr>
-          </thead>
+          <TableHead layout={tableElements.layout}/>
           <tbody>
             {this.getSubList(tableElements)
               .map((item) => (
-              <tr id={"item-" + item.id} key={item.id}>
-                {Object.values(tableElements.layout.attributes).map((attribute) => (
-                  <td onClick={() => this.rowTapped(item.id)}>{this.renderTableItem(item[attribute.key], attribute)}</td>
-                ))}
-                <td style={{ display: 'flex', padding: '0.375rem 0.5rem', width: '6em' }}>
-                  <a href="#" className="fa-thin fa-pen-to-square" style={{ display: 'flex', width: '2.5em', alignItems: 'center', justifyContent: 'center', fontSize: '1.75rem!important', padding: '0.375rem 0.5rem', marginRight: '0.1em', borderColor: '#0d6efd', backgroundColor: '#0d6efd', color: '#fff', borderRadius: '0.375rem' }}
-                  >
-                    <i className="far fa-edit"></i>
-                  </a>
-                  <a style={{ display: 'flex', width: '2.5em', alignItems: 'center', justifyContent: 'center', fontSize: '1.75rem!important', padding: '0.375rem 0.5rem', marginLeft: '0.1em', borderColor: '#0d6efd', backgroundColor: '#0d6efd', color: '#fff', borderRadius: '0.375rem' }}>
-                    <i onClick={() => this.confirmDeleteElement(item.id)} className="far fa-trash-alt"></i>
-                  </a>
-                </td>
-              </tr>
+              <TableRow parentId={contentId} item={item} attributes={tableElements.layout.attributes} handleRowTapped={this.rowTapped} editMode={false}/>
             ))}
           </tbody>
         </table>
@@ -280,14 +355,6 @@ class CatalogTable extends Component {
           <div className="dataTable-info">{this.getPaginationInfo(tableElements.layout.name)}</div>
           <nav className="dataTable-pagination">
               {this.renderTablePagination(tableElements)}
-              {/* <li className="active"><a href="#" data-page="1">1</a></li>
-              <li className=""><a href="#" data-page="2">2</a></li>
-              <li className=""><a href="#" data-page="3">3</a></li>
-              <li className=""><a href="#" data-page="4">4</a></li>
-              <li className=""><a href="#" data-page="5">5</a></li>
-              <li className=""><a href="#" data-page="6">6</a></li>
-              <li className="pager"><a href="#" data-page="2">›</a></li> */}
-            {/* </ul> */}
           </nav>
         </div>
       </div>
@@ -326,7 +393,7 @@ class CatalogTable extends Component {
                   </div> */}
               <div className="dataTable-container">
                 {Object.keys(this.state.entitiesBylayouts).map((key) => (
-                  this.renderTable(this.state.entitiesBylayouts[key])))}
+                  this.renderTable(this.state.entitiesBylayouts[key], this.state.contentId)))}
               </div>
             </div>
           </div>

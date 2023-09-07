@@ -3,8 +3,8 @@ package io.keepup.cms.core.cache;
 import io.keepup.cms.core.persistence.Content;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
@@ -18,40 +18,35 @@ import static java.util.Optional.ofNullable;
  * Adapter component for different cache types
  */
 @Service("cacheAdapter")
-public class CacheAdapter {
+public record CacheAdapter(@NonNull CacheManager cacheManager) {
 
-    private final Log log = LogFactory.getLog(getClass());
-    @Autowired
-    private CacheManager cacheManager;
+    private static final Log LOG = LogFactory.getLog(CacheAdapter.class);
 
     /**
      * Looks up for the {@link Content} record in cache
      *
-     * @param id record identifier
-     * @return record with the specified identifier or empty Optional in case if nothing was found in
-     * cache, or if id is null
+     * @param contentId record identifier
+     * @return record with the specified identifier or empty Optional
      */
-    public Optional<Content> getContent(final Long id) {
-        if (id == null) {
-            log.error("Content identifier is null");
-            return Optional.empty();
-        }
-        return ofNullable(cacheManager.getCache(CONTENT_CACHE_NAME))
-                .map(cache -> cache.get(id, Content.class));
+    public Optional<Content> getContent(final Long contentId) {
+        return contentId == null
+                ? logEmptyIdWarning()
+                : ofNullable(cacheManager.getCache(CONTENT_CACHE_NAME))
+                .map(cache -> cache.get(contentId, Content.class));
     }
 
     /**
-     * Puts the newer Content object version into the cache if there hashes are not equal or
-     * if the older version is not present
+     * Puts the newer Content object version into the cache
+     * if their hashes are not equal or if the older version is not present
      *
      * @param content record to be updated
-     * @return currently persisted record or null if
+     * @return currently persisted record or null
      */
-    public Content updateContent(Content content) {
-        AtomicReference<Content> success = new AtomicReference<>(content);
+    public Content updateContent(final Content content) {
+        final var success = new AtomicReference<>(content);
         ofNullable(cacheManager.getCache(CONTENT_CACHE_NAME))
                 .ifPresent(cache -> {
-                    var cachedContent = cache.get(content.getId(), Content.class);
+                    final var cachedContent = cache.get(content.getId(), Content.class);
                     if (cachedContent == null || cachedContent.hashCode() != content.hashCode()) {
                         cache.put(content.getId(), content);
                     } else {
@@ -64,15 +59,15 @@ public class CacheAdapter {
     /**
      * Evicts the cache if {@link Content} record was there
      *
-     * @param id record identifier
+     * @param contentId record identifier
      */
-    public void deleteContent(Long id) {
-        if (id == null) {
-            log.error("Cannot delete Content record from cache with empty id");
+    public void deleteContent(final Long contentId) {
+        if (contentId == null) {
+            LOG.error("Cannot delete Content record from cache with empty id");
             return;
         }
         ofNullable(cacheManager.getCache(CONTENT_CACHE_NAME))
-                .ifPresent(cache -> cache.evictIfPresent(id));
+                .ifPresent(cache -> cache.evictIfPresent(contentId));
     }
 
     /**
@@ -82,17 +77,26 @@ public class CacheAdapter {
      * @param attributeKey   attribute key to be updated
      * @param attributeValue new attribute value
      */
-    public void updateContent(Long contentId, String attributeKey, Serializable attributeValue) {
+    public void updateContent(final Long contentId,
+                              final String attributeKey,
+                              final Serializable attributeValue) {
         ofNullable(cacheManager.getCache(CONTENT_CACHE_NAME))
-                .ifPresent(cache ->
-                    ofNullable(cache.get(contentId, Content.class))
-                            .ifPresent(rec -> {
-                                rec.setAttribute(attributeKey, attributeValue);
-                                ofNullable(cacheManager.getCache(CONTENT_CACHE_NAME))
-                                        .ifPresent(contentCache -> {
-                                            contentCache.put(contentId, rec);
-                                            log.debug("[CONTENT#%d] Updated attribute key = %s, value = %s".formatted(contentId, attributeKey, attributeValue));
-                                        });
-                            }));
+                .flatMap(cache -> ofNullable(cache.get(contentId, Content.class)))
+                .ifPresent(rec -> {
+                    rec.setAttribute(attributeKey, attributeValue);
+                    ofNullable(cacheManager.getCache(CONTENT_CACHE_NAME))
+                            .ifPresent(contentCache -> {
+                                contentCache.put(contentId, rec);
+                                if (LOG.isDebugEnabled()) {
+                                    LOG.debug("[CONTENT#%d] Updated attribute key = %s, value = %s".formatted(contentId, attributeKey, attributeValue));
+                                }
+                            });
+                });
+    }
+
+    @NonNull
+    private Optional<Content> logEmptyIdWarning() {
+        LOG.error("Content identifier is null");
+        return Optional.empty();
     }
 }

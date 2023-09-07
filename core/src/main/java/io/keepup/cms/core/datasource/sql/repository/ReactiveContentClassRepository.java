@@ -24,7 +24,7 @@ public interface ReactiveContentClassRepository extends ReactiveCrudRepository<C
     @Query("SELECT id, content_id, class_name FROM ENTITY_CLASSES " +
            "AS content_class " +
            "WHERE content_class.content_id = :contentId")
-    Flux<ContentClass> findAllByContentId(@Param("contentId") final Long contentId);
+    Flux<ContentClass> findAllByContentId(@Param("contentId") Long contentId);
 
     /**
      * Delete class link by {@link io.keepup.cms.core.persistence.Content} record ID.
@@ -34,5 +34,5 @@ public interface ReactiveContentClassRepository extends ReactiveCrudRepository<C
      */
     @Query("DELETE FROM ENTITY_CLASSES " +
            "WHERE content_id = :contentId")
-    Flux<Void> deleteByContentId(@Param("contentId") final Long contentId);
+    Flux<Void> deleteByContentId(@Param("contentId") Long contentId);
 }

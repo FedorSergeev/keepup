@@ -3,7 +3,6 @@ package io.keepup.cms.core.config;
 import io.keepup.cms.core.datasource.dao.DataSourceFacade;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -11,13 +10,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.WebFilterExchange;
 import org.springframework.security.web.server.csrf.WebSessionServerCsrfTokenRepository;
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
 import org.springframework.web.server.WebSession;
@@ -30,6 +29,8 @@ import static org.apache.commons.lang3.ArrayUtils.addAll;
 /**
  * Default security configuration. Can be switched off by removing 'security' profile from the
  * list of active profiles.
+ *
+ * Please disable this configuration if you want to customize your own
  *
  * @author Fedor Sergeev
  * @since 2.0.0
@@ -74,11 +75,17 @@ public class SecurityConfiguration {
     private boolean csrfEnabled;
 
     /**
+     * Defines whether to override the default authentication form
+     */
+    @Value("${keepup.security.override-web-login:false}")
+    private boolean overrideWebLoginForm;
+
+    /**
      * Security configuration constructor with DAO component injection.
      *
      * @param dataSourceFacade main KeepUP data access object
      */
-    public SecurityConfiguration(DataSourceFacade dataSourceFacade) {
+    public SecurityConfiguration(final DataSourceFacade dataSourceFacade) {
         this.dataSourceFacade = dataSourceFacade;
         log.debug("Security configuration instantiated with data source facade");
     }
@@ -89,7 +96,7 @@ public class SecurityConfiguration {
      * @return CSRF tokens data access object
      */
     @Bean
-    WebSessionServerCsrfTokenRepository webSessionServerCsrfTokenRepository() {
+    public WebSessionServerCsrfTokenRepository webSessionServerCsrfTokenRepository() {
         log.debug("Instantiating web session CSRF token repository");
         return new WebSessionServerCsrfTokenRepository();
     }
@@ -102,10 +109,11 @@ public class SecurityConfiguration {
      * @return     configured security filter chain component
      */
     @Bean
+    @ConditionalOnProperty(prefix = "keepup.security.default-web-filter-chain", name = "enabled", havingValue = "true")
     @Profile("security")
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         log.debug("Configuring server HTTP security");
-        return http.authorizeExchange()
+        final ServerHttpSecurity csrf = http.authorizeExchange()
                 .pathMatchers(pathMatchers)
                     .authenticated()
                 .pathMatchers(addAll(permittedUrls, loginUrl))
@@ -120,8 +128,10 @@ public class SecurityConfiguration {
                 .and()
                 .csrf(csrfSpec -> {
                     if (!csrfEnabled) csrfSpec.disable();
-                })
-                .build();
+                });
+        return overrideWebLoginForm
+                ? csrf.build()
+                : csrf.formLogin().loginPage(loginUrl).and().build();
     }
 
     /**
@@ -146,9 +156,8 @@ public class SecurityConfiguration {
         return dataSourceFacade::getUserByName;
     }
 
-    @NotNull
-    private Mono<Void> getLogoutSuccessHandler(org.springframework.security.web.server.WebFilterExchange exchange) {
-        ServerHttpResponse response = exchange.getExchange().getResponse();
+    private Mono<Void> getLogoutSuccessHandler(final WebFilterExchange exchange) {
+        final var response = exchange.getExchange().getResponse();
         response.setStatusCode(HttpStatus.FOUND);
         response.getHeaders().setLocation(URI.create(LOGOUT_LOCATION.formatted(loginUrl)));
         response.getCookies().remove(JSESSIONID);

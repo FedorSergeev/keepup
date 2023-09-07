@@ -42,7 +42,7 @@ class SqlContentDaoTest {
     ObjectMapper objectMapper;
     @Mock
     CacheManager manager;
-    @Mock
+
     CacheAdapter adapter;
 
     private static void assertEmpty(List<Content> result) {
@@ -52,7 +52,7 @@ class SqlContentDaoTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-
+        adapter = new CacheAdapter(manager);
         sqlContentDao = new SqlContentDao(reactiveNodeEntityRepository,
                 reactiveNodeAttributeEntityRepository,
                 objectMapper,

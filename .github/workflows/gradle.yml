@@ -20,16 +20,18 @@ jobs:
         distribution: 'adopt'
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
-    - name: Prepare admin UI static content
-      run: ./gradlew :admin-ui:deleteFiles :admin-ui:sb-admin:npmInstall :admin-ui:sb-admin:runBuild :admin-ui:copyFrontend
+      # Temporary switch off frontend as is not in good condition
+#    - name: Prepare admin UI static content
+#      run: ./gradlew :admin-ui:deleteFiles :admin-ui:sb-admin:npmInstall :admin-ui:sb-admin:runBuild :admin-ui:copyFrontend
     - name: Build with Gradle
       run: ./gradlew build
     - name: Generate changelog
       run: ./gradlew generateGitChangelogInlineTemplate
     - name: JaCoCo
       run: ./gradlew codeCoverageReport
-    - name: SonarQube scan on sonarqube.keepupproject.ru
-      run: ./gradlew sonarqube  -Dsonar.projectKey=keepup -Dsonar.host.url=http://sonarqube.keepupproject.ru  -Dsonar.login=${{ secrets.SONAR_SECRET }}
+      # Inner Sonarqube server is switched off
+#    - name: SonarQube scan on sonarqube.keepupproject.ru
+#      run: ./gradlew sonarqube  -Dsonar.projectKey=keepup -Dsonar.host.url=http://sonarqube.keepupproject.ru  -Dsonar.login=${{ secrets.SONAR_SECRET }}
     - name: Coverage
       uses: codecov/codecov-action@v1
       with:

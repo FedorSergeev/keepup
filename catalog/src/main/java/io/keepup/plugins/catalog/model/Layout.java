@@ -31,7 +31,7 @@ public class Layout {
     }
 
     /**
-     * new layout instance.
+     * New layout instance.
      */
     public Layout() {
         attributes = new ArrayList<>();
@@ -42,48 +42,98 @@ public class Layout {
      *
      * @param name name of layout
      */
-    private Layout(String name) {
+    private Layout(final String name) {
         this();
         setName(name);
     }
 
+    /**
+     * Get layout ID
+     *
+     * @return layout ID
+     */
     public Long getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    /**
+     * Set layout ID
+     *
+     * @param id layout ID
+     */
+    public void setId(final Long id) {
         this.id = id;
     }
 
+    /**
+     * Get layout name
+     *
+     * @return name of layout
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Set layout name
+     *
+     * @param name name of layout
+     */
     public void setName(String name) {
         this.name = name;
     }
 
+    /**
+     * Get layout HTML template HTML representation
+     *
+     * @return layout HTML template HTML representation
+     */
     public String getHtml() {
         return html;
     }
 
-    public void setHtml(String html) {
+    /**
+     * Set layout HTML template HTML representation
+     *
+     * @param html layout HTML template HTML representation
+     */
+    public void setHtml(final String html) {
         this.html = html;
     }
 
+    /**
+     * Get element attribute name to be mapped as a breadcrumb value
+     *
+     * @return breadcrumb name attribute key
+     */
     public String getBreadCrumbElementName() {
         return breadCrumbElementName;
     }
 
-    public void setBreadCrumbElementName(String breadCrumbElementName) {
+    /**
+     * Set element attribute name to be mapped as a breadcrumb value
+     *
+     * @param breadCrumbElementName breadcrumb name attribute key
+     */
+    public void setBreadCrumbElementName(final String breadCrumbElementName) {
         this.breadCrumbElementName = breadCrumbElementName;
     }
 
+    /**
+     * Get layout attributes associated with catalog entity
+     *
+     * @return layout attributes
+     */
     public List<LayoutApiAttribute> getAttributes() {
         return attributes;
     }
 
-    public void setAttributes(List<LayoutApiAttribute> attributes) {
+    /**
+     * Set layout attributes associated with catalog entity
+     *
+     * @param attributes layout attributes
+     */
+    public void setAttributes(final List<LayoutApiAttribute> attributes) {
         this.attributes = attributes;
     }
 }

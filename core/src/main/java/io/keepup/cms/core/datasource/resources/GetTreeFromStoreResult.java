@@ -11,7 +11,7 @@ import java.util.Optional;
  * @author Fedor Sergeev
  * @since 1.8
  */
-public class GetTreeFromStoreResult extends AbstractGetFromStoreResult {
+public class GetTreeFromStoreResult extends GetFromStoreResultBase {
 
     /**
      * Files list
@@ -50,6 +50,6 @@ public class GetTreeFromStoreResult extends AbstractGetFromStoreResult {
      * @return        operation result wrapper with error message
      */
     public static GetTreeFromStoreResult error(String message) {
-        return AbstractGetFromStoreResult.error(message, GetTreeFromStoreResult.class);
+        return GetFromStoreResultBase.error(message, GetTreeFromStoreResult.class);
     }
 }

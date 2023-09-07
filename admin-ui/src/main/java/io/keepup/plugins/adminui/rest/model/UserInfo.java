@@ -18,26 +18,44 @@ public class UserInfo {
         modules = new ArrayList<>();
     }
 
+    /**
+     * @return user's name
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * @param name user's nickname
+     */
     public void setName(String name) {
         this.name = name;
     }
 
+    /**
+     * @return user's avatar
+     */
     public String getPicture() {
         return picture;
     }
 
+    /**
+     * @param picture user's avatar
+     */
     public void setPicture(String picture) {
         this.picture = picture;
     }
 
+    /**
+     * @return list of UI admin modules available for user
+     */
     public List<AdminModule> getModules() {
         return modules;
     }
 
+    /**
+     * @param modules list of UI modules available for user
+     */
     public void setModules(List<AdminModule> modules) {
         this.modules = modules;
     }

@@ -14,7 +14,7 @@ import static java.lang.String.format;
  * @author Fedor Sergeev
  * @since 1.8
  */
-public class FtpUtils {
+public final class FtpUtils {
     private static final Log LOG = LogFactory.getLog(FtpUtils.class);
     /**
      * Slash symbol

@@ -12,7 +12,18 @@ import java.util.List;
  * @since 2.0.0
  */
 public class KeepupResponseListWrapper<T> extends AbstractResponseWrapper {
+    /**
+     * List of objects wrapped by current one
+     */
     private List<T> entities;
+    /**
+     * Success flag
+     */
+    private boolean success;
+    /**
+     * Error description, if present
+     */
+    private String error;
 
     /**
      * Default constructor. Empty list of entities is initialized.
@@ -35,7 +46,27 @@ public class KeepupResponseListWrapper<T> extends AbstractResponseWrapper {
      *
      * @param entities entities stored in response object
      */
-    public void setEntities(List<T> entities) {
+    public void setEntities(final List<T> entities) {
         this.entities = entities;
+    }
+
+    @Override
+    public boolean isSuccess() {
+        return success;
+    }
+
+    @Override
+    public void setSuccess(boolean success) {
+        this.success = success;
+    }
+
+    @Override
+    public String getError() {
+        return error;
+    }
+
+    @Override
+    public void setError(String error) {
+        this.error = error;
     }
 }

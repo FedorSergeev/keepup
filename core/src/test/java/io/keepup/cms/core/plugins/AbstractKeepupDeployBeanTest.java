@@ -22,7 +22,6 @@ import io.keepup.cms.core.datasource.sql.repository.ReactiveNodeEntityRepository
 import io.keepup.cms.core.datasource.sql.repository.ReactiveUserEntityRepository;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -109,7 +108,6 @@ class AbstractKeepupDeployBeanTest {
         List<KeepupPluginConfiguration> configurations = null;
         Throwable throwable = null;
         URLClassLoader urlClassLoader = null;
-        String pluginName = "undefined";
         File file = new File(getClass().getClassLoader().getResource("mock-keepup-plugin.jar").toURI());
         try (JarFile jarFile = new JarFile(file)) {
 
@@ -125,10 +123,10 @@ class AbstractKeepupDeployBeanTest {
                     Class<?> currentClass = urlClassLoader.loadClass(className);
                     log.debug("Loaded class %s".formatted(currentClass.getName()));
                     if (currentClass.isAnnotationPresent(Deploy.class)) {
-                        AbstractKeepupDeployBean bean = (AbstractKeepupDeployBean)currentClass.getConstructor(null).newInstance(null);
+                        final AbstractKeepupDeployBean bean = (AbstractKeepupDeployBean)currentClass.getConstructor(null)
+                                .newInstance(null);
                         bean.setApplicationConfig(applicationConfig);
                         bean.setJarHelper(jarHelper);
-                        int initOrder = bean.getInitOrder();
                         bean.setInitOrder(25);
                         configurations = ((List)bean.getConfigurations());
                         bean.deploy();
@@ -149,7 +147,7 @@ class AbstractKeepupDeployBeanTest {
         }
         Assertions.assertNull(throwable);
         Assertions.assertNotNull(configurations);
-        Assert.assertFalse(configurations.isEmpty());
+        Assertions.assertFalse(configurations.isEmpty());
         Assertions.assertNotNull(configurations.get(0).getConfigByName("testConfig"));
         Assertions.assertNull(configurations.get(0).getConfigByName("nonExistingConfig"));
     }
