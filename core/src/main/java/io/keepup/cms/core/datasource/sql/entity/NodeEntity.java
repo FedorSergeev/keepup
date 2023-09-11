@@ -115,7 +115,7 @@ public class NodeEntity implements Serializable  {
      *
      * @param content {@link Content} implementation
      */
-    public NodeEntity(Content content) {
+    public NodeEntity(final Content content) {
         this.id = content.getId() == null || content.getId() == 0
                 ? null
                 : content.getId();

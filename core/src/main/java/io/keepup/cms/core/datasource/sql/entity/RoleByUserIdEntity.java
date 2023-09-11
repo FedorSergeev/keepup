@@ -3,6 +3,7 @@ package io.keepup.cms.core.datasource.sql.entity;
 import org.springframework.data.annotation.Id;
 
 import javax.persistence.*;
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -17,7 +18,8 @@ import java.io.Serializable;
         @Index(name = "IDX_USER_ROLES_ID", columnList = "id"),
         @Index(name = "IDX_USER_ROLES", columnList = "user_id")})
 public class RoleByUserIdEntity implements Serializable {
-
+    @Serial
+    private static final long serialVersionUID = 1L;
     /**
      * Primary identifier
      */

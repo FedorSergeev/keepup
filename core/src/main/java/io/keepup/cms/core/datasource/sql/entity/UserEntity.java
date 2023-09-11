@@ -3,6 +3,7 @@ package io.keepup.cms.core.datasource.sql.entity;
 import org.springframework.data.annotation.Id;
 
 import javax.persistence.*;
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
 
@@ -19,7 +20,8 @@ import java.time.LocalDate;
         @Index(name = "IDX_USER_ROLE", columnList = "user_role")})
 @org.springframework.data.relational.core.mapping.Table
 public class UserEntity implements Serializable {
-
+    @Serial
+    private static final long serialVersionUID = 1L;
     /**
      * Primary identifier
      */

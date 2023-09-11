@@ -21,6 +21,7 @@ import static java.nio.file.Paths.get;
 @Service
 public class ApplicationConfig {
 
+    private static final String SLASH = "/";
     private final Log log = LogFactory.getLog(getClass());
 
     @Value("${keepup.cms.resources.storage_type:0}")
@@ -96,7 +97,7 @@ public class ApplicationConfig {
      * @return path to dump directory
      */
     public String getDump() {
-        return dump;
+        return dump.endsWith(SLASH) ? dump : dump + SLASH;
     }
 
     /**

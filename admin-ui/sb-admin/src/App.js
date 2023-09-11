@@ -8,15 +8,17 @@ import Navbar from './Navbar';
 import LayoutSideNav from './LayoutSideNav';
 import { BrowserRouter as Router } from "react-router-dom";
 
-
 class App extends Component {
-
+  
   state = {};
   render() {
-    const history = createBrowserHistory();
+    const handleScroll = event => {
+      sessionStorage.setItem("scrollPosition", window.scrollY);
+    };
+
     return (
 
-      <Router history={history}>
+      <Router history={createBrowserHistory()}>
         <Navbar />
         <LayoutSideNav/>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" crossOrigin="anonymous"></script>

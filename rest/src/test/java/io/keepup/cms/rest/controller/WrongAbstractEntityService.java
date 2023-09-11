@@ -1,10 +1,10 @@
 package io.keepup.cms.rest.controller;
 
-import io.keepup.cms.core.service.EntityOperationServiceBase;
+import io.keepup.cms.core.service.AbstractEntityOperationService;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-public class WrongEntityService extends EntityOperationServiceBase<SomeEntity> {
+public class WrongAbstractEntityService extends AbstractEntityOperationService<SomeEntity> {
     @Override
     public Flux<SomeEntity> getAll() {
         return Flux.error(new RuntimeException("Wrong entity service getAll method invoked"));

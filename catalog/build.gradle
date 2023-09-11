@@ -41,7 +41,7 @@ java {
 }
 
 group 'ru.keepupproject'
-version '2.0.0-beta-1'
+version '2.0.0'
 bootJar.enabled = false
 jar.enabled = true
 
@@ -72,9 +72,9 @@ publishing {
         catalog(MavenPublication) {
             groupId 'ru.keepupproject'
             artifactId 'keepup-catalog'
-            version '2.0.0-beta-1'
+            version '2.0.0'
             // todo afterEvaluate
-            artifact 'build/libs/catalog-2.0.0-beta-1-plain.jar'
+            artifact 'build/libs/catalog-2.0.0-plain.jar'
             from components.java
             pom {
                 name = 'KeepUP Catalog'

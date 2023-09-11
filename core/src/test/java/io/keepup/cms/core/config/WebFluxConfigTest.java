@@ -38,11 +38,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
         SqlFileDao.class,
         SqlUserDao.class,
         DataSourceFacadeImpl.class,
-        TestEntityOperationService.class,
-        TestNotSerializableAttributesEntityOperationService.class,
-        TestEntityWithoutDefaultConstructorOperationService.class,
-        EntityWithFinalFieldOperationService.class,
-        TestEntityInterfaceService.class,
+        TestAbstractEntityOperationService.class,
+        TestNotSerializableAttributesAbstractEntityOperationService.class,
+        TestAbstractEntityWithoutDefaultConstructorOperationService.class,
+        AbstractEntityWithFinalFieldOperationService.class,
+        TestAbstractEntityInterfaceService.class,
         ReactiveWebServerFactory.class
 })
 @DataR2dbcTest

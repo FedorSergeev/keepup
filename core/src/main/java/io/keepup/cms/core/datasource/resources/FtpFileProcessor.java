@@ -42,20 +42,23 @@ public class FtpFileProcessor implements StorageAccessor<String> {
     /**
      * Creates a new FTP file processor configured by application configuration.
      *
-     * @param applicationConfig application configuration
+     * @param applicationConfig      application configuration
+     * @param contentDeliveryService service responsible for content transfer
      */
-    public FtpFileProcessor(ApplicationConfig applicationConfig) {
+    public FtpFileProcessor(final ApplicationConfig applicationConfig, final IContentDeliveryService contentDeliveryService) {
         username = applicationConfig.getFtpUsername();
         password = applicationConfig.getFtpPassword();
         server = applicationConfig.getFtpServer();
         port = applicationConfig.getPort();
         dump = applicationConfig.getDump();
+        contentDeliveryService.setStorageAccessor(StorageType.FTP, this);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public TransferOperationResult<String> save(File file, String relativePath) {
-        return new FtpOperationExecutor<String>(username, password, server, port).doFtpOperation(file, singletonList(relativePath), (ftpClient, array) -> {
+    public TransferOperationResult<String> save(final File file, final String relativePath) {
+        return new FtpOperationExecutor<String>(username, password, server, port)
+                .doFtpOperation(file, singletonList(relativePath), (ftpClient, array) -> {
             var validationResult = validateSaveFileArguments(array);
             if (validationResult.isSuccess()) {
                 var fileToUpload = (File)array[0];
@@ -138,7 +141,7 @@ public class FtpFileProcessor implements StorageAccessor<String> {
         if (!(array[1] instanceof List)) {
             return ValidationResult.error("wrong path argument");
         }
-        return ValidationResult.success();
+        return ValidationResult.passed();
     }
 
     private void makeDirectories(FTPClient ftpClient, String dirPath) throws IOException {

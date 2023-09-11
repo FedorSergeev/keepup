@@ -13,7 +13,7 @@ import java.io.File;
  */
 public class TransferOperationResult<T> {
 
-    private  static final String OK = "ok";
+    private static final String OK_MESSAGE = "ok";
 
     /**
      * default code 0 is OK
@@ -23,7 +23,7 @@ public class TransferOperationResult<T> {
     /**
      * Success flag
      */
-    private boolean isSuccess;
+    private boolean success;
 
     /**
      * Description of what happened
@@ -66,7 +66,7 @@ public class TransferOperationResult<T> {
      * @return true in case of operation success
      */
     public boolean isSuccess() {
-        return isSuccess;
+        return success;
     }
 
     /**
@@ -75,7 +75,7 @@ public class TransferOperationResult<T> {
      * @param success  true in case of operation success
      */
     public void setSuccess(boolean success) {
-        isSuccess = success;
+        this.success = success;
     }
 
     /**
@@ -121,7 +121,7 @@ public class TransferOperationResult<T> {
      */
     public TransferOperationResult<T> ok() {
         final TransferOperationResult<T> transferOperationResult = new TransferOperationResult<>();
-        transferOperationResult.setMessage(OK);
+        transferOperationResult.setMessage(OK_MESSAGE);
         transferOperationResult.setSuccess(true);
         return transferOperationResult;
     }
@@ -132,7 +132,7 @@ public class TransferOperationResult<T> {
      * @param message error message
      * @return operation result with error
      */
-    public TransferOperationResult<T> error(String message) {
+    public TransferOperationResult<T> error(final String message) {
         final TransferOperationResult<T> transferOperationResult = new TransferOperationResult<>();
         transferOperationResult.setMessage(message);
         transferOperationResult.setCode(1);

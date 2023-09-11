@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.keepup.cms.core.boot.KeepupApplication;
 import io.keepup.cms.core.cache.CacheAdapter;
 import io.keepup.cms.core.cache.KeepupCacheConfiguration;
+import io.keepup.cms.core.commons.ApplicationConfig;
 import io.keepup.cms.core.config.DataSourceConfiguration;
 import io.keepup.cms.core.config.R2dbcConfiguration;
 import io.keepup.cms.core.config.SecurityConfiguration;
@@ -15,23 +16,26 @@ import io.keepup.cms.core.datasource.dao.DataSourceFacadeImpl;
 import io.keepup.cms.core.datasource.dao.sql.SqlContentDao;
 import io.keepup.cms.core.datasource.dao.sql.SqlFileDao;
 import io.keepup.cms.core.datasource.dao.sql.SqlUserDao;
+import io.keepup.cms.core.datasource.resources.StaticContentDeliveryService;
 import io.keepup.cms.core.datasource.sql.entity.NodeEntity;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveNodeAttributeEntityRepository;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveNodeEntityRepository;
 import io.keepup.cms.core.datasource.sql.repository.ReactiveUserEntityRepository;
 import io.keepup.cms.core.persistence.BasicEntity;
 import io.keepup.cms.core.persistence.User;
+import io.keepup.cms.rest.controller.KeepupResponseWrapper;
 import io.keepup.plugins.catalog.model.CatalogEntity;
 import io.keepup.plugins.catalog.model.CatalogEntityListWrapper;
-import io.keepup.plugins.catalog.model.DeleteCatalogEntityRequestResponseWrapper;
 import io.keepup.plugins.catalog.model.Layout;
 import io.keepup.plugins.catalog.rest.CatalogController;
-import io.keepup.plugins.catalog.service.CatalogService;
+import io.keepup.plugins.catalog.service.CatalogServiceAbstract;
 import io.keepup.plugins.catalog.service.LayoutService;
 import io.keepup.plugins.catalog.service.TestCatalogEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,8 +43,11 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers;
@@ -55,10 +62,10 @@ import org.springframework.web.server.WebSession;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
+import java.io.File;
+import java.io.Serializable;
+import java.nio.ByteBuffer;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static io.keepup.cms.core.datasource.sql.EntityUtils.convertToLocalDateViaInstant;
@@ -73,6 +80,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 @RunWith(SpringRunner.class)
 @TestPropertySource(properties = {
         "keepup.security.permitted-urls=/catalog/**",
+        "keepup.security.default-web-filter-chain.enabled=true",
         "keepup.plugins.catalog.enabled=true"
 })
 @ContextConfiguration(classes = {
@@ -95,12 +103,14 @@ import static org.mockito.ArgumentMatchers.anyLong;
         SecurityWebFilterChain.class,
         SecurityConfiguration.class,
         CatalogController.class,
-        CatalogService.class,
-        LayoutService.class
+        CatalogServiceAbstract.class,
+        LayoutService.class,
+        StaticContentDeliveryService.class,
+        ApplicationConfig.class
 })
 class CatalogControllerTest {
     @Autowired
-    private CatalogService catalogService;
+    private CatalogServiceAbstract catalogService;
     @Autowired
     private CatalogController catalogController;
     @Autowired
@@ -119,7 +129,15 @@ class CatalogControllerTest {
     private WebSession webSession;
 
     @SpyBean
-    private CatalogService mockCatalogService;
+    private CatalogServiceAbstract mockCatalogService;
+
+    @Mock
+    private FilePart filePart;
+    @Mock
+    private DataBuffer dataBuffer;
+
+    private ByteBuffer byteBuffer;
+
 
     @BeforeEach
     void setUp() {
@@ -284,7 +302,7 @@ class CatalogControllerTest {
     @Test
     void getAllWithError() {
         Mockito.when(mockCatalogService.getAll())
-               .thenReturn(Flux.error(new RuntimeException("Testing error in CatalogController#getAll")));
+                .thenReturn(Flux.error(new RuntimeException("Testing error in CatalogController#getAll")));
         client.get().uri("/catalog").exchange()
                 .expectStatus().is5xxServerError()
                 .expectBody(JsonNode.class).consumeWith(response -> {
@@ -332,7 +350,7 @@ class CatalogControllerTest {
                         assertNull(value.getName());
                         assertEquals("test entity", value.getLayoutName());
                     } catch (JsonProcessingException e) {
-                       fail(e.getMessage());
+                        fail(e.getMessage());
                     }
                 });
     }
@@ -444,14 +462,13 @@ class CatalogControllerTest {
 
     @Test
     void deleteWithError() {
-        String exceptionMessage = "Test wrong exception";
+        var exceptionMessage = "Test wrong exception";
         MockitoAnnotations.openMocks(this);
         Mockito.when(mockCatalogService.delete(anyLong()))
                 .thenReturn(Mono.error(new RuntimeException(exceptionMessage)));
-        CatalogController testCatalogController = new CatalogController(mockCatalogService, layoutService);
-        CatalogEntity savedEntity = catalogService.save(new TestCatalogEntity(), 0L).block();
-
-        ResponseEntity<DeleteCatalogEntityRequestResponseWrapper> result = testCatalogController.delete(savedEntity.getId(), webSession).block();
+        var testCatalogController = new CatalogController(mockCatalogService, layoutService);
+        var savedEntity = catalogService.save(new TestCatalogEntity(), 0L).block();
+        var result = testCatalogController.delete(savedEntity.getId(), webSession).block();
 
         assertNotNull(result);
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
@@ -459,9 +476,85 @@ class CatalogControllerTest {
         assertEquals(exceptionMessage, result.getBody().getError());
     }
 
+    @Test
+    void updateContentAttributesTest() {
+        final var newTestName = "newTestName";
+        final var attributes = new HashMap<String, Serializable>();
+        attributes.put("name", newTestName);
+        final var entity = layoutService.deleteAll()
+                .then(layoutService.save(new TestCatalogEntity().getTestLayout()))
+                .then(dataSourceFacade.getContent()
+                        .map(BasicEntity::getId)
+                        .flatMap(id -> dataSourceFacade.deleteContent(id))
+                        .collectList())
+                .then(catalogService.save(new TestCatalogEntity(), 0L)).block();
+        final var testCatalogController = new CatalogController(mockCatalogService, layoutService);
+        ResponseEntity<KeepupResponseWrapper<Map<String, Serializable>>> result = testCatalogController.updateContentAttributes(entity.getId(), attributes, webSession).block();
+        assertNotNull(result);
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertEquals(newTestName, result.getBody().getEntity().get("name"));
+
+    }
+
+    @Test
+    void updateContentAttributesWithErrorTest() {
+        final var newTestName = "newTestName";
+        final var attributes = new HashMap<String, Serializable>();
+        attributes.put("name", newTestName);
+        Mockito.when(mockCatalogService.updateContentAttributes(ArgumentMatchers.anyLong(), ArgumentMatchers.any(Map.class)))
+                .thenReturn(Mono.error(new RuntimeException("Test runtime exception during entity attributes update")));
+        final var entity = layoutService.deleteAll()
+                .then(layoutService.save(new TestCatalogEntity().getTestLayout()))
+                .then(dataSourceFacade.getContent()
+                        .map(BasicEntity::getId)
+                        .flatMap(id -> dataSourceFacade.deleteContent(id))
+                        .collectList())
+                .then(catalogService.save(new TestCatalogEntity(), 0L)).block();
+        final var testCatalogController = new CatalogController(mockCatalogService, layoutService);
+        ResponseEntity<KeepupResponseWrapper<Map<String, Serializable>>> result = testCatalogController.updateContentAttributes(entity.getId(), attributes, webSession).block();
+        assertNotNull(result);
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+        assertEquals("Failed to update attributes for entity %d".formatted(entity.getId()), result.getBody().getError());
+
+    }
+
+    @Test
+    void updateContentAttributeAsFileTest() {
+        Mockito.when(mockCatalogService.updateContentAttributes(ArgumentMatchers.anyLong(), ArgumentMatchers.any(Map.class)))
+                .thenReturn(Mono.error(new RuntimeException("Test runtime exception during entity attributes update")));
+        byteBuffer = ByteBuffer.allocate(100);
+        final var tempFile = new File("tmp");
+        Mockito.when(filePart.transferTo(ArgumentMatchers.any(File.class))).thenAnswer((file) -> {
+            tempFile.createNewFile();
+            return Mono.empty();
+        });
+        Mockito.when(filePart.filename()).thenReturn("testFile.txt");
+        Mockito.when(dataBuffer.asByteBuffer()).thenReturn(byteBuffer);
+        Mockito.when(dataBuffer.factory()).thenReturn(new DefaultDataBufferFactory());
+        Mockito.when(filePart.content()).thenReturn(Flux.just(dataBuffer));
+        final var entity = layoutService.deleteAll()
+                .then(layoutService.save(new TestCatalogEntity().getTestLayout()))
+                .then(dataSourceFacade.getContent()
+                        .map(BasicEntity::getId)
+                        .flatMap(id -> dataSourceFacade.deleteContent(id))
+                        .collectList())
+                .then(catalogService.save(new TestCatalogEntity(), 0L)).block();
+        final var testCatalogController = new CatalogController(mockCatalogService, layoutService);
+        testCatalogController.updateContentAttributeAsFile(entity.getId(), "file", false, Mono.just(filePart), webSession)
+                .doOnNext(result -> {
+                    assertNotNull(result);
+                    assertEquals(HttpStatus.OK, result.getStatusCode());
+                    assertNotNull(result.getBody());
+                    assertEquals(entity.getId(), result.getBody().getContentId());
+                    assertNotNull(result.getBody().getAttributeName());
+                    assertEquals("file", result.getBody().getAttributeName());
+                    assertNotNull(result.getBody().getAttributeValue());
+                }).block();
+    }
+
     private Mono<Layout> save10EntitiesAnd1Layout() {
         for (int i = 0; i < 10; i++) {
-            CatalogEntity block = catalogService.save(new TestCatalogEntity(), 0L).block();
+            var block = catalogService.save(new TestCatalogEntity(), 0L).block();
             block.getLayoutName();
         }
         return layoutService.save(new TestCatalogEntity().getTestLayout());

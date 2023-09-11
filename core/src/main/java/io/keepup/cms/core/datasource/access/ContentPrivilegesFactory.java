@@ -6,7 +6,7 @@ package io.keepup.cms.core.datasource.access;
  * @author Fedor Sergeev, f.sergeev@trans-it.pro
  */
 
-public class ContentPrivilegesFactory {
+public final class ContentPrivilegesFactory {
     /**
      * Set of standard privileges. Owner and owner's group have full access, everyone can only create node's children
      */

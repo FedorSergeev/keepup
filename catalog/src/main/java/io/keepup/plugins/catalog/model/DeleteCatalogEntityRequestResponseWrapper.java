@@ -10,14 +10,25 @@ import io.keepup.cms.rest.controller.AbstractResponseWrapper;
  */
 public class DeleteCatalogEntityRequestResponseWrapper extends AbstractResponseWrapper {
 
+    /**
+     * Creates new response wrapper success object
+     *
+     * @return response wrapper
+     */
     public static DeleteCatalogEntityRequestResponseWrapper success() {
-        var response = new DeleteCatalogEntityRequestResponseWrapper();
+        final var response = new DeleteCatalogEntityRequestResponseWrapper();
         response.setSuccess(true);
         return response;
     }
 
-    public static DeleteCatalogEntityRequestResponseWrapper error(String error) {
-        var response = new DeleteCatalogEntityRequestResponseWrapper();
+    /**
+     * Creates new response wrapper erroneous object
+     *
+     * @param error error message
+     * @return      response wrapper
+     */
+    public static DeleteCatalogEntityRequestResponseWrapper error(final String error) {
+        final var response = new DeleteCatalogEntityRequestResponseWrapper();
         response.setSuccess(false);
         response.setError(error);
         return response;

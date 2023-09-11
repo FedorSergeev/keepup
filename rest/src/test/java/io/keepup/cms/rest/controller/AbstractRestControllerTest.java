@@ -46,12 +46,13 @@ import static org.junit.jupiter.api.Assertions.*;
 @ActiveProfiles({"dev", "h2", "security"})
 @RunWith(SpringRunner.class)
 @TestPropertySource(properties = {
+        "keepup.security.default-web-filter-chain.enabled=true",
         "keepup.security.permitted-urls=/rest-test,/rest-test/**",
 })
 @ContextConfiguration(classes = {
         KeepupApplication.class,
         SomeEntityController.class,
-        SomeEntityService.class,
+        SomeAbstractEntityService.class,
         ObjectMapper.class,
         DataSourceFacadeImpl.class,
         SqlUserDao.class,
@@ -74,7 +75,7 @@ class AbstractRestControllerTest {
     @Autowired
     private SomeEntityController someEntityController;
     @Autowired
-    private SomeEntityService someEntityService;
+    private SomeAbstractEntityService someEntityService;
     @Autowired
     private DataSourceFacade dataSourceFacade;
 
@@ -175,7 +176,7 @@ class AbstractRestControllerTest {
     void getALlServiceError() throws IllegalAccessException {
         var service = FieldUtils.readField(someEntityController, "operationService", true);
 
-        FieldUtils.writeField(someEntityController, "operationService", new WrongEntityService(), true);
+        FieldUtils.writeField(someEntityController, "operationService", new WrongAbstractEntityService(), true);
         client.get().uri("/rest-test").exchange()
                 .expectStatus().is5xxServerError()
                 .expectBody(KeepupResponseListWrapper.class).consumeWith(response -> {
@@ -254,7 +255,7 @@ class AbstractRestControllerTest {
     void getServiceError() throws IllegalAccessException {
         var service = FieldUtils.readField(someEntityController, "operationService", true);
 
-        FieldUtils.writeField(someEntityController, "operationService", new WrongEntityService(), true);
+        FieldUtils.writeField(someEntityController, "operationService", new WrongAbstractEntityService(), true);
 
         var value = UUID.randomUUID().toString();
         SomeEntity entity = new SomeEntity();

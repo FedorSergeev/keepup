@@ -20,10 +20,10 @@ import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import javax.transaction.Transactional;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
@@ -189,7 +189,7 @@ public class SqlContentDao implements ContentDao {
     /**
      * {@inheritDoc}
      */
-    @Transactional
+    @Transactional("connectionFactoryTransactionManager")
     public Mono<Map<String, Serializable>> updateContent(Long id, Map<String, Serializable> newAttributes) {
         final List<NodeAttributeEntity> nodeAttributeEntities = new ArrayList<>();
         final Map<String, Serializable> result = new HashMap<>();
@@ -198,17 +198,16 @@ public class SqlContentDao implements ContentDao {
                     var attributeKey = oldAttribute.getAttributeKey();
                     var newValue = newAttributes.get(attributeKey);
                     if (newValue != null) {
-                        nodeAttributeEntities.add(new NodeAttributeEntity(id, oldAttribute.getContentId(), attributeKey, newValue));
+                        nodeAttributeEntities.add(new NodeAttributeEntity(oldAttribute.getId(), id, attributeKey, newValue));
                         newAttributes.remove(attributeKey);
                     }
                 })
                 .collect(toList())
-                .map(attributes -> {
+                .flatMap(attributes -> {
                     newAttributes.forEach((key, value) -> nodeAttributeEntities.add(new NodeAttributeEntity(id, key, value)));
-                    return nodeAttributeEntities;
+                    return nodeAttributeEntityRepository.saveAll(nodeAttributeEntities)
+                            .collectList();
                 })
-                .then(nodeAttributeEntityRepository.saveAll(nodeAttributeEntities)
-                        .collect(toList()))
                 .map(savedElements -> {
                     savedElements.forEach(element -> result.put(element.getAttributeKey(), getContentAttribute(element)));
                     return result;
@@ -450,10 +449,6 @@ public class SqlContentDao implements ContentDao {
             log.error("Class %s not found in classpath: %s".formatted(nodeAttributeEntity.getJavaClass(), e.getMessage()));
         }
         return null;
-    }
-
-    Log getLog() {
-        return log;
     }
 
     ReactiveNodeEntityRepository getNodeEntityRepository() {

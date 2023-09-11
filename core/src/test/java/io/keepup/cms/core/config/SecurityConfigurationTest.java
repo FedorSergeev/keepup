@@ -43,7 +43,9 @@ import java.util.concurrent.atomic.AtomicReference;
 @RunWith(SpringRunner.class)
 @TestPropertySource(properties = {
         "keepup.security.path-matchers=/testing,/testing/with-role,/with-role-admin",
-        "keepup.security.csrf-enabled=false"
+        "keepup.security.csrf-enabled=false",
+        "keepup.security.default-web-filter-chain.enabled=true",
+        "keepup.security.login-url=/login"
 })
 @ContextConfiguration(classes = {
         BCryptPasswordEncoder.class,
@@ -110,6 +112,15 @@ class SecurityConfigurationTest {
                 .expectStatus().isForbidden();
     }
 
+    @Test
+    void logoutTest() {
+        webClient.get()
+                .uri("/logout")
+                .cookie(SESSION, getSessionCookieValue(getCookieByLoggingIn()))
+                .exchange()
+                .expectStatus().is3xxRedirection();
+    }
+
     @NotNull
     private AtomicReference<String> getCookieByLoggingIn() {
         final var cookieRef = new AtomicReference<String>();
@@ -126,8 +137,8 @@ class SecurityConfigurationTest {
                         .body(BodyInserters.fromFormData("username", savedUser.getUsername())
                                 .with("password", "test"))
                         .exchange()
-                        .expectHeader().value("Set-Cookie", cookieRef::set
-                )).block();
+                        .expectHeader().value("Set-Cookie", cookieRef::set))
+                .block();
         return cookieRef;
     }
 

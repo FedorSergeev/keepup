@@ -17,6 +17,11 @@ public class AbstractResponseWrapper {
     protected String error;
 
     /**
+     * Response success status
+     *
+     * @return true if response is successful
+     */
+    /**
      * Check success of the result.
      *
      * @return true if result is successful
@@ -25,6 +30,11 @@ public class AbstractResponseWrapper {
         return success;
     }
 
+    /**
+     * Define response success status
+     *
+     * @param success true is response if successful
+     */
     /**
      * Define success of the result.
      *
@@ -44,9 +54,9 @@ public class AbstractResponseWrapper {
     }
 
     /**
-     * Set error message.
+     * Define response error description
      *
-     * @param error  error message
+     * @param error error description
      */
     public void setError(String error) {
         this.error = error;

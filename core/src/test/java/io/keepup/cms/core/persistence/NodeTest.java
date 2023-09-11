@@ -55,4 +55,9 @@ class NodeTest {
 
         assertFalse(node.hasAttribute("toDelete"));
     }
+
+    @Test
+    void notEqualsNullTest() {
+        assertNotEquals(new Node(), null);
+    }
 }

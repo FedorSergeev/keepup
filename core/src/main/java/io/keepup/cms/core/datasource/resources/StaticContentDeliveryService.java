@@ -1,7 +1,6 @@
 package io.keepup.cms.core.datasource.resources;
 
 import io.keepup.cms.core.commons.ApplicationConfig;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 
@@ -22,22 +21,17 @@ public class StaticContentDeliveryService implements IContentDeliveryService {
 
     private final Map<StorageType, StorageAccessor<String>> storageProcessors = new EnumMap<>(StorageType.class);
 
-    private int storageType;
-    private String staticPath;
+    private final int storageType;
 
     /**
      * Constructor with injection of beans managed by IoC container.
      *
-     * @param storageAccessor   component for accessing the static content storage
      * @param applicationConfig application configuration component
      */
-    @Autowired
-    public StaticContentDeliveryService(StorageAccessor<String> storageAccessor, ApplicationConfig applicationConfig) {
+    public StaticContentDeliveryService(final ApplicationConfig applicationConfig) {
         storageType = applicationConfig.getStorageType();
-        staticPath = applicationConfig.getStaticPath();
-        storageProcessors.put(StorageType.FTP, storageAccessor);
+        final var staticPath = applicationConfig.getStaticPath();
         storageProcessors.put(StorageType.FILESYSTEM, new FilesystemFileProcessor(staticPath, applicationConfig.getDocumentRoot(), staticPath));
-
     }
 
     @Override
@@ -83,5 +77,13 @@ public class StaticContentDeliveryService implements IContentDeliveryService {
         return ofNullable(storageProcessors.get(StorageType.valueOf(storageType)))
                 .map(processor -> processor.getByName(filename, path))
                 .orElse(GetFileFromStoreResult.error(format("No processor found for storage type %s", StorageType.valueOf(storageType))));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setStorageAccessor(final StorageType storageType, final StorageAccessor<String> processor) {
+        storageProcessors.put(storageType, processor);
     }
 }

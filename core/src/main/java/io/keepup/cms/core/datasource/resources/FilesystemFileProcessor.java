@@ -34,7 +34,7 @@ public class FilesystemFileProcessor implements StorageAccessor<String> {
      * @param documentRoot document root for application
      * @param staticPath path to static resources
      */
-    public FilesystemFileProcessor(String rootPath, String documentRoot, String staticPath) {
+    public FilesystemFileProcessor(final String rootPath, final String documentRoot, final String staticPath) {
         this.rootPath = rootPath;
         this.appDocumentRoot = documentRoot;
         this.staticPath = staticPath;
@@ -48,7 +48,7 @@ public class FilesystemFileProcessor implements StorageAccessor<String> {
      * @return             result wrapper with success marker and error message in negative cases
      */
     @Override
-    public TransferOperationResult<String> save(File file, String relativePath) {
+    public TransferOperationResult<String> save(final File file, final String relativePath) {
         TransferOperationResult<String> transferOperationResult;
         final String filePath = appDocumentRoot.concat(relativePath);
         try {
@@ -71,22 +71,22 @@ public class FilesystemFileProcessor implements StorageAccessor<String> {
      *                      or it is a directory
      */
     @Override
-    public GetTreeFromStoreResult getByType(String type, String... relativePaths) {
+    public GetTreeFromStoreResult getByType(final String type, final String... relativePaths) {
         if (relativePaths == null) {
             return GetTreeFromStoreResult.error("No relative paths specified");
         }
 
         final List<StoredFileData> resultFiles = new ArrayList<>();
 
-        for (String path : relativePaths) {
-            String normalizedPath = path.toLowerCase();
-            var baseHtmlDirectory = new File(staticPath.concat(normalizedPath));
-            File[] directoryListing = baseHtmlDirectory.listFiles((dir, name) -> name.toLowerCase().endsWith(".".concat(type)));
+        for (final var path : relativePaths) {
+            final var normalizedPath = path.toLowerCase();
+            final var baseHtmlDirectory = new File(staticPath.concat(normalizedPath));
+            final var directoryListing = baseHtmlDirectory.listFiles((dir, name) -> name.toLowerCase().endsWith(".".concat(type)));
             ofNullable(directoryListing)
                     .ifPresent(files -> Arrays.stream(files)
                                               .forEach((file -> resultFiles.add(new StoredFileData(file, normalizedPath)))));
         }
-        var result = new GetTreeFromStoreResult();
+        final var result = new GetTreeFromStoreResult();
         result.setSuccess(true);
         result.setFiles(resultFiles);
         return result;
@@ -100,7 +100,7 @@ public class FilesystemFileProcessor implements StorageAccessor<String> {
      * @return             wrapped result with message and success flag
      */
     @Override
-    public GetFileFromStoreResult getByName(String name, String relativePath) {
+    public GetFileFromStoreResult getByName(final String name, final String relativePath) {
         final var directory = new File(rootPath.concat(relativePath));
         if (directory.exists() && directory.isDirectory()) {
             final var resultFile = new File(directory.getAbsolutePath().concat(SLASH).concat(name));

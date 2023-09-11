@@ -1,9 +1,11 @@
 package io.keepup.cms.core.persistence;
 
 import io.keepup.cms.core.datasource.sql.EntityUtils;
+import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.Collection;
@@ -17,7 +19,10 @@ import java.util.Map;
  * @since 1.0
  * @see UserDetails
  */
+@NoArgsConstructor
 public class User implements UserDetails {
+    @Serial
+    private static final long serialVersionUID = 1L;
     /**
      * Primary identifier
      */

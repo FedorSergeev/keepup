@@ -31,7 +31,8 @@ public class NodeAttributeEntity extends AbstractEntityAttribute {
 
     @Serial
     private static final long serialVersionUID = 507224019294570770L;
-    private static final Log log = LogFactory.getLog(NodeAttributeEntity.class);
+    private static final Log LOG = LogFactory.getLog(NodeAttributeEntity.class);
+    private static final String NULL = "null";
     /**
      * Primary identifier
      */
@@ -58,7 +59,7 @@ public class NodeAttributeEntity extends AbstractEntityAttribute {
      * @param key       attribute key
      * @param value     attribute value
      */
-    public NodeAttributeEntity(Long contentId, String key, Serializable value) {
+    public NodeAttributeEntity(final Long contentId, final String key, final Serializable value) {
 
         this.contentId = contentId;
         setAttributeKey(key);
@@ -85,7 +86,7 @@ public class NodeAttributeEntity extends AbstractEntityAttribute {
      * @param key       attribute key
      * @param value     attribute value
      */
-    public NodeAttributeEntity(Long id, Long contentId, String key, Serializable value) {
+    public NodeAttributeEntity(final Long id, final Long contentId, final String key, final Serializable value) {
         this(contentId, key, value);
         this.id = id;
     }
@@ -147,10 +148,10 @@ public class NodeAttributeEntity extends AbstractEntityAttribute {
         }
         return "id= ".concat(strId)
                 .concat(" contentId=").concat(ofNullable(contentId).map(NodeAttributeEntity::apply).orElse(EMPTY))
-                .concat(" attributeKey=").concat(ofNullable(getAttributeKey()).orElse("null"))
-                .concat(" attributeValue=").concat(ofNullable(stringAttributeValue).orElse("null"))
-                .concat(" creationTime=").concat(ofNullable(getCreationTime()).map(LocalDate::toString).orElse("null"))
-                .concat(" modificationTime=").concat(ofNullable(getModificationTime()).map(LocalDate::toString).orElse("null"));
+                .concat(" attributeKey=").concat(ofNullable(getAttributeKey()).orElse(NULL))
+                .concat(" attributeValue=").concat(ofNullable(stringAttributeValue).orElse(NULL))
+                .concat(" creationTime=").concat(ofNullable(getCreationTime()).map(LocalDate::toString).orElse(NULL))
+                .concat(" modificationTime=").concat(ofNullable(getModificationTime()).map(LocalDate::toString).orElse(NULL));
     }
 
     private static String apply(Long cId) {
@@ -159,6 +160,6 @@ public class NodeAttributeEntity extends AbstractEntityAttribute {
 
     @Override
     protected Log getLog() {
-        return log;
+        return LOG;
     }
 }

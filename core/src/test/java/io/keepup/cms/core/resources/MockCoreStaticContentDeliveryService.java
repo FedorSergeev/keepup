@@ -10,13 +10,15 @@ import java.io.File;
  */
 public class MockCoreStaticContentDeliveryService extends StaticContentDeliveryService {
 
-    public MockCoreStaticContentDeliveryService(StorageAccessor<String> storageAccessor, ApplicationConfig applicationConfig) {
-        super(storageAccessor, applicationConfig);
+    public MockCoreStaticContentDeliveryService(ApplicationConfig applicationConfig) {
+        super(applicationConfig);
     }
 
     @Override
     public TransferOperationResult<String> store(File file, String relativePath) {
-        return new TransferOperationResult<String>().ok();
+        final var result = new TransferOperationResult<String>().ok();
+        result.setPayload(relativePath + file.getName());
+        return result;
     }
 
     @Override

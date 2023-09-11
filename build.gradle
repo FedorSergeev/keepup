@@ -1,7 +1,8 @@
 import se.bjurr.gitchangelog.plugin.gradle.GitChangelogTask
 
 plugins {
-    id "se.bjurr.gitchangelog.git-changelog-gradle-plugin" version "1.71.4"
+    id "se.bjurr.gitchangelog.git-changelog-gradle-plugin" version "1.79.0"
+    id "io.github.gradle-nexus.publish-plugin" version "2.0.0-rc-1"
     id "org.sonarqube" version "3.3"
 }
 
@@ -21,7 +22,7 @@ allprojects {
 }
 
 group 'ru.keepupproject.plugins'
-version '2.0.0-beta-1'
+version '2.0.0'
 
 subprojects {
     java {
@@ -30,7 +31,7 @@ subprojects {
     }
 
     group 'ru.keepupproject'
-    version '2.0.0-beta-1'
+    version '2.0.0'
 }
 
 dependencies {
@@ -73,27 +74,30 @@ task codeCoverageReport(type: JacocoReport) {
 }
 
 task generateGitChangelogInlineTemplate(type: GitChangelogTask) {
-    fromRepo = file(".")
+    prependToFile = false; // false will replace the file, true will prepend content
+    fromRepo = file("$projectDir")
+    fromRef = "2.0.0-beta.2";
+    toRef = "v.2.0.0";
     file = new File("CHANGELOG.md")
     templateContent = """
-# Changelog
-Changelog
-{{#tags}}
-## {{name}}
- {{#issues}}
-  {{#hasLink}}
-### {{name}} [{{issue}}]({{link}}) {{title}}
-  {{/hasLink}}
-  {{^hasLink}}
-### {{name}}
-  {{/hasLink}}
-  {{#commits}}
-[{{hash}}](https://github.com/FedorSergeev/keepup/commit/{{hash}}) {{authorName}} *{{commitTime}}*
-{{{message}}}
-  {{/commits}}
- {{/issues}}
-{{/tags}}
- """
+                        # Changelog
+                        Changelog
+                        {{#tags}}
+                        ## {{name}}
+                         {{#issues}}
+                          {{#hasLink}}
+                        ### {{name}} [{{issue}}]({{link}}) {{title}}
+                          {{/hasLink}}
+                          {{^hasLink}}
+                        ### {{name}}
+                          {{/hasLink}}
+                          {{#commits}}
+                        [{{hash}}](https://github.com/FedorSergeev/keepup/commit/{{hash}}) {{authorName}} *{{commitTime}}*
+                        {{{message}}}
+                          {{/commits}}
+                         {{/issues}}
+                        {{/tags}}
+                      """
 }
 
 codeCoverageReport.dependsOn {

@@ -35,9 +35,15 @@ public class LayoutService {
     private final LayoutEntityRepository layoutEntityRepository;
     private final ObjectMapper objectMapper;
 
-    public LayoutService(LayoutEntityRepository layoutEntityRepository, ObjectMapper objectMapper) {
+    /**
+     * Constructor
+     *
+     * @param layoutEntityRepository DAO for object layouts
+     */
+    public LayoutService(final LayoutEntityRepository layoutEntityRepository) {
         this.layoutEntityRepository = layoutEntityRepository;
-        this.objectMapper = objectMapper;
+        this.objectMapper = new ObjectMapper();
+        log.debug("Layout service implemented by class " + this.getClass().getName() + "instantiated");
     }
 
     /**
@@ -46,15 +52,15 @@ public class LayoutService {
      * @param layout object to update
      * @return       Publisher signaling when layout is saved
      */
-    public Mono<Layout> save(Layout layout) {
+    public Mono<Layout> save(final Layout layout) {
         log.debug("Received request to save Layout entity with id = %d and name = %s"
                 .formatted(layout.getId(), layout.getName()));
         String layoutAttributes;
-        var layoutEntity = new LayoutEntity();
+        final var layoutEntity = new LayoutEntity();
         layoutEntity.setId(layout.getId());
         layoutEntity.setName(layout.getName());
         layoutEntity.setHtml(layout.getHtml());
-        layoutEntity.setBreadCrumbName(layout.getBreadCrumbElementName());
+        layoutEntity.setBreadcrumbName(layout.getBreadCrumbElementName());
 
         try {
             layoutAttributes = objectMapper.writeValueAsString(layout.getAttributes());
@@ -156,9 +162,10 @@ public class LayoutService {
         resultLayout.setId(entity.getId());
         resultLayout.setName(entity.getName());
         resultLayout.setHtml(entity.getHtml());
-        resultLayout.setBreadCrumbElementName(entity.getBreadCrumbName());
+        resultLayout.setBreadCrumbElementName(entity.getBreadcrumbName());
 
         try {
+            var list = objectMapper.readValue(entity.getAttributes(),List.class);
             List<LayoutApiAttribute> attributes = objectMapper.readValue(entity.getAttributes(), new TypeReference<>() {});
             resultLayout.setAttributes(ofNullable(attributes).orElse(new ArrayList<>()));
         } catch (JsonProcessingException e) {

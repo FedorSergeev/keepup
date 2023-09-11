@@ -6,7 +6,7 @@ package io.keepup.cms.core.datasource.resources;
  * @author Fedor Sergeev
  * @since 1.8
  */
-public class GetFileFromStoreResult extends AbstractGetFromStoreResult {
+public class GetFileFromStoreResult extends GetFromStoreResultBase {
 
     /**
      * Fetched file
@@ -35,6 +35,6 @@ public class GetFileFromStoreResult extends AbstractGetFromStoreResult {
      * @return        operation result wrapper with error message
      */
     public static GetFileFromStoreResult error(String message) {
-        return AbstractGetFromStoreResult.error(message, GetFileFromStoreResult.class);
+        return GetFromStoreResultBase.error(message, GetFileFromStoreResult.class);
     }
 }

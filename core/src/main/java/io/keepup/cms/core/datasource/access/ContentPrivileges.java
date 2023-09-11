@@ -2,6 +2,7 @@ package io.keepup.cms.core.datasource.access;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -15,6 +16,8 @@ import static java.util.Optional.ofNullable;
  */
 
 public class ContentPrivileges implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
     private static final String OWNER = "owner";
     private static final String ROLE = "role";
     private static final String OTHERS = "others";
