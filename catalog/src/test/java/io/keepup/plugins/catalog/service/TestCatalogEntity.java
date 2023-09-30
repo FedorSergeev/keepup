@@ -46,6 +46,19 @@ public class TestCatalogEntity implements CatalogEntity {
     }
 
     @Override
+    public void setLayoutName(String layoutName) {
+        this.layoutName = layoutName;
+    }
+
+    @Override
+    public Long getParentId() {
+        return 0L;
+    }
+
+    @Override
+    public void setParentId(Long parentId) {}
+
+    @Override
     public Long getId() {
         return id;
     }

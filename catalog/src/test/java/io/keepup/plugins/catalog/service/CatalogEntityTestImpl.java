@@ -27,6 +27,9 @@ public class CatalogEntityTestImpl implements CatalogEntity {
         return "testLayout";
     }
 
+    @Override
+    public void setLayoutName(String layoutName) {}
+
     public void setId(Long id) {
         this.id = id;
     }

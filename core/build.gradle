@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'ru.keepupproject'
-version '2.0.0'
+version '2.0.1'
 description = 'keepup-core'
 
 java {
@@ -42,9 +42,9 @@ publishing {
         core(MavenPublication) {
             groupId 'ru.keepupproject'
             artifactId 'keepup-core'
-            version '2.0.0'
+            version '2.0.1'
             // todo afterEvaluate
-            artifact 'build/libs/core-2.0.0-plain.jar'
+            artifact 'build/libs/core-2.0.1-plain.jar'
             from components.java
             pom {
                 name = 'KeepUP Core'

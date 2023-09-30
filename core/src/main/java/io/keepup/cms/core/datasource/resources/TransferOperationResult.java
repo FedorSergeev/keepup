@@ -116,13 +116,14 @@ public class TransferOperationResult<T> {
 
     /**
      * Create successful operation result.
-     *
+     * @param payload payload
      * @return successful operation result
      */
-    public TransferOperationResult<T> ok() {
+    public TransferOperationResult<T> ok(final T payload) {
         final TransferOperationResult<T> transferOperationResult = new TransferOperationResult<>();
         transferOperationResult.setMessage(OK_MESSAGE);
         transferOperationResult.setSuccess(true);
+        transferOperationResult.setPayload(payload);
         return transferOperationResult;
     }
 

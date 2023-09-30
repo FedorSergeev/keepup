@@ -26,7 +26,7 @@ import javax.sql.DataSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for {@link CatalogServiceAbstract} component using PostgreSQL Docker container
+ * Tests for {@link CatalogService} component using PostgreSQL Docker container
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"dev"})
@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
                 SqlUserDao.class,
                 DataSource.class,
                 DataSourceFacadeImpl.class,
-                CatalogServiceAbstract.class
+                CatalogService.class
         }
 )
 @TestPropertySource(properties = {
@@ -80,7 +80,7 @@ class PostgresCatalogServiceTest {
     }
 
     @Autowired
-    CatalogServiceAbstract catalogService;
+    CatalogService catalogService;
 
     @Test
     void getContentParents() {

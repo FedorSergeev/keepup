@@ -22,9 +22,27 @@ public interface CatalogEntity extends Serializable {
     Long getId();
 
     /**
+     * Get node parent ID
+     * @return parent ID
+     */
+    Long getParentId();
+
+    /**
+     * Define entity parent node ID
+     * @param parentId parent node ID for current entity
+     */
+    void setParentId(Long parentId);
+
+    /**
      * Fetches the {@link Layout} name for view witch suits current object.
      *
      * @return name of layout entity
      */
     String getLayoutName();
+
+    /**
+     * Needed to define the layout template used by service layer to created an entity
+     * @param layoutName name of layout template
+     */
+    void setLayoutName(String layoutName);
 }

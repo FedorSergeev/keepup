@@ -87,7 +87,7 @@ class JarHelperTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         Mockito.when(mockStaticContentDeliveryService.store(ArgumentMatchers.any(File.class), ArgumentMatchers.anyString()))
-                .thenReturn(new TransferOperationResult().ok());
+                .thenReturn(new TransferOperationResult().ok(""));
     }
 
     /**

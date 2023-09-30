@@ -3,7 +3,7 @@ package io.keepup.plugins.catalog.rest;
 import io.keepup.cms.core.persistence.User;
 import io.keepup.cms.rest.controller.KeepupResponseWrapper;
 import io.keepup.plugins.catalog.model.*;
-import io.keepup.plugins.catalog.service.CatalogServiceAbstract;
+import io.keepup.plugins.catalog.service.CatalogService;
 import io.keepup.plugins.catalog.service.LayoutService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -48,16 +48,15 @@ public class CatalogController {
 
     private static final String SESSION_ID_WITH_RESPONSE = "Session id: %s, Send response: %s";
     private final Log log = LogFactory.getLog(getClass());
-    private final CatalogServiceAbstract catalogService;
+    private final CatalogService catalogService;
     private final LayoutService layoutService;
 
     /**
      * Constructs a new service entity.
-     *
      * @param catalogService business layer service for catalog entities
      * @param layoutService  component responsible for operations with entity views
      */
-    public CatalogController(final CatalogServiceAbstract catalogService,
+    public CatalogController(final CatalogService catalogService,
                              final LayoutService layoutService) {
         this.catalogService = catalogService;
         this.layoutService = layoutService;
@@ -66,7 +65,6 @@ public class CatalogController {
     /**
      * Get catalog entity possibly with it's children, with corresponding
      * {@link io.keepup.plugins.catalog.model.Layout} objects
-     *
      * @param id         entity primary identifier
      * @param children   flag for getting children as well
      * @param parents    include parent nodes to the result list
@@ -117,7 +115,6 @@ public class CatalogController {
 
     /**
      * Get all catalog entities and layouts.
-     *
      * @param webSession server-side session data abstraction
      * @return Publisher for ResponseEntity wrapping catalog entities with layouts
      */
@@ -141,7 +138,6 @@ public class CatalogController {
     /**
      * Create or update catalog entity. Logic is a little bit complicated because of possible inconsistency between
      * {@link CatalogEntity} interface and it's implementation.
-     *
      * @param parentId      identifier of record witch will be current entity's parent node
      * @param catalogEntity entity to be saved or updated
      * @param webSession    server-side session data abstraction
@@ -175,7 +171,6 @@ public class CatalogController {
 
     /**
      * Upload file and set a link to it as an attribute for the specified entity.
-     *
      * @param id         identifier of the entity whose attribute is to be updated as a file
      * @param name       name if file to be set as a new entity attribute
      * @param isPublic   flag defines whether a new file shoud be visible worldwide or not
@@ -197,16 +192,43 @@ public class CatalogController {
     }
 
     /**
+     * Upload file and set a link to it as an attribute for the new entity.
+     * @param parentId   identifier of the entity whose attribute is to be updated as a file
+     * @param name       name if file to be set as a new entity attribute
+     * @param layoutName name of the display template by which the entity is created
+     * @param type       corresponding Java type, in case if parameter is empty, proxy implementation will be created
+     * @param isPublic   flag defines whether a new file shoud be visible worldwide or not
+     * @param filePart   publisher for file part object emitting
+     * @param webSession server-side session abstraction
+     * @return publisher for new created entity which contains link to the uploaded file
+     */
+    @PostMapping(value = {"/new/{parentId}/attribute"}, consumes = MULTIPART_FORM_DATA_VALUE)
+    public Mono<ResponseEntity<CreateCatalogEntityWithFileAttributeResponse>> createEntityWithFileAttribute(@PathVariable("parentId") final Long parentId,
+                                                                                             @RequestParam("name") final String name,
+                                                                                             @RequestParam(value = "layoutName", required = false) final String layoutName,
+                                                                                             @RequestParam(value = "type", required = false) final String type,
+                                                                                             @RequestParam(value = "public", required = false, defaultValue = "false") final boolean isPublic,
+                                                                                             @RequestPart("file") Mono<FilePart> filePart,
+                                                                                             final WebSession webSession) {
+        log.info("Session id: %s, Received request to create new catalog entity with parentId = %s as file"
+                .formatted(webSession.getId(), parentId));
+        return ReactiveSecurityContextHolder.getContext()
+            .map(SecurityContext::getAuthentication)
+            .map(auth -> (User)auth.getPrincipal())
+            .flatMap(user -> filePart.flatMap(part -> catalogService.createEntityWithFileAttribute(parentId, user.getId(), name, part, layoutName, type))
+            .map(ResponseEntity::ok));
+    }
+
+    /**
      * Set new values only for the specified keys attributes.
-     *
      * @param id entity identifier
      * @param attributes entity attributes to be updated
      * @param webSession server-side web session representation
      * @return publisher witch emits an updated entity
      */
-    @PostMapping("/{id}/updateAttributes")
+    @PostMapping(path = "/{id}/updateAttributes", consumes = APPLICATION_JSON_VALUE)
     public Mono<ResponseEntity<KeepupResponseWrapper<Map<String, Serializable>>>> updateContentAttributes(@PathVariable("id") final Long id,
-                                                                              final Map<String, Serializable> attributes,
+                                                                              final @RequestBody Map<String, Serializable> attributes,
                                                                               final WebSession webSession) {
         log.info("Session id: %s, Received request to update catalog entity %s attributes"
                 .formatted(webSession.getId(), id));
@@ -217,7 +239,7 @@ public class CatalogController {
 
 
     /**
-     * Removes entity by id if is served by {@link CatalogServiceAbstract}
+     * Removes entity by id if is served by {@link CatalogService}
      * @param id         entity identifier
      * @param webSession server-side session data abstraction
      * @return publisher witch produces information about delete operation result

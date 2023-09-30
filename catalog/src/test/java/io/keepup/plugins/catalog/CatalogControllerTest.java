@@ -28,7 +28,7 @@ import io.keepup.plugins.catalog.model.CatalogEntity;
 import io.keepup.plugins.catalog.model.CatalogEntityListWrapper;
 import io.keepup.plugins.catalog.model.Layout;
 import io.keepup.plugins.catalog.rest.CatalogController;
-import io.keepup.plugins.catalog.service.CatalogServiceAbstract;
+import io.keepup.plugins.catalog.service.CatalogService;
 import io.keepup.plugins.catalog.service.LayoutService;
 import io.keepup.plugins.catalog.service.TestCatalogEntity;
 import org.junit.jupiter.api.BeforeEach;
@@ -103,14 +103,14 @@ import static org.mockito.ArgumentMatchers.anyLong;
         SecurityWebFilterChain.class,
         SecurityConfiguration.class,
         CatalogController.class,
-        CatalogServiceAbstract.class,
+        CatalogService.class,
         LayoutService.class,
         StaticContentDeliveryService.class,
         ApplicationConfig.class
 })
 class CatalogControllerTest {
     @Autowired
-    private CatalogServiceAbstract catalogService;
+    private CatalogService catalogService;
     @Autowired
     private CatalogController catalogController;
     @Autowired
@@ -129,7 +129,7 @@ class CatalogControllerTest {
     private WebSession webSession;
 
     @SpyBean
-    private CatalogServiceAbstract mockCatalogService;
+    private CatalogService mockCatalogService;
 
     @Mock
     private FilePart filePart;
@@ -248,6 +248,21 @@ class CatalogControllerTest {
             public String getLayoutName() {
                 return "layout";
             }
+
+            @Override
+            public void setLayoutName(String layoutName) {
+                // nothing will happen
+            }
+
+            @Override
+            public Long getParentId() {
+                return 0L;
+            }
+
+            @Override
+            public void setParentId(Long parentId) {
+
+            }
         };
         CatalogEntity childEntity = new CatalogEntity() {
             @Override
@@ -258,6 +273,21 @@ class CatalogControllerTest {
             @Override
             public String getLayoutName() {
                 return "layout";
+            }
+
+            @Override
+            public void setLayoutName(String layoutName) {
+                // nothing will happen
+            }
+
+            @Override
+            public Long getParentId() {
+                return 0L;
+            }
+
+            @Override
+            public void setParentId(Long parentId) {
+
             }
         };
         CatalogEntity[] catalogEntities = {entity, childEntity};

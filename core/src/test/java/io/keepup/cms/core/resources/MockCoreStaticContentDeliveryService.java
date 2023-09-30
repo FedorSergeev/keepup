@@ -16,7 +16,7 @@ public class MockCoreStaticContentDeliveryService extends StaticContentDeliveryS
 
     @Override
     public TransferOperationResult<String> store(File file, String relativePath) {
-        final var result = new TransferOperationResult<String>().ok();
+        final var result = new TransferOperationResult<String>().ok("");
         result.setPayload(relativePath + file.getName());
         return result;
     }

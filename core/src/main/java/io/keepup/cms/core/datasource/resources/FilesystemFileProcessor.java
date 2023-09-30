@@ -54,7 +54,7 @@ public class FilesystemFileProcessor implements StorageAccessor<String> {
         try {
             copyFileToDirectory(file, new File(filePath));
             log.info(format("File %s saved to directory %s", file.getName(), filePath));
-            transferOperationResult = new TransferOperationResult<String>().ok();
+            transferOperationResult = new TransferOperationResult<String>().ok(relativePath + file.getName());
         } catch (IOException ex) {
             log.error(format("Failed to save file %s to dump directory: %s", file.getName(), ex.getMessage()));
             transferOperationResult = new TransferOperationResult<String>().error(ex.toString());

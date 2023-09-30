@@ -96,7 +96,7 @@ public class LayoutService {
      * @param name {@link Layout} name
      * @return     publisher for found {@link Layout} object
      */
-    public Mono<Layout> getByName(String name) {
+    public Mono<Layout> getByName(final String name) {
         if (name == null) {
             log.debug("Empty name parameter");
             return Mono.empty();

@@ -22,7 +22,7 @@ allprojects {
 }
 
 group 'ru.keepupproject.plugins'
-version '2.0.0'
+version '2.0.1'
 
 subprojects {
     java {
@@ -31,7 +31,7 @@ subprojects {
     }
 
     group 'ru.keepupproject'
-    version '2.0.0'
+    version '2.0.1'
 }
 
 dependencies {
@@ -74,10 +74,10 @@ task codeCoverageReport(type: JacocoReport) {
 }
 
 task generateGitChangelogInlineTemplate(type: GitChangelogTask) {
-    prependToFile = false; // false will replace the file, true will prepend content
+    prependToFile = false // false will replace the file, true will prepend content
     fromRepo = file("$projectDir")
-    fromRef = "2.0.0-beta.2";
-    toRef = "v.2.0.0";
+    fromRef = "2.0.0"
+    toRef = "2.0.1"
     file = new File("CHANGELOG.md")
     templateContent = """
                         # Changelog

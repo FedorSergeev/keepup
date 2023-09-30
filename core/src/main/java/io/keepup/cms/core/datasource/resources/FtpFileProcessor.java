@@ -72,7 +72,7 @@ public class FtpFileProcessor implements StorageAccessor<String> {
                           .filter(fileToUploadName::equals)
                           .forEach(name -> deleteFile(name, ftpClient));
                     return ftpClient.appendFile(new String(fileToUploadName.getBytes(UTF_8), UTF_8), fileInputStream)
-                            ? new TransferOperationResult<String>().ok()
+                            ? new TransferOperationResult<String>().ok(relativePath + fileToUploadName)
                             : new TransferOperationResult<String>().error("Failed to upload file");
                 } catch (FileNotFoundException e) {
                     log.error("File %s not found".formatted(file.getName()));

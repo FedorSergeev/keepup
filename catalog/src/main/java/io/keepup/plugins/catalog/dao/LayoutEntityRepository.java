@@ -18,7 +18,7 @@ public interface LayoutEntityRepository extends ReactiveCrudRepository<LayoutEnt
      * @param name name of Layout, should be unique
      * @return LayoutEntity or empty Mono if the result set is empty
      */
-    @Query("SELECT id, name, html, attributes FROM layouts AS layoutEntity WHERE layoutEntity.name = :name")
+    @Query("SELECT id, name, html, breadcrumb_name, attributes FROM layouts AS layoutEntity WHERE layoutEntity.name = :name")
     Mono<LayoutEntity> findByName(@Param("name") final String name);
 
     /**
@@ -27,6 +27,6 @@ public interface LayoutEntityRepository extends ReactiveCrudRepository<LayoutEnt
      * @param names collection of Layout names
      * @return      publisher for many LayoutEntity objects or empty Publisher if the result set is empty
      */
-    @Query("SELECT id, name, html, attributes FROM layouts AS layoutEntity WHERE layoutEntity.name IN (:names)")
+    @Query("SELECT id, name, html, breadcrumb_name, attributes FROM layouts AS layoutEntity WHERE layoutEntity.name IN (:names)")
     Flux<LayoutEntity> findByNames(@Param("names") final Iterable<String> names);
 }

@@ -40,7 +40,7 @@ public class StaticContentDeliveryService implements IContentDeliveryService {
     }
 
     @Override
-    public TransferOperationResult<String> store(File file, String relativePath) {
+    public TransferOperationResult<String> store(final File file, final String relativePath) {
         return ofNullable(storageProcessors.get(getStorageType()))
                 .map(processor -> processor.save(file, new DefaultUriBuilderFactory().builder().build("/", relativePath).toString()))
                 .orElse(new TransferOperationResult<String>().error(format("No files processor specified for type %s", getStorageType())));

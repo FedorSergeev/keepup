@@ -7,7 +7,7 @@ plugins {
 
 description = "admin-ui"
 group 'ru.keepupproject'
-version '2.0.0'
+version '2.0.1'
 bootJar.enabled = false
 jar.enabled = true
 
@@ -64,9 +64,9 @@ publishing {
         adminui(MavenPublication) {
             groupId 'ru.keepupproject'
             artifactId 'keepup-admin-ui'
-            version '2.0.0'
+            version '2.0.1'
             // todo afterEvaluate
-            artifact 'build/libs/admin-ui-2.0.0-plain.jar'
+            artifact 'build/libs/admin-ui-2.0.1-plain.jar'
             from components.java
             pom {
                 name = 'KeepUP Admin UI'

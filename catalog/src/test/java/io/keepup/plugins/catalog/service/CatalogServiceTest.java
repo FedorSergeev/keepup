@@ -66,7 +66,7 @@ import static org.junit.jupiter.api.Assertions.*;
         SqlFileDao.class,
         SqlUserDao.class,
         DataSourceFacadeImpl.class,
-        CatalogServiceAbstract.class,
+        CatalogService.class,
         LayoutService.class,
         ApplicationConfig.class,
         StaticContentDeliveryService.class
@@ -80,7 +80,7 @@ class CatalogServiceTest {
     private final Log log = LogFactory.getLog(getClass());
 
     @Autowired
-    private CatalogServiceAbstract catalogService;
+    private CatalogService catalogService;
     @Autowired
     private DataSourceFacade dataSourceFacade;
     @Autowired
@@ -282,6 +282,29 @@ class CatalogServiceTest {
         assertEquals("error", errorSignature);
 
         ReflectionTestUtils.setField(applicationConfig, "dump", dumpPath);
+    }
+
+    @Test
+    void createEntityWithFileAttributeTest() {
+        MockitoAnnotations.openMocks(this);
+        byteBuffer = ByteBuffer.allocate(100);
+        final var tempFile = new File("tmp");
+        Mockito.when(filePart.transferTo(ArgumentMatchers.any(File.class))).thenAnswer((file) -> {
+            tempFile.createNewFile();
+            return Mono.empty();
+        });
+        Mockito.when(filePart.filename()).thenReturn("testFile.txt");
+        Mockito.when(dataBuffer.asByteBuffer()).thenReturn(byteBuffer);
+        Mockito.when(dataBuffer.factory()).thenReturn(new DefaultDataBufferFactory());
+        Mockito.when(filePart.content()).thenReturn(Flux.just(dataBuffer));
+
+        catalogService.createEntityWithFileAttribute(0L, 1L, "file", filePart, null, null)
+            .doOnNext(result -> {
+                assertNotNull(result.fileAttributeName());
+                assertEquals("file", result.getFileAttributeName());
+                assertNotNull(result.fileAttributeValue());
+            })
+            .block();
     }
 
     private Mono<Layout> createNewLayout() {
